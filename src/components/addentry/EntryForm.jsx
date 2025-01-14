@@ -23,6 +23,34 @@ const EntryForm = ({ entry, onClose }) => {
   const [recognition, setRecognition] = useState(null);
   const [feedback, setFeedback] = useState('');
 
+  // Define category options based on type
+  const categoryOptions = {
+    Expense: [
+      'Petrol',
+      'Food',
+      'Accommodation',
+      'Material',
+      'Carpenter',
+      'Painter',
+      'Fall ceiling'
+    ],
+    Income: [
+      'Salary',
+      'Investment',
+      'Rental',
+      'Business',
+      'Other'
+    ]
+  };
+
+  useEffect(() => {
+    // Reset category when type changes
+    setFormData(prev => ({
+      ...prev,
+      category: ''
+    }));
+  }, [formData.type]);
+
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user'));
     if (user?._id || user?.id) {
@@ -99,14 +127,10 @@ const EntryForm = ({ entry, onClose }) => {
       setFormData(prev => ({ ...prev, type: 'Expense' }));
     }
 
-    // Parse category
-    const commonCategories = [
-      'salary', 'rent', 'groceries', 'utilities', 'food', 
-      'transport', 'medical', 'entertainment', 'shopping',
-      'bills', 'maintenance', 'internet', 'phone'
-    ];
-    const foundCategory = commonCategories.find(category => 
-      transcript.includes(category)
+    // Parse category based on type
+    const currentCategories = categoryOptions[formData.type];
+    const foundCategory = currentCategories.find(category => 
+      transcript.toLowerCase().includes(category.toLowerCase())
     );
     if (foundCategory) {
       setFormData(prev => ({ ...prev, category: foundCategory }));
@@ -200,29 +224,7 @@ const EntryForm = ({ entry, onClose }) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-[#7F5539]">
-          {entry ? 'Update Entry' : 'New Entry'}
-        </h2>
-        <div className="flex items-center gap-4">
-          {isListening && (
-            <span className="text-sm text-green-600 animate-pulse">
-              🎤 Listening...
-            </span>
-          )}
-          <button
-            type="button"
-            onClick={toggleVoiceInput}
-            className={`p-3 rounded-full transition-all duration-300 hover:scale-105 ${
-              isListening 
-                ? 'bg-red-500 text-white' 
-                : 'bg-[#B08968] text-white'
-            }`}
-          >
-            {isListening ? <MicOff size={20} /> : <Mic size={20} />}
-          </button>
-        </div>
-      </div>
+     
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
@@ -288,15 +290,20 @@ const EntryForm = ({ entry, onClose }) => {
 
         <div>
           <label className={labelClasses}>Category</label>
-          <input
-            type="text"
+          <select
             name="category"
             value={formData.category}
             onChange={handleInputChange}
             required
             className={inputClasses}
-            placeholder="e.g., Salary"
-          />
+          >
+            <option value="">Select a category</option>
+            {categoryOptions[formData.type].map(category => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div>

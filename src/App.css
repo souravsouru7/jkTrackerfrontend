@@ -36,3 +36,12 @@
     transform: rotate(360deg);
   }
 }
+
+
+@layer base {
+  input, textarea, select {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-appearance: none;
+    @apply touch-manipulation;
+  }
+}

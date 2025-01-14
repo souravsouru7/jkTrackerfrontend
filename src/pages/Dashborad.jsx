@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { logout } from "../store/slice/authSlice";
 import {
   fetchMonthlyExpenses,
@@ -15,80 +15,133 @@ import {
   selectProject,
   deleteProject,
 } from "../store/slice/projectSlice";
-import { Menu, X, Plus, Trash2 } from "lucide-react";
+import { Menu, X, Plus, Trash2, ChevronRight } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   PieChart, Pie, Cell, ResponsiveContainer
 } from "recharts";
+import { fetchFinancialSummary } from '../store/slice/fincialSlice';
+import FinancialOverview from './FinancialOverview';
+import Navbar from './Navbar';
 
-// Lazy loaded components
 const EntryForm = lazy(() => import("../components/addentry/EntryForm"));
 
-// Component for mobile header
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      when: "beforeChildren",
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1
+  }
+};
+
 const MobileHeader = React.memo(({ isOpen, setIsOpen }) => (
-  <header className="sticky top-0 z-50 bg-white/10 backdrop-blur-md border-b border-[#B08968]/20">
+  <motion.header
+    initial={{ y: -100 }}
+    animate={{ y: 0 }}
+    className="sticky top-0 z-50 bg-white/10 backdrop-blur-md border-b border-[#B08968]/20"
+  >
     <div className="flex justify-between items-center px-4 py-4">
-      <h1 className="text-xl font-bold text-[#7F5539]">Finance Tracker</h1>
-      <button onClick={() => setIsOpen(!isOpen)} className="text-[#7F5539]">
+      <motion.h1
+        whileHover={{ scale: 1.05 }}
+        className="text-xl font-bold text-[#7F5539]"
+      >
+        Finance Tracker
+      </motion.h1>
+      <motion.button
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => setIsOpen(!isOpen)}
+        className="text-[#7F5539]"
+      >
         {isOpen ? <X size={24} /> : <Menu size={24} />}
-      </button>
+      </motion.button>
     </div>
-  </header>
+  </motion.header>
 ));
 
-// Component for mobile menu
 const MobileMenu = React.memo(({ isOpen, setIsOpen, navigate, dispatch }) => {
   const handleNavigation = useCallback((path) => {
     navigate(path);
     setIsOpen(false);
   }, [navigate, setIsOpen]);
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-white z-40 flex flex-col">
-      <div className="flex justify-between items-center px-4 py-4 border-b">
-        <h1 className="text-xl font-bold text-[#7F5539]">Finance Tracker</h1>
-        <button onClick={() => setIsOpen(false)}>
-          <X size={24} className="text-[#7F5539]" />
-        </button>
-      </div>
-      <nav className="flex flex-col p-4 gap-4">
-        <button
-          onClick={() => handleNavigation("/entries")}
-          className="w-full py-3 text-left text-[#9C6644] text-lg"
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ x: "100%" }}
+          animate={{ x: 0 }}
+          exit={{ x: "100%" }}
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          className="fixed inset-0 bg-white z-40 flex flex-col"
         >
-          Entries
-        </button>
-        <button
-          onClick={() => handleNavigation("/balance-sheet")}
-          className="w-full py-3 text-left text-[#9C6644] text-lg"
-        >
-          Balance Sheet
-        </button>
-        <button
-          onClick={() => handleNavigation("/create-bill")}
-          className="w-full py-3 text-left text-[#9C6644] text-lg"
-        >
-          Create Bill
-        </button>
-        <button
-          onClick={() => dispatch(logout())}
-          className="w-full py-3 bg-[#B08968] text-white rounded-lg text-lg"
-        >
-          Logout
-        </button>
-      </nav>
-    </div>
+          <div className="flex justify-between items-center px-4 py-4 border-b">
+            <h1 className="text-xl font-bold text-[#7F5539]">Finance Tracker</h1>
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setIsOpen(false)}
+            >
+              <X size={24} className="text-[#7F5539]" />
+            </motion.button>
+          </div>
+          <nav className="flex flex-col p-4 gap-4">
+            {["Entries", "Balance Sheet", "Create Bill"].map((item, index) => (
+              <motion.button
+                key={item}
+                initial={{ x: -50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{ scale: 1.02, x: 10 }}
+                onClick={() => handleNavigation(`/${item.toLowerCase().replace(' ', '-')}`)}
+                className="w-full py-3 text-left text-[#9C6644] text-lg flex items-center justify-between"
+              >
+                {item}
+                <ChevronRight size={20} />
+              </motion.button>
+            ))}
+            <motion.button
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => dispatch(logout())}
+              className="w-full py-3 bg-[#B08968] text-white rounded-lg text-lg mt-4"
+            >
+              Logout
+            </motion.button>
+          </nav>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 });
 
-// Component for project list
 const ProjectList = React.memo(({ projects, selectedProject, onSelectProject, onDeleteProject }) => (
-  <div className="space-y-2">
+  <motion.div
+    variants={containerVariants}
+    initial="hidden"
+    animate="visible"
+    className="space-y-2"
+  >
     {projects.map((project) => (
-      <div
+      <motion.div
         key={project._id}
+        variants={itemVariants}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
         className={`flex items-center justify-between p-3 rounded-lg ${
           selectedProject?._id === project._id ? 'bg-[#B08968] text-white' : 'bg-white'
         }`}
@@ -96,54 +149,113 @@ const ProjectList = React.memo(({ projects, selectedProject, onSelectProject, on
         <span onClick={() => onSelectProject(project)} className="flex-1 cursor-pointer">
           {project.name}
         </span>
-        <button onClick={() => onDeleteProject(project._id)} className="ml-2">
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => onDeleteProject(project._id)}
+          className="ml-2"
+        >
           <Trash2 size={20} />
-        </button>
-      </div>
+        </motion.button>
+      </motion.div>
     ))}
-  </div>
+  </motion.div>
 ));
 
-// Component for financial summary
-const FinancialSummary = React.memo(({ summary }) => (
-  <section className="bg-white/80 rounded-xl p-4">
-    <h2 className="text-lg font-semibold text-[#7F5539] mb-4">Financial Summary</h2>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <motion.div 
-        whileHover={{ scale: 1.05 }}
-        className="bg-white/50 p-6 rounded-xl border border-[#B08968]/20 backdrop-blur-md"
-      >
-        <h3 className="text-lg font-semibold text-[#7F5539] mb-2">Total Income</h3>
-        <p className="text-3xl font-bold text-green-600">
-          ₹{(summary.totalIncome || 0).toFixed(2)}
-        </p>
-      </motion.div>
-      <motion.div 
-        whileHover={{ scale: 1.05 }}
-        className="bg-white/50 p-6 rounded-xl border border-[#B08968]/20 backdrop-blur-md"
-      >
-        <h3 className="text-lg font-semibold text-[#7F5539] mb-2">Total Expenses</h3>
-        <p className="text-3xl font-bold text-red-500">
-          ₹{(summary.totalExpenses || 0).toFixed(2)}
-        </p>
-      </motion.div>
-      <motion.div 
-        whileHover={{ scale: 1.05 }}
-        className="bg-white/50 p-6 rounded-xl border border-[#B08968]/20 backdrop-blur-md"
-      >
-        <h3 className="text-lg font-semibold text-[#7F5539] mb-2">Net Balance</h3>
-        <p className="text-3xl font-bold text-[#9C6644]">
-          ₹{(summary.netBalance || 0).toFixed(2)}
-        </p>
-      </motion.div>
-    </div>
-  </section>
-));
+const FinancialSummary = React.memo(({ summary, selectedProject }) => {
+  const remainingPayment = (selectedProject?.budget || 0) - (summary.totalIncome || 0);
+  
+  const cards = [
+    {
+      title: "Budget",
+      value: selectedProject?.budget || 0,
+      gradient: "from-blue-50 to-blue-100/50",
+      border: "border-blue-200",
+      textColor: "text-blue-700"
+    },
+    {
+      title: "Total Expenses",
+      value: summary.totalExpenses || 0,
+      gradient: "from-red-50 to-red-100/50",
+      border: "border-red-200",
+      textColor: "text-red-700"
+    },
+    {
+      title: "Payment Received",
+      value: summary.totalIncome || 0,
+      gradient: "from-teal-50 to-teal-100/50",
+      border: "border-teal-200",
+      textColor: "text-teal-700"
+    },
+    {
+      title: "Remaining Payment",
+      value: remainingPayment,
+      gradient: "from-amber-50 to-amber-100/50",
+      border: "border-amber-200",
+      textColor: "text-amber-700"
+    },
+    {
+      title: "Net Balance",
+      value: summary.netBalance || 0,
+      gradient: "from-purple-50 to-purple-100/50",
+      border: "border-purple-200",
+      textColor: "text-purple-700"
+    }
+  ];
 
-// Component for charts
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-gradient-to-br from-white/90 to-white/70 rounded-xl p-6 shadow-lg"
+    >
+      <motion.h2
+        initial={{ x: -20 }}
+        animate={{ x: 0 }}
+        className="text-2xl font-bold text-[#7F5539] mb-6"
+      >
+        Financial Summary
+      </motion.h2>
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6"
+      >
+        {cards.map((card, index) => (
+          <motion.div
+            key={card.title}
+            variants={itemVariants}
+            whileHover={{ scale: 1.03, transition: { duration: 0.2 } }}
+            className={`bg-gradient-to-br ${card.gradient} p-6 rounded-xl border ${card.border} shadow-md backdrop-blur-md`}
+          >
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">{card.title}</h3>
+            <motion.p
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: index * 0.1 }}
+              className={`text-3xl font-bold ${card.textColor}`}
+            >
+              ₹{card.value.toFixed(2)}
+            </motion.p>
+          </motion.div>
+        ))}
+      </motion.div>
+    </motion.section>
+  );
+});
+
 const Charts = React.memo(({ monthlyExpenses, incomeVsExpense, colorPalette }) => (
-  <>
-    <section className="bg-white/80 rounded-xl p-4">
+  <motion.div
+    variants={containerVariants}
+    initial="hidden"
+    animate="visible"
+    className="space-y-6"
+  >
+    <motion.section
+      variants={itemVariants}
+      className="bg-white/80 rounded-xl p-4 transform hover:shadow-lg transition-all duration-300"
+    >
       <h2 className="text-lg font-semibold text-[#7F5539] mb-4">Monthly Expenses</h2>
       <div className="h-[300px] w-full">
         <ResponsiveContainer>
@@ -156,9 +268,12 @@ const Charts = React.memo(({ monthlyExpenses, incomeVsExpense, colorPalette }) =
           </BarChart>
         </ResponsiveContainer>
       </div>
-    </section>
+    </motion.section>
 
-    <section className="bg-white/80 rounded-xl p-4">
+    <motion.section
+      variants={itemVariants}
+      className="bg-white/80 rounded-xl p-4 transform hover:shadow-lg transition-all duration-300"
+    >
       <h2 className="text-lg font-semibold text-[#7F5539] mb-4">Income vs Expense</h2>
       <div className="h-[300px] w-full">
         <ResponsiveContainer>
@@ -181,22 +296,23 @@ const Charts = React.memo(({ monthlyExpenses, incomeVsExpense, colorPalette }) =
           </PieChart>
         </ResponsiveContainer>
       </div>
-    </section>
-  </>
+    </motion.section>
+  </motion.div>
 ));
 
-// Toast notification component
 const Toast = React.memo(({ message, type }) => (
-  <div
+  <motion.div
+    initial={{ opacity: 0, y: 50 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: 50 }}
     className={`fixed bottom-4 left-4 right-4 p-4 rounded-lg ${
       type === "success" ? "bg-[#B08968]" : "bg-red-500"
     } text-white z-50`}
   >
     {message}
-  </div>
+  </motion.div>
 ));
 
-// Main Dashboard component
 const Dashboard = () => {
   // State
   const [isOpen, setIsOpen] = useState(false);
@@ -206,11 +322,13 @@ const Dashboard = () => {
   const [notificationMessage, setNotificationMessage] = useState("");
   const [notificationType, setNotificationType] = useState("");
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
+  const [newProjectBudget, setNewProjectBudget] = useState("");
 
   // Hooks
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  
+  const { overall } = useSelector(state => state.summary);
+
   // Memoized values
   const user = useMemo(() => JSON.parse(localStorage.getItem("user")), []);
   const userId = useMemo(() => user?._id || user?.id, [user]);
@@ -226,6 +344,12 @@ const Dashboard = () => {
   const balanceSummary = useSelector((state) => state.balanceSheet.summary);
 
   // Effects
+  useEffect(() => {
+    if (userId) {
+      dispatch(fetchFinancialSummary(userId));
+    }
+  }, [dispatch, userId]);
+
   useEffect(() => {
     if (userId) {
       dispatch(fetchProjects(userId));
@@ -262,14 +386,16 @@ const Dashboard = () => {
         userId,
         name: newProjectName,
         description: newProjectDescription,
+        budget: newProjectBudget
       })).unwrap();
       setNewProjectName("");
       setNewProjectDescription("");
+      setNewProjectBudget("");
       showToast("Project created successfully", "success");
     } catch (error) {
       showToast("Failed to create project", "error");
     }
-  }, [dispatch, userId, newProjectName, newProjectDescription, showToast]);
+  }, [dispatch, userId, newProjectName, newProjectDescription, newProjectBudget, showToast]);
 
   const handleDeleteProject = useCallback(async (projectId) => {
     if (!window.confirm("Are you sure you want to delete this project?")) return;
@@ -286,19 +412,39 @@ const Dashboard = () => {
     dispatch(selectProject(project));
   }, [dispatch]);
 
-  // Render
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F5EBE0] via-[#E6CCB2] to-[#DDB892]">
-      <MobileHeader isOpen={isOpen} setIsOpen={setIsOpen} />
-      <MobileMenu
-        isOpen={isOpen}
-        setIsOpen={setIsOpen}
-        navigate={navigate}
-        dispatch={dispatch}
-      />
+      {/* Show Navbar on desktop, MobileHeader on mobile */}
+      <div className="hidden md:block">
+        <Navbar />
+      </div>
+      <div className="md:hidden">
+        <MobileHeader isOpen={isOpen} setIsOpen={setIsOpen} />
+        <MobileMenu
+          isOpen={isOpen}
+          setIsOpen={setIsOpen}
+          navigate={navigate}
+          dispatch={dispatch}
+        />
+      </div>
 
-      <main className="p-4 space-y-6">
-        <section className="bg-white/80 rounded-xl p-4">
+      <main className="container mx-auto px-4 py-8">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-[#7F5539]">Financial Summary</h1>
+          <p className="text-sm text-gray-600 mt-1">
+            Track your overall expenses and income across all projects
+          </p>
+        </div>
+
+        <div className="bg-white/80 rounded-xl p-6 shadow-lg backdrop-blur-sm mb-6">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-[#7F5539]">Income & Expense Overview</h2>
+            <p className="text-sm text-gray-500">Current financial status</p>
+          </div>
+          <FinancialOverview overall={overall} />
+        </div>
+
+        <section className="bg-white/80 rounded-xl p-4 mb-6">
           <h2 className="text-lg font-semibold text-[#7F5539] mb-4">Create Project</h2>
           <div className="space-y-4">
             <input
@@ -315,6 +461,13 @@ const Dashboard = () => {
               placeholder="Description"
               className="w-full px-4 py-3 rounded-lg bg-white border border-[#B08968]/20"
             />
+            <input
+              type="number"
+              value={newProjectBudget}
+              onChange={(e) => setNewProjectBudget(e.target.value)}
+              placeholder="Budget"
+              className="w-full px-4 py-3 rounded-lg bg-white border border-[#B08968]/20"
+            />
             <button
               onClick={handleCreateProject}
               className="w-full py-3 bg-[#B08968] text-white rounded-lg"
@@ -324,7 +477,7 @@ const Dashboard = () => {
           </div>
         </section>
 
-        <section className="bg-white/80 rounded-xl p-4">
+        <section className="bg-white/80 rounded-xl p-4 mb-6">
           <h2 className="text-lg font-semibold text-[#7F5539] mb-4">Your Projects</h2>
           <ProjectList
             projects={projects}
@@ -336,7 +489,7 @@ const Dashboard = () => {
 
         {selectedProject && (
           <>
-            <FinancialSummary summary={balanceSummary} />
+            <FinancialSummary summary={balanceSummary} selectedProject={selectedProject} />
             <Charts
               monthlyExpenses={monthlyExpenses}
               incomeVsExpense={incomeVsExpense}
@@ -360,14 +513,14 @@ const Dashboard = () => {
                 className="absolute top-4 right-4"
               >
                 <X size={24} className="text-[#7F5539]" />
-                </button>
+              </button>
               <Suspense fallback={
                 <div className="flex items-center justify-center p-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#B08968]"></div>
                 </div>
               }>
-                <EntryForm 
-                  onClose={() => setIsEntryModalOpen(false)} 
+                <EntryForm
+                  onClose={() => setIsEntryModalOpen(false)}
                   projectId={selectedProject?._id}
                   onSuccess={() => {
                     setIsEntryModalOpen(false);
@@ -394,44 +547,5 @@ const Dashboard = () => {
     </div>
   );
 };
-
-// Create a prop types validator for each component if needed
-// ProjectList.propTypes = {
-//   projects: PropTypes.array.isRequired,
-//   selectedProject: PropTypes.object,
-//   onSelectProject: PropTypes.func.isRequired,
-//   onDeleteProject: PropTypes.func.isRequired,
-// };
-
-// FinancialSummary.propTypes = {
-//   summary: PropTypes.shape({
-//     totalIncome: PropTypes.number,
-//     totalExpenses: PropTypes.number,
-//     netBalance: PropTypes.number,
-//   }).isRequired,
-// };
-
-// Charts.propTypes = {
-//   monthlyExpenses: PropTypes.array.isRequired,
-//   incomeVsExpense: PropTypes.array.isRequired,
-//   colorPalette: PropTypes.arrayOf(PropTypes.string).isRequired,
-// };
-
-// MobileHeader.propTypes = {
-//   isOpen: PropTypes.bool.isRequired,
-//   setIsOpen: PropTypes.func.isRequired,
-// };
-
-// MobileMenu.propTypes = {
-//   isOpen: PropTypes.bool.isRequired,
-//   setIsOpen: PropTypes.func.isRequired,
-//   navigate: PropTypes.func.isRequired,
-//   dispatch: PropTypes.func.isRequired,
-// };
-
-// Toast.propTypes = {
-//   message: PropTypes.string.isRequired,
-//   type: PropTypes.oneOf(['success', 'error']).isRequired,
-// };
 
 export default React.memo(Dashboard);

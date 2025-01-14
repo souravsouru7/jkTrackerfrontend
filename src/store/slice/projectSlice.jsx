@@ -24,7 +24,10 @@ export const fetchProjects = createAsyncThunk('projects/fetchProjects', async (u
 
 export const createProject = createAsyncThunk('projects/createProject', async (projectData) => {
   try {
-    const response = await axios.post(`${API_URL}/api/projects`, projectData, {
+    const response = await axios.post(`${API_URL}/api/projects`, {
+      ...projectData,
+      budget: Number(projectData.budget) || 0
+    }, {
       headers: getAuthHeader()
     });
     return response.data.project;

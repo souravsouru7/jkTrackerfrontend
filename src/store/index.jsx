@@ -6,6 +6,7 @@ import balanceSheetReducer from './slice/balanceSheetSlice';
 import analyticsReducer from './slice/analyticsSlice';
 import projectReducer from './slice/projectSlice';
 import interiorBillingSlice from "./slice/interiorBillingSlice"
+import summaryReducer from './slice/fincialSlice';
 const store = configureStore({
     reducer: {
         auth: authReducer,
@@ -13,7 +14,8 @@ const store = configureStore({
         balanceSheet: balanceSheetReducer,
         analytics: analyticsReducer,
         projects: projectReducer,
-        interiorBilling: interiorBillingSlice
+        interiorBilling: interiorBillingSlice,
+        summary: summaryReducer
 
     },
 });
