@@ -1,13 +1,17 @@
+// EntryForm.jsx
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addEntry, updateEntry } from '../../store/slice/entrySlice';
 import { fetchProjects } from '../../store/slice/projectSlice';
-import { Plus, Mic, MicOff } from 'lucide-react';
+import { Plus, Mic, MicOff, AlertCircle, X } from 'lucide-react';
 
+// Entry Form Component
 const EntryForm = ({ entry, onClose }) => {
   const dispatch = useDispatch();
   const selectedProject = useSelector(state => state.projects.selectedProject);
   const projects = useSelector(state => state.projects.projects);
+  
+  // Form State
   const [formData, setFormData] = useState(
     entry || { 
       type: 'Income', 
@@ -18,40 +22,29 @@ const EntryForm = ({ entry, onClose }) => {
     }
   );
   
+  // UI State
   const [error, setError] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [recognition, setRecognition] = useState(null);
   const [feedback, setFeedback] = useState('');
 
-  // Define category options based on type
+  // Category Options
   const categoryOptions = {
-    Expense: [
-      'Petrol',
-      'Food',
-      'Accommodation',
-      'Material',
-      'Carpenter',
-      'Painter',
-      'Fall ceiling'
-    ],
-    Income: [
-      'Salary',
-      'Investment',
-      'Rental',
-      'Business',
-      'Other'
-    ]
+    Expense: ['Petrol', 'Food', 'Accommodation', 'Material', 'Carpenter', 'Painter', 'Fall ceiling'],
+    Income: ['Salary', 'Investment', 'Rental', 'Business', 'Other']
   };
 
+  // Reset category when type changes
   useEffect(() => {
-    // Reset category when type changes
     setFormData(prev => ({
       ...prev,
       category: ''
     }));
   }, [formData.type]);
 
+  // Initialize speech recognition and fetch projects
   useEffect(() => {
+    // Fetch projects
     const user = JSON.parse(localStorage.getItem('user'));
     if (user?._id || user?.id) {
       dispatch(fetchProjects(user?._id || user?.id));
@@ -61,10 +54,10 @@ const EntryForm = ({ entry, onClose }) => {
     if (window.webkitSpeechRecognition || window.SpeechRecognition) {
       const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
       const recognitionInstance = new SpeechRecognition();
+      
       recognitionInstance.continuous = false;
       recognitionInstance.interimResults = false;
       recognitionInstance.lang = 'en-US';
-
       recognitionInstance.maxAlternatives = 1;
 
       recognitionInstance.onstart = () => {
@@ -83,13 +76,13 @@ const EntryForm = ({ entry, onClose }) => {
         setIsListening(false);
         switch (event.error) {
           case 'no-speech':
-            setError('No speech was detected. Please try again and speak clearly.');
+            setError('No speech detected. Please try again.');
             break;
           case 'audio-capture':
-            setError('No microphone was found. Ensure it is connected and permitted.');
+            setError('No microphone found. Please check your device.');
             break;
           case 'not-allowed':
-            setError('Microphone permission was denied. Please allow microphone access.');
+            setError('Microphone access denied. Please enable permissions.');
             break;
           case 'network':
             setError('Network error occurred. Please check your connection.');
@@ -102,7 +95,7 @@ const EntryForm = ({ entry, onClose }) => {
       recognitionInstance.onend = () => {
         setIsListening(false);
         if (!error) {
-          setFeedback('Listening stopped. Click the mic button to try again.');
+          setFeedback('Listening stopped. Click the mic to try again.');
           setTimeout(() => setFeedback(''), 3000);
         }
       };
@@ -111,10 +104,11 @@ const EntryForm = ({ entry, onClose }) => {
     }
   }, [dispatch, error]);
 
+  // Process voice input
   const processVoiceInput = (transcript) => {
     console.log('Processing transcript:', transcript);
 
-    // Parse amount
+    // Extract amount
     const amountMatch = transcript.match(/(\d+)/);
     if (amountMatch) {
       setFormData(prev => ({ ...prev, amount: amountMatch[0] }));
@@ -127,7 +121,7 @@ const EntryForm = ({ entry, onClose }) => {
       setFormData(prev => ({ ...prev, type: 'Expense' }));
     }
 
-    // Parse category based on type
+    // Find matching category
     const currentCategories = categoryOptions[formData.type];
     const foundCategory = currentCategories.find(category => 
       transcript.toLowerCase().includes(category.toLowerCase())
@@ -136,7 +130,7 @@ const EntryForm = ({ entry, onClose }) => {
       setFormData(prev => ({ ...prev, category: foundCategory }));
     }
 
-    // Use remaining text as description
+    // Extract description
     const description = transcript
       .replace(/(\d+)/, '')
       .replace(/(income|expense|earn|spend|cost)/, '')
@@ -147,6 +141,7 @@ const EntryForm = ({ entry, onClose }) => {
     }
   };
 
+  // Form submission handler
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedProject) {
@@ -172,7 +167,7 @@ const EntryForm = ({ entry, onClose }) => {
       const entryData = {
         ...formData,
         projectId: selectedProject._id,
-        userId: user?._id || user?.id,
+        userId: userId,
         amount: parseFloat(formData.amount),
         date: new Date().toISOString()
       };
@@ -190,6 +185,7 @@ const EntryForm = ({ entry, onClose }) => {
     }
   };
 
+  // Input change handler
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -198,6 +194,7 @@ const EntryForm = ({ entry, onClose }) => {
     }));
   };
 
+  // Voice input toggle handler
   const toggleVoiceInput = () => {
     if (!recognition) {
       setError('Voice recognition is not supported in your browser');
@@ -219,123 +216,166 @@ const EntryForm = ({ entry, onClose }) => {
     }
   };
 
-  const inputClasses = "w-full p-3 bg-white/50 border border-[#B08968]/20 rounded-lg text-[#7F5539] placeholder-[#B08968] focus:ring-2 focus:ring-[#B08968] focus:border-[#B08968] transition-all duration-200";
-  const labelClasses = "block text-sm font-medium text-[#7F5539] mb-2";
+  // Class definitions for consistent styling
+  const inputClasses = "w-full p-3 bg-white/80 border border-[#B08968]/30 rounded-lg text-[#7F5539] placeholder-[#B08968]/70 focus:ring-2 focus:ring-[#B08968] focus:border-transparent outline-none transition-all duration-300 hover:bg-white/90";
+  const labelClasses = "block text-sm font-medium text-[#7F5539] mb-1.5";
+  const selectClasses = `${inputClasses} appearance-none bg-no-repeat bg-right pr-10 cursor-pointer`;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-     
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
-          {error}
-        </div>
-      )}
-
-      {feedback && !error && (
-        <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-lg">
-          {feedback}
-        </div>
-      )}
-
-      <div className="space-y-4">
-        <div>
-          <label className={labelClasses}>Project</label>
-          <select
-            name="projectId"
-            value={formData.projectId}
-            onChange={handleInputChange}
-            required
-            className={inputClasses}
+    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white/95 backdrop-blur-sm shadow-xl rounded-xl border border-[#B08968]/20 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="sticky top-0 bg-white/95 px-6 py-4 border-b border-[#B08968]/10 flex justify-between items-center">
+          <div>
+            <h2 className="text-xl font-semibold text-[#7F5539]">
+              {entry ? 'Update Entry' : 'New Entry'}
+            </h2>
+            <p className="text-sm text-[#B08968]">Fill in the details below</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-[#7F5539] hover:text-[#9C6644] transition-colors p-2 rounded-lg hover:bg-[#B08968]/10"
           >
-            <option value="">Select a project</option>
-            {projects.map(project => (
-              <option key={project._id} value={project._id}>
-                {project.name}
-              </option>
-            ))}
-          </select>
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
-        <div>
-          <label className={labelClasses}>Type</label>
-          <select
-            name="type"
-            value={formData.type}
-            onChange={handleInputChange}
-            className={inputClasses}
-          >
-            <option value="Income">Income</option>
-            <option value="Expense">Expense</option>
-          </select>
+        {/* Form Content */}
+        <div className="p-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Alerts */}
+            {error && (
+              <div className="bg-red-50/90 border border-red-200 rounded-lg p-4 flex gap-3 items-start">
+                <AlertCircle className="h-5 w-5 text-red-500 mt-0.5" />
+                <div>
+                  <p className="font-medium text-red-800">Error</p>
+                  <p className="text-red-600">{error}</p>
+                </div>
+              </div>
+            )}
+
+            {feedback && !error && (
+              <div className="bg-green-50/90 border border-green-200 rounded-lg p-4 flex gap-3 items-center">
+                <Mic className="h-5 w-5 text-green-500" />
+                <p className="text-green-700">{feedback}</p>
+              </div>
+            )}
+
+            {/* Form Fields */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Project Select */}
+              <div>
+                <label className={labelClasses}>Project</label>
+                <select 
+                  name="projectId"
+                  value={formData.projectId}
+                  onChange={handleInputChange}
+                  required
+                  className={selectClasses}
+                >
+                  <option value="">Select a project</option>
+                  {projects.map(project => (
+                    <option key={project._id} value={project._id}>
+                      {project.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Type Select */}
+              <div>
+                <label className={labelClasses}>Type</label>
+                <select
+                  name="type"
+                  value={formData.type}
+                  onChange={handleInputChange}
+                  className={selectClasses}
+                >
+                  <option value="Income">Income</option>
+                  <option value="Expense">Expense</option>
+                </select>
+              </div>
+
+              {/* Amount Input */}
+              <div>
+                <label className={labelClasses}>Amount</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#9C6644] font-medium">
+                    Rs
+                  </span>
+                  <input
+                    type="number"
+                    name="amount"
+                    value={formData.amount}
+                    onChange={handleInputChange}
+                    required
+                    min="0"
+                    step="0.01"
+                    className={`${inputClasses} pl-10`}
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+
+              {/* Category Select */}
+              <div>
+                <label className={labelClasses}>Category</label>
+                <select
+                  name="category"
+                  value={formData.category}
+                  onChange={handleInputChange}
+                  required
+                  className={selectClasses}
+                >
+                  <option value="">Select a category</option>
+                  {categoryOptions[formData.type].map(category => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Description Input */}
+              <div className="sm:col-span-2">
+                <label className={labelClasses}>Description</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    className={inputClasses}
+                    placeholder="Add a description..."
+                  />
+                 
+                </div>
+              </div>
+            </div>
+          </form>
         </div>
 
-        <div>
-          <label className={labelClasses}>Amount</label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#9C6644]">Rs</span>
-            <input
-              type="number"
-              name="amount"
-              value={formData.amount}
-              onChange={handleInputChange}
-              required
-              min="0"
-              step="0.01"
-              className={`${inputClasses} pl-10`}
-              placeholder="0.00"
-            />
+        {/* Footer */}
+        <div className="sticky bottom-0 bg-white/95 px-6 py-4 border-t border-[#B08968]/10">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={handleSubmit}
+              className="flex-1 group flex items-center justify-center gap-2 bg-[#B08968] hover:bg-[#9C6644] text-white px-6 py-2.5 rounded-lg transition-all duration-300 hover:shadow-lg"
+            >
+              <Plus size={18} className="transform group-hover:rotate-180 transition-transform duration-300" />
+              <span className="font-medium">{entry ? 'Update Entry' : 'Save Entry'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 bg-white/50 text-[#7F5539] px-6 py-2.5 rounded-lg hover:bg-white/70 transition-all duration-300 hover:shadow-md border border-[#B08968]/20"
+            >
+              Cancel
+            </button>
           </div>
         </div>
-
-        <div>
-          <label className={labelClasses}>Category</label>
-          <select
-            name="category"
-            value={formData.category}
-            onChange={handleInputChange}
-            required
-            className={inputClasses}
-          >
-            <option value="">Select a category</option>
-            {categoryOptions[formData.type].map(category => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className={labelClasses}>Description</label>
-          <input
-            type="text"
-            name="description"
-            value={formData.description}
-            onChange={handleInputChange}
-            className={inputClasses}
-            placeholder="Add a description..."
-          />
-        </div>
       </div>
-
-      <div className="flex gap-4 mt-8">
-        <button
-          type="submit"
-          className="flex-1 group flex items-center justify-center gap-2 bg-[#B08968] hover:bg-[#9C6644] text-white px-6 py-3 rounded-lg transition-all duration-300 hover:scale-105"
-        >
-          <Plus size={20} className="transform group-hover:rotate-180 transition-transform duration-300" />
-          <span>{entry ? 'Update Entry' : 'Save Entry'}</span>
-        </button>
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex-1 bg-white/50 text-[#7F5539] px-6 py-3 rounded-lg hover:bg-white/70 transition-all duration-300 hover:scale-105 border border-[#B08968]/20"
-        >
-          Cancel
-        </button>
-      </div>
-    </form>
+    </div>
   );
 };
 
