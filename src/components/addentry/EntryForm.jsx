@@ -30,9 +30,22 @@ const EntryForm = ({ entry, onClose }) => {
 
   // Category Options
   const categoryOptions = {
-    Expense: ['Petrol', 'Food', 'Accommodation', 'Material', 'Carpenter', 'Painter', 'Fall ceiling'],
+    Expense: [ 
+     "Food", 
+      "Accommodation",
+      "Carpenter", 
+      "Carpenter material",
+      "Painter", 
+      "Paint material", 
+      "Fall ceiling", 
+      "Ceiling material", 
+      "Electrian", 
+      "Electrical material", 
+      "Glass"],
     Income: ['Salary', 'Investment', 'Rental', 'Business', 'Other']
   };
+  
+
 
   // Reset category when type changes
   useEffect(() => {
