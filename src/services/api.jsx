@@ -1,11 +1,9 @@
 import axios from 'axios';
+import config from '../config';
 
 const API = axios.create({
-    baseURL: 'https://modernbakery.shop/', // Correct base URL with protocol
+    baseURL: config.API_URL,
 });
-
-
 
 export const signup = (data) => API.post('/auth/signup', data);
 export const login = (data) => API.post('/auth/login', data);
-

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logout } from "../store/slice/authSlice";
-import { LogOut, FileText, Calculator, PlusCircle, Menu, X } from 'lucide-react';
+import { LogOut, FileText, Calculator, PlusCircle, Menu, X, LayoutDashboard } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Navbar = () => {
@@ -19,7 +19,7 @@ const Navbar = () => {
     { name: "Entries", icon: FileText, path: "/entries" },
     { name: "Balance Sheet", icon: Calculator, path: "/balance-sheet" },
     { name: "Create Bill", icon: PlusCircle, path: "/create-bill" },
-    { name: "Dashboard", icon: PlusCircle, path: "/dashboard" }
+    { name: "Dashboard", icon: LayoutDashboard, path: "/dashboard" }
   ];
 
   const handleNavigation = (path) => {

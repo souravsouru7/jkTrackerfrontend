@@ -1,7 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
+import config from '../../config';
 
-const BASE_URL = 'https://modernbakery.shop';
+const BASE_URL = config.API_URL;
 
 const getAuthHeader = () => {
   const token = localStorage.getItem('token');

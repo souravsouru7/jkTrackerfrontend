@@ -163,26 +163,34 @@ const ProjectList = React.memo(({ projects, selectedProject, onSelectProject, on
 ));
 
 const FinancialSummary = React.memo(({ summary, selectedProject }) => {
-  const remainingPayment = (selectedProject?.budget || 0) - (summary.totalIncome || 0);
+  // Ensure values are numbers and default to 0 if undefined
+  const budget = Number(selectedProject?.budget) || 0;
+  const totalIncome = Number(summary?.totalIncome) || 0;
+  const totalExpenses = Number(summary?.totalExpenses) || 0;
+  const netBalance = Number(summary?.netBalance) || 0;
+  
+  // Calculate remaining payment as (budget - totalIncome)
+  // This shows how much of the budget is still to be received
+  const remainingPayment = Math.max(budget - totalIncome, 0);
   
   const cards = [
     {
       title: "Budget",
-      value: selectedProject?.budget || 0,
+      value: budget,
       gradient: "from-blue-50 to-blue-100/50",
       border: "border-blue-200",
       textColor: "text-blue-700"
     },
     {
       title: "Total Expenses",
-      value: summary.totalExpenses || 0,
+      value: totalExpenses,
       gradient: "from-red-50 to-red-100/50",
       border: "border-red-200",
       textColor: "text-red-700"
     },
     {
       title: "Payment Received",
-      value: summary.totalIncome || 0,
+      value: totalIncome,
       gradient: "from-teal-50 to-teal-100/50",
       border: "border-teal-200",
       textColor: "text-teal-700"
@@ -196,13 +204,12 @@ const FinancialSummary = React.memo(({ summary, selectedProject }) => {
     },
     {
       title: "Net Balance",
-      value: summary.netBalance || 0,
+      value: netBalance,
       gradient: "from-purple-50 to-purple-100/50",
       border: "border-purple-200",
       textColor: "text-purple-700"
     }
   ];
-
   return (
     <motion.section
       initial={{ opacity: 0, y: 20 }}
@@ -347,6 +354,10 @@ const Dashboard = () => {
   useEffect(() => {
     if (userId) {
       dispatch(fetchFinancialSummary(userId));
+      const savedProject = localStorage.getItem('selectedProject');
+      if (savedProject) {
+        dispatch(selectProject(JSON.parse(savedProject)));
+      }
     }
   }, [dispatch, userId]);
 
@@ -410,7 +421,28 @@ const Dashboard = () => {
 
   const handleSelectProject = useCallback((project) => {
     dispatch(selectProject(project));
+    localStorage.setItem('selectedProject', JSON.stringify(project));
   }, [dispatch]);
+
+  const refreshData = useCallback(() => {
+    if (userId) {
+      dispatch(fetchFinancialSummary(userId));
+      if (selectedProject) {
+        const projectId = selectedProject._id;
+        Promise.all([
+          dispatch(fetchMonthlyExpenses({ userId, projectId })),
+          dispatch(fetchIncomeVsExpense({ userId, projectId })),
+          dispatch(fetchCategoryExpenses({ userId, projectId })),
+          dispatch(fetchBalanceSummary(userId))
+        ]);
+      }
+    }
+  }, [dispatch, userId, selectedProject]);
+
+  const handleEntryModalClose = useCallback(() => {
+    setIsEntryModalOpen(false);
+    refreshData();
+  }, [refreshData]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F5EBE0] via-[#E6CCB2] to-[#DDB892]">
@@ -509,7 +541,7 @@ const Dashboard = () => {
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="w-full max-w-md bg-white rounded-xl relative">
               <button
-                onClick={() => setIsEntryModalOpen(false)}
+                onClick={handleEntryModalClose}
                 className="absolute top-4 right-4"
               >
                 <X size={24} className="text-[#7F5539]" />
@@ -520,7 +552,7 @@ const Dashboard = () => {
                 </div>
               }>
                 <EntryForm
-                  onClose={() => setIsEntryModalOpen(false)}
+                  onClose={handleEntryModalClose}
                   projectId={selectedProject?._id}
                   onSuccess={() => {
                     setIsEntryModalOpen(false);

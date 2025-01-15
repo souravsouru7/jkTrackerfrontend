@@ -1,9 +1,9 @@
 // features/balanceSheetSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
+import config from '../../config';
 
-const API_URL = "https://modernbakery.shop";
-
+const API_URL = config.API_URL;
 
 export const fetchBalanceSummary = createAsyncThunk(
   'balanceSheet/fetchSummary',

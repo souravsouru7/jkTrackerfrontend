@@ -178,7 +178,10 @@ const EntryForm = ({ entry, onClose }) => {
         await dispatch(addEntry(entryData)).unwrap();
       }
 
-      onClose && onClose();
+      // Call onClose after successful submission
+      if (onClose) {
+        onClose();
+      }
     } catch (err) {
       setError(err.message || 'Failed to save entry');
       console.error('Error saving entry:', err);

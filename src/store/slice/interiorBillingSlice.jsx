@@ -1,7 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
+import config from '../../config';
 
-const API_URL = process.env.REACT_APP_API_URL || "https://modernbakery.shop";
+const API_URL = config.API_URL;
 
 // Async thunk for creating a bill
 export const createBill = createAsyncThunk(
