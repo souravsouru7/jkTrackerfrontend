@@ -4,6 +4,7 @@ import { addEntry, updateEntry, fetchEntries, deleteEntry } from '../../store/sl
 import { Plus, Search, Filter, X, Edit2, Trash2 } from 'lucide-react';
 import EntryForm from './EntryForm';
 import Navbar from '../../pages/Navbar';
+import ExportButton from './ExportButton';
 
 const ExpenseTracker = () => {
   const dispatch = useDispatch();
@@ -97,22 +98,27 @@ const ExpenseTracker = () => {
       <div className="pt-16"> {/* Add padding-top to account for navbar height */}
         <div className="max-w-4xl mx-auto p-6 space-y-6">
           {/* Header Section */}
-          <div className={`sticky top-16 bg-white/30 backdrop-blur-md border-b border-[#B08968]/20 
-            py-4 z-20 transition-all duration-300 ${isScrolled ? 'shadow-md' : ''}`}>
-            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+          <div className={`sticky ${isScrolled ? 'top-16' : 'top-20'} z-10 bg-white/80 backdrop-blur-md border-b border-[#B08968]/20 p-4 transition-all duration-300`}>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => {
+                    setShowForm(true);
+                    setSelectedEntry(null);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#7F5539] rounded-md hover:bg-[#9C6644] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#7F5539]"
+                >
+                  <Plus size={16} />
+                  Add Entry
+                </button>
+                <ExportButton />
+              </div>
               <h1 className="text-3xl font-bold text-[#7F5539]">
                 Expense Tracker
                 <span className="block text-sm font-normal text-[#9C6644] mt-1">
                   Track your expenses and income efficiently
                 </span>
               </h1>
-              <button
-                onClick={() => setShowForm(true)}
-                className="group flex items-center justify-center space-x-2 bg-[#B08968] hover:bg-[#9C6644] text-white px-6 py-3 rounded-lg transition-all duration-300 hover:scale-105"
-              >
-                <Plus size={20} className="transform group-hover:rotate-180 transition-transform duration-300" />
-                <span>Add Entry</span>
-              </button>
             </div>
           </div>
 

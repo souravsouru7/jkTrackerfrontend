@@ -90,6 +90,35 @@ export const updateEntry = createAsyncThunk(
   }
 );
 
+export const exportEntries = createAsyncThunk(
+  'entries/exportEntries',
+  async (projectId, { rejectWithValue }) => {
+    try {
+      const response = await API.get(`/entries/export/${projectId}`, {
+        responseType: 'blob'
+      });
+      
+      // Create blob link to download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `project-entries-${projectId}.xlsx`);
+      
+      // Append to html page
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up and remove the link
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      return true;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || 'Failed to export entries');
+    }
+  }
+);
+
 const entriesSlice = createSlice({
   name: 'entries',
   initialState: {
@@ -127,6 +156,18 @@ const entriesSlice = createSlice({
           state.entries[index] = validateEntry(action.payload);
         }
         state.error = null;
+      })
+      .addCase(exportEntries.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(exportEntries.fulfilled, (state) => {
+        state.status = 'succeeded';
+        state.error = null;
+      })
+      .addCase(exportEntries.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload || 'Failed to export entries';
       });
   },
 });
