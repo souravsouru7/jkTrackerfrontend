@@ -1,99 +1,247 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
-import config from '../../config';
 
-const API_URL = config.API_URL;
+// Configure axios base URL
+axios.defaults.baseURL = 'http://localhost:3000';
 
-// Async thunk for creating a bill
-export const createBill = createAsyncThunk(
-    'interiorBilling/createBill',
-    async (billData, { rejectWithValue }) => {
-        try {
-            const token = localStorage.getItem('token'); // Get auth token
-            const response = await axios.post(`${API_URL}/api/interior/bills`, billData, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-            return response.data;
-        } catch (error) {
-            return rejectWithValue(error.response.data);
+const initialState = {
+  bills: [],
+  loading: false,
+  error: null,
+  currentBill: null,
+  loadingStates: {
+    fetchBills: false,
+    createBill: false,
+    updateBill: false,
+    generatePDF: false,
+    fetchBillById: false
+  }
+};
+
+export const fetchAllBills = createAsyncThunk(
+  'interiorBilling/fetchAllBills',
+  async (_, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      const response = await axios.get('/api/interior/bills', {
+        headers: {
+          Authorization: `Bearer ${token}`
         }
+      });
+      if (!response.data || !response.data.data) {
+        throw new Error('Invalid response format');
+      }
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || error.message || 'Failed to fetch bills');
     }
+  }
 );
 
-// Async thunk for generating PDF
-export const generatePDF = createAsyncThunk(
-    'interiorBilling/generatePDF',
-    async (billId, { rejectWithValue }) => {
-        try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get(`${API_URL}/api/interior/bills/${billId}/pdf`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                },
-                responseType: 'blob'
-            });
-            return response.data;
-        } catch (error) {
-            return rejectWithValue(error.response.data);
+export const fetchBillById = createAsyncThunk(
+  'interiorBilling/fetchBillById',
+  async (id, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`/api/interior/bills/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
         }
+      });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response.data);
     }
+  }
+);
+
+export const generatePDF = createAsyncThunk(
+  'interiorBilling/generatePDF',
+  async (id, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`/api/interior/bills/${id}/pdf`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        responseType: 'blob'
+      });
+
+      // Create a blob from the PDF stream
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      
+      // Create a URL for the blob
+      const url = window.URL.createObjectURL(blob);
+      
+      // Create a temporary link element
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `bill-${id}.pdf`);
+      
+      // Append to body, click, and cleanup
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      return id;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || 'Failed to generate PDF');
+    }
+  }
+);
+
+export const createBill = createAsyncThunk(
+  'interiorBilling/createBill',
+  async (billData, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await axios.post('/api/interior/bills', billData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      // The response directly contains the bill data
+      if (!response.data || !response.data._id) {
+        throw new Error('Invalid response from server');
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error('Create bill error:', error);
+      return rejectWithValue(error.response?.data?.message || error.message || 'Failed to create bill');
+    }
+  }
+);
+
+export const updateBill = createAsyncThunk(
+  'interiorBilling/updateBill',
+  async ({ id, billData }, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.put(`/api/interior/bills/${id}`, billData, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
 );
 
 const interiorBillingSlice = createSlice({
-    name: 'interiorBilling',
-    initialState: {
-        bills: [],
-        currentBill: null,
-        loading: false,
-        error: null,
-        success: false
+  name: 'interiorBilling',
+  initialState,
+  reducers: {
+    clearCurrentBill: (state) => {
+      state.currentBill = null;
     },
-    reducers: {
-        clearError: (state) => {
-            state.error = null;
-        },
-        clearSuccess: (state) => {
-            state.success = false;
-        },
-        setCurrentBill: (state, action) => {
-            state.currentBill = action.payload;
-        }
-    },
-    extraReducers: (builder) => {
-        builder
-            // Create Bill
-            .addCase(createBill.pending, (state) => {
-                state.loading = true;
-                state.error = null;
-            })
-            .addCase(createBill.fulfilled, (state, action) => {
-                state.loading = false;
-                state.bills.push(action.payload);
-                state.currentBill = action.payload;
-                state.success = true;
-            })
-            .addCase(createBill.rejected, (state, action) => {
-                state.loading = false;
-                state.error = action.payload?.message || 'Failed to create bill';
-            })
-            // Generate PDF
-            .addCase(generatePDF.pending, (state) => {
-                state.loading = true;
-                state.error = null;
-            })
-            .addCase(generatePDF.fulfilled, (state) => {
-                state.loading = false;
-                state.success = true;
-            })
-            .addCase(generatePDF.rejected, (state, action) => {
-                state.loading = false;
-                state.error = action.payload?.message || 'Failed to generate PDF';
-            });
+    resetLoadingStates: (state) => {
+      state.loadingStates = initialState.loadingStates;
+      state.loading = false;
+      state.error = null;
     }
+  },
+  extraReducers: (builder) => {
+    builder
+      // Fetch all bills
+      .addCase(fetchAllBills.pending, (state) => {
+        state.loadingStates.fetchBills = true;
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchAllBills.fulfilled, (state, action) => {
+        state.loadingStates.fetchBills = false;
+        state.loading = false;
+        state.bills = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchAllBills.rejected, (state, action) => {
+        state.loadingStates.fetchBills = false;
+        state.loading = false;
+        state.error = action.payload || 'Failed to fetch bills';
+        state.bills = [];
+      })
+      // Fetch single bill
+      .addCase(fetchBillById.pending, (state) => {
+        state.loadingStates.fetchBillById = true;
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchBillById.fulfilled, (state, action) => {
+        state.loadingStates.fetchBillById = false;
+        state.loading = false;
+        state.currentBill = action.payload;
+      })
+      .addCase(fetchBillById.rejected, (state, action) => {
+        state.loadingStates.fetchBillById = false;
+        state.loading = false;
+        state.error = action.payload?.message || 'Failed to fetch bill';
+      })
+      // Create bill
+      .addCase(createBill.pending, (state) => {
+        state.loadingStates.createBill = true;
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(createBill.fulfilled, (state, action) => {
+        state.loadingStates.createBill = false;
+        state.loading = false;
+        state.bills.unshift(action.payload);
+      })
+      .addCase(createBill.rejected, (state, action) => {
+        state.loadingStates.createBill = false;
+        state.loading = false;
+        state.error = action.payload?.message || 'Failed to create bill';
+      })
+      // Update bill
+      .addCase(updateBill.pending, (state) => {
+        state.loadingStates.updateBill = true;
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateBill.fulfilled, (state, action) => {
+        state.loadingStates.updateBill = false;
+        state.loading = false;
+        const index = state.bills.findIndex(bill => bill._id === action.payload._id);
+        if (index !== -1) {
+          state.bills[index] = action.payload;
+        }
+      })
+      .addCase(updateBill.rejected, (state, action) => {
+        state.loadingStates.updateBill = false;
+        state.loading = false;
+        state.error = action.payload?.message || 'Failed to update bill';
+      })
+      // Generate PDF
+      .addCase(generatePDF.pending, (state) => {
+        state.loadingStates.generatePDF = true;
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(generatePDF.fulfilled, (state) => {
+        state.loadingStates.generatePDF = false;
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(generatePDF.rejected, (state, action) => {
+        state.loadingStates.generatePDF = false;
+        state.loading = false;
+        state.error = action.payload || 'Failed to generate PDF';
+      });
+  }
 });
 
-export const { clearError, clearSuccess, setCurrentBill } = interiorBillingSlice.actions;
+export const { clearCurrentBill, resetLoadingStates } = interiorBillingSlice.actions;
 export default interiorBillingSlice.reducer;

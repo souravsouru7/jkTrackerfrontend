@@ -35,7 +35,14 @@ const Login = () => {
     };
 
     return (
-        <div className="relative min-h-screen bg-gradient-to-br from-[#F5EBE0] via-[#E6CCB2] to-[#DDB892] perspective-1000">
+        <div className="relative min-h-screen bg-cover bg-center bg-no-repeat perspective-1000"
+            style={{
+                backgroundImage: 'url("https://images.unsplash.com/photo-1631679706909-1844bbd07221?q=80&w=1920")',
+                backgroundBlendMode: 'overlay',
+            }}>
+            {/* Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#F5EBE0]/90 via-[#E6CCB2]/85 to-[#DDB892]/90"></div>
+
             {/* Dynamic 3D Background Grid */}
             <div className="absolute inset-0 z-0">
                 {[...Array(20)].map((_, i) => (
@@ -93,23 +100,20 @@ const Login = () => {
                         rotateY(${mousePosition.x * 0.1}deg)
                     `
                 }}>
-                {/* Logo Section */}
-                <div className="mb-8 transform-style-3d hover:scale-105 transition-all duration-300">
-                    <h1 className="text-7xl font-bold text-[#7F5539] text-center tracking-wide"
+                {/* Title Section */}
+                <div className="mb-8 transform-style-3d flex flex-col items-center relative z-10">
+                    <h1 className="text-6xl font-bold text-[#8B5E34] text-center tracking-wider animate-fade-in"
                         style={{
-                            transform: `
-                                translateZ(50px)
-                                rotateX(${mousePosition.y * 0.2}deg)
-                                rotateY(${mousePosition.x * 0.2}deg)
-                            `
+                            fontFamily: "'Playfair Display', serif",
+                            textShadow: '2px 2px 4px rgba(139, 94, 52, 0.1)'
                         }}>
                         JK Tracker
                     </h1>
-                    <div className="h-1 w-40 bg-gradient-to-r from-[#7F5539] via-[#9C6644] to-[#7F5539] mx-auto mt-2 rounded-full"></div>
+                    <div className="h-1 w-32 bg-[#8B5E34] mx-auto mt-3 rounded-full animate-width"></div>
                 </div>
 
                 {/* Login Form */}
-                <div className="w-96 p-8 bg-white/30 backdrop-blur-md rounded-2xl shadow-xl border border-[#B08968]/20 transform-style-3d hover:scale-105 transition-all duration-300"
+                <div className="w-96 p-8 bg-white/80 backdrop-blur-md rounded-xl shadow-lg border border-[#8B5E34]/10 transform-style-3d transition-all duration-300"
                     style={{
                         transform: `
                             translateZ(100px)
@@ -117,67 +121,46 @@ const Login = () => {
                             rotateY(${mousePosition.x * 0.1}deg)
                         `
                     }}>
-                    <h2 className="text-3xl font-bold mb-6 text-[#7F5539] text-center">Welcome Back</h2>
+                    <h2 className="text-3xl font-semibold mb-6 text-[#8B5E34] text-center" style={{ fontFamily: "'Playfair Display', serif" }}>Welcome Back</h2>
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="space-y-2 transform-style-3d">
-                            <label className="block text-[#7F5539] text-sm font-medium">Email</label>
+                        <div className="space-y-2">
+                            <label className="block text-[#8B5E34] text-sm font-medium">Email</label>
                             <input
                                 type="email"
                                 name="email"
                                 value={formData.email}
                                 onChange={handleChange}
-                                className="w-full px-4 py-3 bg-white/50 border border-[#B08968]/20 rounded-lg text-[#7F5539] placeholder-[#9C6644] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                className="w-full px-4 py-3 bg-white/90 border border-[#8B5E34]/20 rounded-lg text-[#8B5E34] placeholder-[#8B5E34]/50 focus:outline-none focus:ring-2 focus:ring-[#8B5E34]/30 focus:border-transparent transition-all duration-300"
                                 required
                                 placeholder="Enter your email"
-                                style={{
-                                    transform: 'translateZ(20px)'
-                                }}
                             />
                         </div>
-                        <div className="space-y-2 transform-style-3d">
-                            <label className="block text-[#7F5539] text-sm font-medium">Password</label>
+                        <div className="space-y-2">
+                            <label className="block text-[#8B5E34] text-sm font-medium">Password</label>
                             <input
                                 type="password"
                                 name="password"
                                 value={formData.password}
                                 onChange={handleChange}
-                                className="w-full px-4 py-3 bg-white/50 border border-[#B08968]/20 rounded-lg text-[#7F5539] placeholder-[#9C6644] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                className="w-full px-4 py-3 bg-white/90 border border-[#8B5E34]/20 rounded-lg text-[#8B5E34] placeholder-[#8B5E34]/50 focus:outline-none focus:ring-2 focus:ring-[#8B5E34]/30 focus:border-transparent transition-all duration-300"
                                 required
                                 placeholder="Enter your password"
-                                style={{
-                                    transform: 'translateZ(20px)'
-                                }}
                             />
                         </div>
-                        
                         {error && <p className="text-red-500 text-center animate-shake">{error}</p>}
-                        
                         <button
                             type="submit"
-                            className="w-full py-3 bg-[#B08968] text-white rounded-lg font-medium transform hover:translate-y-[-2px] hover:shadow-lg transition-all duration-300 disabled:opacity-50 hover:bg-[#9C6644]"
+                            className="w-full py-3 px-4 bg-[#8B5E34] text-white rounded-lg font-medium hover:bg-[#724C2A] transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-[#8B5E34]/50 focus:ring-offset-2"
                             disabled={isLoading}
-                            style={{
-                                transform: 'translateZ(30px)'
-                            }}
                         >
-                            {isLoading ? (
-                                <span className="flex items-center justify-center">
-                                    <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                    </svg>
-                                    Logging in...
-                                </span>
-                            ) : (
-                                'Login'
-                            )}
+                            {isLoading ? 'Logging in...' : 'Login'}
                         </button>
                     </form>
                     <div className="mt-6 text-center transform-style-3d" style={{ transform: 'translateZ(25px)' }}>
-                        <p className="text-[#7F5539]">Don't have an account? 
+                        <p className="text-[#8B5E34]">Don't have an account? 
                             <button 
                                 onClick={() => navigate('/signup')} 
-                                className="ml-2 text-[#9C6644] hover:text-[#7F5539] transition-colors duration-300"
+                                className="ml-2 text-[#8B5E34]/50 hover:text-[#8B5E34] transition-colors duration-300"
                             >
                                 Sign Up
                             </button>
@@ -201,6 +184,27 @@ const Login = () => {
                     0%, 100% { transform: translateX(0); }
                     25% { transform: translateX(-5px); }
                     75% { transform: translateX(5px); }
+                }
+                @keyframes float {
+                    0%, 100% { transform: translateY(0px); }
+                    50% { transform: translateY(-10px); }
+                }
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(20px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                @keyframes width {
+                    from { width: 0; }
+                    to { width: 10rem; }
+                }
+                .animate-float {
+                    animation: float 3s ease-in-out infinite;
+                }
+                .animate-fade-in {
+                    animation: fadeIn 1s ease-out forwards;
+                }
+                .animate-width {
+                    animation: width 1s ease-out forwards;
                 }
             `}</style>
         </div>

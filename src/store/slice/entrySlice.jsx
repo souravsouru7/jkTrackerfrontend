@@ -36,7 +36,13 @@ export const fetchEntries = createAsyncThunk(
           projectId: selectedProject._id 
         } 
       });
-      return response.data.map(entry => validateEntry(entry));
+      
+      // Sort entries by date in descending order (newest first)
+      const entries = response.data
+        .map(entry => validateEntry(entry))
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+      return entries;
     } catch (error) {
       return rejectWithValue(error.response?.data || 'Failed to fetch entries');
     }
@@ -134,28 +140,27 @@ const entriesSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchEntries.fulfilled, (state, action) => {
-        state.entries = action.payload.map(entry => validateEntry(entry));
         state.status = 'succeeded';
-        state.error = null;
+        state.entries = action.payload;
       })
       .addCase(fetchEntries.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = action.payload || 'Failed to fetch entries';
+        state.error = action.payload;
       })
       .addCase(addEntry.fulfilled, (state, action) => {
-        state.entries.push(validateEntry(action.payload));
-        state.error = null;
-      })
-      .addCase(deleteEntry.fulfilled, (state, action) => {
-        state.entries = state.entries.filter((entry) => entry._id !== action.payload);
-        state.error = null;
+        // Add new entry at the beginning of the array
+        state.entries.unshift(action.payload);
       })
       .addCase(updateEntry.fulfilled, (state, action) => {
-        const index = state.entries.findIndex((entry) => entry._id === action.payload._id);
+        const index = state.entries.findIndex(entry => entry._id === action.payload._id);
         if (index !== -1) {
-          state.entries[index] = validateEntry(action.payload);
+          state.entries[index] = action.payload;
+          // Re-sort entries after update
+          state.entries.sort((a, b) => new Date(b.date) - new Date(a.date));
         }
-        state.error = null;
+      })
+      .addCase(deleteEntry.fulfilled, (state, action) => {
+        state.entries = state.entries.filter(entry => entry._id !== action.payload);
       })
       .addCase(exportEntries.pending, (state) => {
         state.status = 'loading';

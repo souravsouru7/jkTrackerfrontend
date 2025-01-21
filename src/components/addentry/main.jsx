@@ -16,7 +16,8 @@ const ExpenseTracker = () => {
   const [activeFilters, setActiveFilters] = useState({
     type: 'All',
     category: 'All',
-    dateRange: 'All'
+    dateRange: 'All',
+    sortBy: 'date'
   });
   const [showFilters, setShowFilters] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -49,7 +50,7 @@ const ExpenseTracker = () => {
   }
 
   const getFilteredEntries = () => {
-    return entries.filter(entry => {
+    let filteredEntries = entries.filter(entry => {
       const matchesSearch = 
         entry.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         entry.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -81,6 +82,22 @@ const ExpenseTracker = () => {
 
       return matchesSearch && matchesType && matchesCategory && matchesDate;
     });
+
+    switch (activeFilters.sortBy) {
+      case 'date':
+        filteredEntries.sort((a, b) => new Date(b.date) - new Date(a.date));
+        break;
+      case 'amount':
+        filteredEntries.sort((a, b) => b.amount - a.amount);
+        break;
+      case 'category':
+        filteredEntries.sort((a, b) => a.category.localeCompare(b.category));
+        break;
+      default:
+        break;
+    }
+
+    return filteredEntries;
   };
 
   const categories = ['All', ...new Set(entries.map(entry => entry.category))];
@@ -147,7 +164,7 @@ const ExpenseTracker = () => {
             {/* Filter Options */}
             {showFilters && (
               <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                {['Type', 'Category', 'Date Range'].map((filterType) => (
+                {['Type', 'Category', 'Date Range', 'Sort By'].map((filterType) => (
                   <div key={filterType}>
                     <label className="block text-sm font-medium text-[#7F5539] mb-2">{filterType}</label>
                     <select
@@ -168,12 +185,18 @@ const ExpenseTracker = () => {
                         categories.map(category => (
                           <option key={category} value={category}>{category}</option>
                         ))
-                      ) : (
+                      ) : filterType === 'Date Range' ? (
                         <>
                           <option value="All">All Time</option>
                           <option value="Today">Today</option>
                           <option value="This Week">This Week</option>
                           <option value="This Month">This Month</option>
+                        </>
+                      ) : (
+                        <>
+                          <option value="date">Date</option>
+                          <option value="amount">Amount</option>
+                          <option value="category">Category</option>
                         </>
                       )}
                     </select>
