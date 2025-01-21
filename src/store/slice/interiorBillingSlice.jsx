@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
 // Configure axios base URL
-axios.defaults.baseURL = 'http://localhost:3000';
+axios.defaults.baseURL = 'https://modernbakery.shop';
 
 const initialState = {
   bills: [],
