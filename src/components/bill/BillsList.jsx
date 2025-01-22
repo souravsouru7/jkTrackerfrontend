@@ -80,7 +80,7 @@ const BillsList = () => {
                       <tr key={bill._id} className="border-b border-[#B08968]/10 hover:bg-[#B08968]/5">
                         <td className="px-4 py-2">{bill.billNumber}</td>
                         <td className="px-4 py-2">{new Date(bill.date).toLocaleDateString()}</td>
-                        <td className="px-4 py-2">{bill.customerName}</td>
+                        <td className="px-4 py-2">{bill.clientName}</td>
                         <td className="px-4 py-2">₹{bill.grandTotal ? bill.grandTotal.toFixed(2) : '0.00'}</td>
                         <td className="px-4 py-2 space-x-2">
                          
