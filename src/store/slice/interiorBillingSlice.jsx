@@ -1,8 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
-
-// Configure axios base URL
-axios.defaults.baseURL = 'https://modernbakery.shop';
+import API from '../../services/api';
 
 const initialState = {
   bills: [],
@@ -22,21 +19,10 @@ export const fetchAllBills = createAsyncThunk(
   'interiorBilling/fetchAllBills',
   async (_, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-      const response = await axios.get('/api/interior/bills', {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      if (!response.data || !response.data.data) {
-        throw new Error('Invalid response format');
-      }
+      const response = await API.get('/api/interior/bills');
       return response.data.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || error.message || 'Failed to fetch bills');
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch bills');
     }
   }
 );
@@ -45,12 +31,7 @@ export const fetchBillById = createAsyncThunk(
   'interiorBilling/fetchBillById',
   async (id, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`/api/interior/bills/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+      const response = await API.get(`/api/interior/bills/${id}`);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -62,11 +43,7 @@ export const generatePDF = createAsyncThunk(
   'interiorBilling/generatePDF',
   async (id, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`/api/interior/bills/${id}/pdf`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        },
+      const response = await API.get(`/api/interior/bills/${id}/pdf`, {
         responseType: 'blob'
       });
 
@@ -98,18 +75,7 @@ export const createBill = createAsyncThunk(
   'interiorBilling/createBill',
   async (billData, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      const response = await axios.post('/api/interior/bills', billData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
+      const response = await API.post('/api/interior/bills', billData);
       // The response directly contains the bill data
       if (!response.data || !response.data._id) {
         throw new Error('Invalid response from server');
@@ -127,12 +93,7 @@ export const updateBill = createAsyncThunk(
   'interiorBilling/updateBill',
   async ({ id, billData }, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.put(`/api/interior/bills/${id}`, billData, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+      const response = await API.put(`/api/interior/bills/${id}`, billData);
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);

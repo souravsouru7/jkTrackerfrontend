@@ -10,11 +10,22 @@ const BillsList = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { bills, error, loadingStates } = useSelector((state) => state.interiorBilling);
+  const { token } = useSelector((state) => state.auth);
   const [pdfError, setPdfError] = useState(null);
 
   useEffect(() => {
-    dispatch(fetchAllBills());
-  }, [dispatch]);
+    // Only fetch bills if we have a token
+    if (token) {
+      dispatch(fetchAllBills());
+    }
+  }, [dispatch, token]);
+
+  // Redirect to login if no token is present
+  useEffect(() => {
+    if (!token) {
+      navigate('/login');
+    }
+  }, [token, navigate]);
 
   const handleViewBill = (id) => {
     navigate(`/bills/${id}`);

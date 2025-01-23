@@ -80,72 +80,59 @@ const BalanceSheet = () => {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-gradient-to-br from-[#F5EBE0] via-[#E6CCB2] to-[#DDB892] py-8 relative">
-        <div className="max-w-4xl mx-auto p-6 space-y-6 relative z-10">
+      <div className="min-h-screen bg-[#F5EBE0] pt-16 pb-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-6">
           {/* Header */}
-          <div className={`fixed top-16 left-0 right-0 z-40 transition-all duration-300 ${
-            isScrolled ? 'bg-white/30 backdrop-blur-md border-b border-[#B08968]/20' : ''
-          }`}>
-            <div className="max-w-4xl mx-auto p-6">
-              <h1 className="text-3xl font-bold text-[#7F5539]">
-                Balance Sheet
-                <span className="block text-sm font-normal text-[#9C6644] mt-1">Track your financial overview</span>
-              </h1>
-            </div>
+          <div className="mb-4">
+            <h1 className="text-2xl font-semibold text-[#7F5539]">
+              Balance Sheet
+            </h1>
+            <p className="text-sm text-[#9C6644]">Track your financial overview</p>
           </div>
 
-          {/* Overall Summary */}
-          <div className="mt-24 bg-white/30 backdrop-blur-md border border-[#B08968]/20 rounded-2xl shadow-xl p-6">
-            <h2 className="text-2xl font-bold text-[#7F5539] mb-6">Overall Summary</h2>
+          {/* Overall Summary Section */}
+          <div className="bg-[#F5EBE0]/50 rounded-lg p-6">
+            <h2 className="text-lg font-semibold text-[#7F5539] mb-4">Overall Summary</h2>
             {summary.loading ? (
               <div className="flex justify-center py-4">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#B08968]"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#B08968]"></div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <motion.div 
-                  whileHover={{ scale: 1.05 }}
-                  className="bg-white/50 p-6 rounded-xl border border-[#B08968]/20 backdrop-blur-md"
-                >
-                  <h3 className="text-lg font-semibold text-[#7F5539] mb-2">Total Income</h3>
-                  <p className="text-3xl font-bold text-green-600">₹{(summary.totalIncome || 0).toFixed(2)}</p>
-                </motion.div>
-                <motion.div 
-                  whileHover={{ scale: 1.05 }}
-                  className="bg-white/50 p-6 rounded-xl border border-[#B08968]/20 backdrop-blur-md"
-                >
-                  <h3 className="text-lg font-semibold text-[#7F5539] mb-2">Total Expenses</h3>
-                  <p className="text-3xl font-bold text-red-500">₹{(summary.totalExpenses || 0).toFixed(2)}</p>
-                </motion.div>
-                <motion.div 
-                  whileHover={{ scale: 1.05 }}
-                  className="bg-white/50 p-6 rounded-xl border border-[#B08968]/20 backdrop-blur-md"
-                >
-                  <h3 className="text-lg font-semibold text-[#7F5539] mb-2">Net Balance</h3>
-                  <p className="text-3xl font-bold text-[#9C6644]">₹{(summary.netBalance || 0).toFixed(2)}</p>
-                </motion.div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-white rounded-lg p-4 shadow-sm">
+                  <h3 className="text-sm text-[#7F5539] mb-1">Total Income</h3>
+                  <p className="text-2xl font-bold text-green-600">₹{(summary.totalIncome || 0).toFixed(2)}</p>
+                </div>
+                <div className="bg-white rounded-lg p-4 shadow-sm">
+                  <h3 className="text-sm text-[#7F5539] mb-1">Total Expenses</h3>
+                  <p className="text-2xl font-bold text-red-500">₹{(summary.totalExpenses || 0).toFixed(2)}</p>
+                </div>
+                <div className="bg-white rounded-lg p-4 shadow-sm">
+                  <h3 className="text-sm text-[#7F5539] mb-1">Net Balance</h3>
+                  <p className="text-2xl font-bold text-[#9C6644]">₹{(summary.netBalance || 0).toFixed(2)}</p>
+                </div>
               </div>
             )}
           </div>
 
           {/* Tab Navigation */}
-          <div className="flex space-x-4">
+          <div className="flex gap-2 mb-4">
             <button
               onClick={() => setActiveTab('monthly')}
-              className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                 activeTab === 'monthly'
                   ? 'bg-[#B08968] text-white'
-                  : 'bg-white/50 text-[#7F5539] border border-[#B08968]/20 hover:bg-white/70'
+                  : 'bg-white text-[#7F5539] hover:bg-[#B08968]/10'
               }`}
             >
               Monthly Breakdown
             </button>
             <button
               onClick={() => setActiveTab('yearly')}
-              className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                 activeTab === 'yearly'
                   ? 'bg-[#B08968] text-white'
-                  : 'bg-white/50 text-[#7F5539] border border-[#B08968]/20 hover:bg-white/70'
+                  : 'bg-white text-[#7F5539] hover:bg-[#B08968]/10'
               }`}
             >
               Yearly Breakdown
@@ -153,15 +140,15 @@ const BalanceSheet = () => {
           </div>
 
           {/* Content Section */}
-          <div className="bg-white/30 backdrop-blur-md border border-[#B08968]/20 rounded-2xl shadow-xl p-6">
+          <div className="bg-[#F5EBE0]/50 rounded-lg p-4 sm:p-6">
             {activeTab === 'monthly' && (
               <>
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-[#7F5539]">Monthly Breakdown</h2>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                  <h2 className="text-lg font-semibold text-[#7F5539]">Monthly Breakdown</h2>
                   <select
                     value={selectedYear}
                     onChange={(e) => setSelectedYear(Number(e.target.value))}
-                    className="bg-white/50 border border-[#B08968]/20 rounded-lg px-4 py-2 text-[#7F5539] focus:ring-2 focus:ring-[#B08968] focus:border-[#B08968] transition-all duration-200"
+                    className="px-3 py-1.5 rounded-md text-sm text-[#7F5539] border border-[#B08968]/20 bg-white focus:outline-none focus:ring-2 focus:ring-[#B08968]"
                   >
                     {(yearly.data.length > 0 ? yearly.data : [{ year: new Date().getFullYear() }])
                       .map((year) => (
@@ -171,33 +158,30 @@ const BalanceSheet = () => {
                 </div>
                 {monthly.loading ? (
                   <div className="flex justify-center py-8">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#B08968]"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#B08968]"></div>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
+                  <div className="overflow-x-auto -mx-4 sm:mx-0">
+                    <table className="w-full min-w-[600px]">
                       <thead>
                         <tr className="border-b border-[#B08968]/20">
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-[#7F5539]">Month</th>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-[#7F5539]">Income</th>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-[#7F5539]">Expenses</th>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-[#7F5539]">Balance</th>
+                          <th className="py-3 pl-6 pr-4 text-left text-sm font-medium text-[#7F5539]">Month</th>
+                          <th className="p-3 text-left text-sm font-medium text-[#7F5539]">Income</th>
+                          <th className="p-3 text-left text-sm font-medium text-[#7F5539]">Expenses</th>
+                          <th className="p-3 text-left text-sm font-medium text-[#7F5539]">Balance</th>
                         </tr>
                       </thead>
                       <tbody>
                         {monthly.data.map((month, index) => (
-                          <motion.tr 
+                          <tr 
                             key={month.month}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: index * 0.1 }}
-                            className="border-b border-[#B08968]/20 hover:bg-white/50"
+                            className="border-b border-[#B08968]/10 hover:bg-white/50"
                           >
-                            <td className="px-6 py-4 text-sm text-[#9C6644]">{monthNames[month.month - 1]}</td>
-                            <td className="px-6 py-4 text-sm text-green-600">₹{(month.income || 0).toFixed(2)}</td>
-                            <td className="px-6 py-4 text-sm text-red-500">₹{(month.expenses || 0).toFixed(2)}</td>
-                            <td className="px-6 py-4 text-sm text-[#9C6644]">₹{(month.balance || 0).toFixed(2)}</td>
-                          </motion.tr>
+                            <td className="py-3 pl-6 pr-4 text-sm text-[#9C6644]">{monthNames[month.month - 1]}</td>
+                            <td className="p-3 text-sm text-green-600">₹{(month.income || 0).toFixed(2)}</td>
+                            <td className="p-3 text-sm text-red-500">₹{(month.expenses || 0).toFixed(2)}</td>
+                            <td className="p-3 text-sm text-[#9C6644]">₹{(month.balance || 0).toFixed(2)}</td>
+                          </tr>
                         ))}
                       </tbody>
                     </table>
@@ -208,36 +192,35 @@ const BalanceSheet = () => {
 
             {activeTab === 'yearly' && (
               <>
-                <h2 className="text-2xl font-bold text-[#7F5539] mb-6">Yearly Breakdown</h2>
+                <div className="mb-6">
+                  <h2 className="text-lg font-semibold text-[#7F5539]">Yearly Breakdown</h2>
+                </div>
                 {yearly.loading ? (
                   <div className="flex justify-center py-8">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#B08968]"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#B08968]"></div>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
+                  <div className="overflow-x-auto -mx-4 sm:mx-0">
+                    <table className="w-full min-w-[600px]">
                       <thead>
                         <tr className="border-b border-[#B08968]/20">
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-[#7F5539]">Year</th>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-[#7F5539]">Income</th>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-[#7F5539]">Expenses</th>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-[#7F5539]">Balance</th>
+                          <th className="py-3 pl-6 pr-4 text-left text-sm font-medium text-[#7F5539]">Year</th>
+                          <th className="p-3 text-left text-sm font-medium text-[#7F5539]">Income</th>
+                          <th className="p-3 text-left text-sm font-medium text-[#7F5539]">Expenses</th>
+                          <th className="p-3 text-left text-sm font-medium text-[#7F5539]">Balance</th>
                         </tr>
                       </thead>
                       <tbody>
                         {yearly.data.map((year, index) => (
-                          <motion.tr 
+                          <tr 
                             key={year.year}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: index * 0.1 }}
-                            className="border-b border-[#B08968]/20 hover:bg-white/50"
+                            className="border-b border-[#B08968]/10 hover:bg-white/50"
                           >
-                            <td className="px-6 py-4 text-sm text-[#9C6644]">{year.year}</td>
-                            <td className="px-6 py-4 text-sm text-green-600">₹{(year.income || 0).toFixed(2)}</td>
-                            <td className="px-6 py-4 text-sm text-red-500">₹{(year.expenses || 0).toFixed(2)}</td>
-                            <td className="px-6 py-4 text-sm text-[#9C6644]">₹{(year.balance || 0).toFixed(2)}</td>
-                          </motion.tr>
+                            <td className="py-3 pl-6 pr-4 text-sm text-[#9C6644]">{year.year}</td>
+                            <td className="p-3 text-sm text-green-600">₹{(year.income || 0).toFixed(2)}</td>
+                            <td className="p-3 text-sm text-red-500">₹{(year.expenses || 0).toFixed(2)}</td>
+                            <td className="p-3 text-sm text-[#9C6644]">₹{(year.balance || 0).toFixed(2)}</td>
+                          </tr>
                         ))}
                       </tbody>
                     </table>

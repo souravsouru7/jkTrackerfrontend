@@ -446,21 +446,9 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F5EBE0] via-[#E6CCB2] to-[#DDB892]">
-      {/* Show Navbar on desktop, MobileHeader on mobile */}
-      <div className="hidden md:block">
-        <Navbar />
-      </div>
-      <div className="md:hidden">
-        <MobileHeader isOpen={isOpen} setIsOpen={setIsOpen} />
-        <MobileMenu
-          isOpen={isOpen}
-          setIsOpen={setIsOpen}
-          navigate={navigate}
-          dispatch={dispatch}
-        />
-      </div>
+      <Navbar />
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 pb-24">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-[#7F5539]">Financial Summary</h1>
           <p className="text-sm text-gray-600 mt-1">
@@ -537,44 +525,28 @@ const Dashboard = () => {
           <Plus size={24} />
         </button>
 
-        {isEntryModalOpen && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="w-full max-w-md bg-white rounded-xl relative">
-              <button
-                onClick={handleEntryModalClose}
-                className="absolute top-4 right-4"
-              >
-                <X size={24} className="text-[#7F5539]" />
-              </button>
-              <Suspense fallback={
-                <div className="flex items-center justify-center p-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#B08968]"></div>
-                </div>
-              }>
-                <EntryForm
-                  onClose={handleEntryModalClose}
-                  projectId={selectedProject?._id}
-                  onSuccess={() => {
-                    setIsEntryModalOpen(false);
-                    showToast("Entry added successfully", "success");
-                    // Refresh data
-                    if (selectedProject && userId) {
-                      const projectId = selectedProject._id;
-                      dispatch(fetchMonthlyExpenses({ userId, projectId }));
-                      dispatch(fetchIncomeVsExpense({ userId, projectId }));
-                      dispatch(fetchCategoryExpenses({ userId, projectId }));
-                      dispatch(fetchBalanceSummary(userId));
-                    }
-                  }}
-                />
-              </Suspense>
-            </div>
-          </div>
-        )}
+        <AnimatePresence>
+          {showNotification && (
+            <Toast message={notificationMessage} type={notificationType} />
+          )}
+        </AnimatePresence>
 
-        {showNotification && (
-          <Toast message={notificationMessage} type={notificationType} />
-        )}
+        <Suspense fallback={<div>Loading...</div>}>
+          {isEntryModalOpen && (
+            <EntryForm onClose={handleEntryModalClose} projectId={selectedProject?._id} onSuccess={() => {
+              setIsEntryModalOpen(false);
+              showToast("Entry added successfully", "success");
+              // Refresh data
+              if (selectedProject && userId) {
+                const projectId = selectedProject._id;
+                dispatch(fetchMonthlyExpenses({ userId, projectId }));
+                dispatch(fetchIncomeVsExpense({ userId, projectId }));
+                dispatch(fetchCategoryExpenses({ userId, projectId }));
+                dispatch(fetchBalanceSummary(userId));
+              }
+            }} />
+          )}
+        </Suspense>
       </main>
     </div>
   );
