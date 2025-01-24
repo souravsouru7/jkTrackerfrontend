@@ -7,6 +7,7 @@ import {
   fetchMonthlyExpenses,
   fetchIncomeVsExpense,
   fetchCategoryExpenses,
+  fetchCategoryAnalysis,
 } from "../store/slice/analyticsSlice";
 import { fetchBalanceSummary } from "../store/slice/balanceSheetSlice";
 import {
@@ -18,7 +19,9 @@ import {
 import { Menu, X, Plus, Trash2, ChevronRight } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-  PieChart, Pie, Cell, ResponsiveContainer
+  PieChart, Pie, Cell, ResponsiveContainer,
+  AreaChart, Area,
+  RadialBarChart, RadialBar
 } from "recharts";
 import { fetchFinancialSummary } from '../store/slice/fincialSlice';
 import FinancialOverview from './FinancialOverview';
@@ -163,149 +166,439 @@ const ProjectList = React.memo(({ projects, selectedProject, onSelectProject, on
 ));
 
 const FinancialSummary = React.memo(({ summary, selectedProject }) => {
-  // Ensure values are numbers and default to 0 if undefined
   const budget = Number(selectedProject?.budget) || 0;
   const totalIncome = Number(summary?.totalIncome) || 0;
   const totalExpenses = Number(summary?.totalExpenses) || 0;
   const netBalance = Number(summary?.netBalance) || 0;
-  
-  // Calculate remaining payment as (budget - totalIncome)
-  // This shows how much of the budget is still to be received
   const remainingPayment = Math.max(budget - totalIncome, 0);
   
   const cards = [
     {
       title: "Budget",
       value: budget,
-      gradient: "from-blue-50 to-blue-100/50",
-      border: "border-blue-200",
-      textColor: "text-blue-700"
+      gradient: "from-[#B08968] to-[#9C6644]",
+      icon: (
+        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      )
     },
     {
       title: "Total Expenses",
       value: totalExpenses,
-      gradient: "from-red-50 to-red-100/50",
-      border: "border-red-200",
-      textColor: "text-red-700"
+      gradient: "from-[#7F5539] to-[#6B4423]",
+      icon: (
+        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      )
     },
     {
       title: "Payment Received",
       value: totalIncome,
-      gradient: "from-teal-50 to-teal-100/50",
-      border: "border-teal-200",
-      textColor: "text-teal-700"
+      gradient: "from-[#9C6644] to-[#8B4513]",
+      icon: (
+        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+        </svg>
+      )
     },
     {
       title: "Remaining Payment",
       value: remainingPayment,
-      gradient: "from-amber-50 to-amber-100/50",
-      border: "border-amber-200",
-      textColor: "text-amber-700"
-    },
-    {
-      title: "Net Balance",
-      value: netBalance,
-      gradient: "from-purple-50 to-purple-100/50",
-      border: "border-purple-200",
-      textColor: "text-purple-700"
+      gradient: "from-[#B08968] to-[#9C6644]",
+      icon: (
+        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      )
     }
   ];
-  return (
-    <motion.section
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-gradient-to-br from-white/90 to-white/70 rounded-xl p-6 shadow-lg"
-    >
-      <motion.h2
-        initial={{ x: -20 }}
-        animate={{ x: 0 }}
-        className="text-2xl font-bold text-[#7F5539] mb-6"
-      >
-        Financial Summary
-      </motion.h2>
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6"
-      >
-        {cards.map((card, index) => (
-          <motion.div
-            key={card.title}
-            variants={itemVariants}
-            whileHover={{ scale: 1.03, transition: { duration: 0.2 } }}
-            className={`bg-gradient-to-br ${card.gradient} p-6 rounded-xl border ${card.border} shadow-md backdrop-blur-md`}
-          >
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">{card.title}</h3>
-            <motion.p
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: index * 0.1 }}
-              className={`text-3xl font-bold ${card.textColor}`}
+
+  const MobileView = () => (
+    <div className="block sm:hidden p-4 space-y-6">
+      {cards.map((card, index) => (
+        <motion.div
+          key={card.title}
+          variants={itemVariants}
+          whileTap={{ scale: 0.98 }}
+          className={`relative overflow-hidden bg-gradient-to-br ${card.gradient} rounded-2xl p-4 text-white shadow-lg`}
+        >
+          <div className="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8">
+            <motion.div
+              initial={{ rotate: 0, opacity: 0.1 }}
+              animate={{ rotate: 360, opacity: 0.2 }}
+              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+              className="w-full h-full"
             >
-              ₹{card.value.toFixed(2)}
-            </motion.p>
-          </motion.div>
-        ))}
-      </motion.div>
-    </motion.section>
+              {card.icon}
+            </motion.div>
+          </div>
+          <div className="relative z-10">
+            <div className="mb-2">
+              {card.icon}
+            </div>
+            <h3 className="text-xs font-medium text-white/80 mb-1">{card.title}</h3>
+            <p className="text-lg font-bold">
+              ₹{card.value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+            </p>
+          </div>
+        </motion.div>
+      ))}
+    </div>
+  );
+
+  const DesktopView = () => (
+    <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4">
+      {cards.map((card) => (
+        <motion.div
+          key={card.title}
+          variants={itemVariants}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className={`bg-gradient-to-br ${card.gradient} rounded-xl p-4 shadow-sm text-white`}
+        >
+          <h3 className="text-sm font-medium text-white/80">{card.title}</h3>
+          <p className="text-2xl font-bold mt-2">
+            ₹{card.value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+          </p>
+        </motion.div>
+      ))}
+    </div>
+  );
+
+  return (
+    <motion.div variants={containerVariants}>
+      <MobileView />
+      <DesktopView />
+    </motion.div>
   );
 });
 
-const Charts = React.memo(({ monthlyExpenses, incomeVsExpense, colorPalette }) => (
-  <motion.div
-    variants={containerVariants}
-    initial="hidden"
-    animate="visible"
-    className="space-y-6"
-  >
-    <motion.section
-      variants={itemVariants}
-      className="bg-white/80 rounded-xl p-4 transform hover:shadow-lg transition-all duration-300"
-    >
-      <h2 className="text-lg font-semibold text-[#7F5539] mb-4">Monthly Expenses</h2>
-      <div className="h-[300px] w-full">
-        <ResponsiveContainer>
-          <BarChart data={monthlyExpenses} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="_id.month" />
-            <YAxis />
-            <Tooltip />
-            <Bar dataKey="total" fill="#B08968" />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    </motion.section>
+const Charts = React.memo(({ monthlyExpenses, incomeVsExpense, categoryAnalysis, colorPalette }) => {
+  // Format currency for tooltips
+  const formatCurrency = (value) => {
+    return `₹${value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+  };
 
-    <motion.section
-      variants={itemVariants}
-      className="bg-white/80 rounded-xl p-4 transform hover:shadow-lg transition-all duration-300"
-    >
-      <h2 className="text-lg font-semibold text-[#7F5539] mb-4">Income vs Expense</h2>
-      <div className="h-[300px] w-full">
-        <ResponsiveContainer>
-          <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-            <Pie
-              data={incomeVsExpense}
-              dataKey="total"
-              nameKey="_id"
-              cx="50%"
-              cy="50%"
-              outerRadius={80}
-              label
-            >
-              {incomeVsExpense.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={colorPalette[index % colorPalette.length]} />
-              ))}
-            </Pie>
-            <Tooltip />
-            <Legend />
-          </PieChart>
-        </ResponsiveContainer>
+  // Check if data is available
+  const hasMonthlyData = monthlyExpenses && monthlyExpenses.length > 0;
+  const hasIncomeExpenseData = incomeVsExpense && incomeVsExpense.length > 0;
+  const hasCategoryAnalysisData = categoryAnalysis && categoryAnalysis.length > 0;
+
+  // Modern Mobile Charts
+  const MobileCharts = () => {
+    const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+    
+    return (
+      <div className="space-y-4 p-2">
+        {/* Financial Summary */}
+        <motion.div
+          variants={itemVariants}
+          className="bg-white rounded-lg shadow-lg p-4"
+        >
+          <h2 className="text-xl font-semibold text-[#7F5539] mb-2">Financial Summary</h2>
+          <p className="text-sm text-gray-600 mb-4">Track your overall expenses and income</p>
+        </motion.div>
+
+        {/* Monthly Expenses Chart */}
+        <motion.div
+          variants={itemVariants}
+          className="bg-white rounded-lg shadow-lg p-3"
+        >
+          <h3 className="text-base font-semibold text-[#7F5539] mb-2">Monthly Expenses</h3>
+          <div className="h-[180px]">
+            {!hasMonthlyData ? (
+              <div className="h-full flex items-center justify-center text-gray-500">
+                No expense data available
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={monthlyExpenses}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="month" 
+                    fontSize={10}
+                    tick={{ fill: '#7F5539' }}
+                  />
+                  <YAxis 
+                    fontSize={10}
+                    tickFormatter={formatCurrency}
+                    tick={{ fill: '#7F5539' }}
+                  />
+                  <Tooltip 
+                    formatter={(value) => [formatCurrency(value), "Amount"]}
+                    contentStyle={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                      border: 'none',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                    }}
+                  />
+                  <Bar dataKey="amount" name="Expenses" fill="#B08968" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Income vs Expense Chart */}
+        <motion.div
+          variants={itemVariants}
+          className="bg-white rounded-lg shadow-lg p-3"
+        >
+          <h3 className="text-base font-semibold text-[#7F5539] mb-2">Income vs Expense</h3>
+          <div className="h-[200px]">
+            {!hasIncomeExpenseData ? (
+              <div className="h-full flex items-center justify-center text-gray-500">
+                No income/expense data available
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={incomeVsExpense}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={40}
+                    outerRadius={60}
+                    fill="#B08968"
+                  >
+                    {incomeVsExpense.map((entry, index) => (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={entry.name === 'Income' ? '#4CAF50' : '#F44336'}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value) => [formatCurrency(value), "Amount"]}
+                    contentStyle={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                      border: 'none',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                    }}
+                  />
+                  <Legend
+                    verticalAlign="bottom"
+                    height={36}
+                    iconType="circle"
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Category Analysis Chart */}
+        {hasCategoryAnalysisData && (
+          <motion.div
+            variants={itemVariants}
+            className="bg-white rounded-lg shadow-lg p-3"
+          >
+            <h3 className="text-base font-semibold text-[#7F5539] mb-2">Category Analysis</h3>
+            <div className="h-[250px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={categoryAnalysis}
+                  layout="vertical"
+                  margin={{ top: 5, right: 30, left: 50, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                  <XAxis type="number" tickFormatter={formatCurrency} />
+                  <YAxis 
+                    type="category" 
+                    dataKey="name" 
+                    width={100}
+                    tick={{ fontSize: 12 }}
+                  />
+                  <Tooltip
+                    formatter={(value) => formatCurrency(value)}
+                    contentStyle={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                      border: 'none',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                    }}
+                  />
+                  <Bar 
+                    dataKey="value" 
+                    fill="#B08968"
+                    radius={[0, 4, 4, 0]}
+                    barSize={20}
+                  >
+                    {categoryAnalysis.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </motion.div>
+        )}
       </div>
-    </motion.section>
-  </motion.div>
-));
+    );
+  };
+
+  // Desktop Charts
+  const DesktopCharts = () => {
+    const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+    
+    return (
+      <div className="grid grid-cols-2 gap-6 p-6">
+        {/* Monthly Expenses Chart */}
+        <motion.div
+          variants={itemVariants}
+          className="bg-white rounded-lg p-6 shadow-sm h-[400px]"
+        >
+          <h3 className="text-lg font-semibold text-[#7F5539] mb-4">Monthly Expenses</h3>
+          {!hasMonthlyData ? (
+            <div className="h-full flex items-center justify-center text-gray-500">
+              No expense data available
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={monthlyExpenses}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" fontSize={12} />
+                <YAxis fontSize={12} tickFormatter={formatCurrency} />
+                <Tooltip 
+                  formatter={(value) => [formatCurrency(value), "Amount"]}
+                  contentStyle={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                  }}
+                />
+                <Legend />
+                <Bar dataKey="amount" name="Expenses" fill="#B08968" />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </motion.div>
+
+        {/* Income vs Expense Chart */}
+        <motion.div
+          variants={itemVariants}
+          className="bg-white rounded-lg p-6 shadow-sm h-[400px]"
+        >
+          <h3 className="text-lg font-semibold text-[#7F5539] mb-4">Income vs Expense</h3>
+          {!hasIncomeExpenseData ? (
+            <div className="h-full flex items-center justify-center text-gray-500">
+              No income/expense data available
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={incomeVsExpense}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={80}
+                  outerRadius={120}
+                  fill="#B08968"
+                  label={({ name, value }) => `${name}: ${formatCurrency(value)}`}
+                >
+                  {incomeVsExpense.map((entry, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={entry.name === 'Income' ? '#4CAF50' : '#F44336'}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip
+                  formatter={(value) => [formatCurrency(value), "Amount"]}
+                  contentStyle={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                  }}
+                />
+                <Legend
+                  verticalAlign="bottom"
+                  height={36}
+                  iconType="circle"
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </motion.div>
+
+        {/* Category Analysis Chart */}
+        {hasCategoryAnalysisData && (
+          <motion.div
+            variants={itemVariants}
+            className="bg-white rounded-lg shadow-lg p-6 col-span-2"
+          >
+            <h3 className="text-lg font-semibold mb-4">Category Analysis</h3>
+            <div className="h-[400px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={categoryAnalysis}
+                  layout="vertical"
+                  margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                  <XAxis type="number" tickFormatter={formatCurrency} />
+                  <YAxis 
+                    type="category" 
+                    dataKey="name" 
+                    width={150}
+                    tick={{ fontSize: 14 }}
+                  />
+                  <Tooltip
+                    formatter={(value) => formatCurrency(value)}
+                    contentStyle={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                      border: 'none',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                    }}
+                  />
+                  <Bar 
+                    dataKey="value" 
+                    fill="#B08968"
+                    radius={[0, 4, 4, 0]}
+                    barSize={30}
+                  >
+                    {categoryAnalysis.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </motion.div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="min-h-screen bg-[#DDB892]/10"
+    >
+      <div className="p-4">
+        <div className="block md:hidden">
+          <MobileCharts />
+        </div>
+        <div className="hidden md:block">
+          <DesktopCharts />
+        </div>
+      </div>
+    </motion.div>
+  );
+});
 
 const Toast = React.memo(({ message, type }) => (
   <motion.div
@@ -348,6 +641,7 @@ const Dashboard = () => {
   const selectedProject = useSelector((state) => state.projects.selectedProject);
   const monthlyExpenses = useSelector((state) => state.analytics.monthlyExpenses);
   const incomeVsExpense = useSelector((state) => state.analytics.incomeVsExpense);
+  const categoryAnalysis = useSelector((state) => state.analytics.categoryAnalysis);
   const balanceSummary = useSelector((state) => state.balanceSheet.summary);
 
   // Effects
@@ -372,14 +666,31 @@ const Dashboard = () => {
   useEffect(() => {
     if (selectedProject && userId) {
       const projectId = selectedProject._id;
+      console.log('Fetching data for project:', projectId);
+      
+      // Fetch all data in parallel
       Promise.all([
-        dispatch(fetchMonthlyExpenses({ userId, projectId })),
-        dispatch(fetchIncomeVsExpense({ userId, projectId })),
-        dispatch(fetchCategoryExpenses({ userId, projectId })),
+        dispatch(fetchMonthlyExpenses({ userId, projectId }))
+          .then(res => console.log('Monthly Expenses:', res.payload)),
+        dispatch(fetchIncomeVsExpense({ userId, projectId }))
+          .then(res => console.log('Income vs Expense:', res.payload)),
+        dispatch(fetchCategoryExpenses({ userId, projectId }))
+          .then(res => console.log('Category Expenses:', res.payload)),
+        dispatch(fetchCategoryAnalysis({ userId, projectId }))
+          .then(res => console.log('Category Analysis:', res.payload)),
         dispatch(fetchBalanceSummary(userId))
-      ]);
+          .then(res => console.log('Balance Summary:', res.payload))
+      ]).catch(error => {
+        console.error('Error fetching data:', error);
+        showToast("Failed to fetch data", "error");
+      });
     }
   }, [dispatch, userId, selectedProject]);
+
+  useEffect(() => {
+    console.log('Monthly Expenses updated:', monthlyExpenses);
+    console.log('Income vs Expense updated:', incomeVsExpense);
+  }, [monthlyExpenses, incomeVsExpense]);
 
   // Callbacks
   const showToast = useCallback((message, type) => {
@@ -433,6 +744,7 @@ const Dashboard = () => {
           dispatch(fetchMonthlyExpenses({ userId, projectId })),
           dispatch(fetchIncomeVsExpense({ userId, projectId })),
           dispatch(fetchCategoryExpenses({ userId, projectId })),
+          dispatch(fetchCategoryAnalysis({ userId, projectId })),
           dispatch(fetchBalanceSummary(userId))
         ]);
       }
@@ -513,6 +825,7 @@ const Dashboard = () => {
             <Charts
               monthlyExpenses={monthlyExpenses}
               incomeVsExpense={incomeVsExpense}
+              categoryAnalysis={categoryAnalysis}
               colorPalette={colorPalette}
             />
           </>
@@ -542,6 +855,7 @@ const Dashboard = () => {
                 dispatch(fetchMonthlyExpenses({ userId, projectId }));
                 dispatch(fetchIncomeVsExpense({ userId, projectId }));
                 dispatch(fetchCategoryExpenses({ userId, projectId }));
+                dispatch(fetchCategoryAnalysis({ userId, projectId }));
                 dispatch(fetchBalanceSummary(userId));
               }
             }} />

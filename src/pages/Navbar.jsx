@@ -43,12 +43,24 @@ const Navbar = () => {
 
   return (
     <>
+      {/* Mobile Top Logo */}
+      <div className="md:hidden fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-md border-b border-[#8B5E34]/20 z-40">
+        <div className="flex justify-center items-center h-16 px-4">
+          <img 
+            src="/logo.png"   
+            alt="JK Interiors Logo" 
+            className="h-20 w-auto object-contain"
+          />
+        </div>
+      </div>
+
+      {/* Desktop Navigation */}
       <nav className="bg-white/90 backdrop-blur-md border-b border-[#8B5E34]/20 sticky top-0 z-40 hidden md:block">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex-shrink-0 flex items-center">
               <img 
-                src="/jklogo.jpg" 
+                src="/logo.png" 
                 alt="JK Interiors Logo" 
                 className="h-10 w-auto object-contain"
               />
@@ -95,8 +107,12 @@ const Navbar = () => {
               onClick={() => handleNavigation(item.path)}
               className="flex flex-col items-center justify-center w-16 py-1"
             >
-              <item.icon className={`h-6 w-6 ${location.pathname === item.path ? 'text-indigo-600' : 'text-gray-500'}`} />
-              <span className={`text-xs mt-1 ${location.pathname === item.path ? 'text-indigo-600' : 'text-gray-500'}`}>
+              <item.icon className={`h-6 w-6 ${
+                location.pathname === item.path ? 'text-[#8B5E34]' : 'text-gray-500'
+              }`} />
+              <span className={`text-xs mt-1 ${
+                location.pathname === item.path ? 'text-[#8B5E34]' : 'text-gray-500'
+              }`}>
                 {item.name}
               </span>
             </button>
@@ -105,8 +121,12 @@ const Navbar = () => {
             onClick={() => handleNavigation('more')}
             className="flex flex-col items-center justify-center w-16 py-1"
           >
-            <MoreHorizontal className={`h-6 w-6 ${showMobileMenu ? 'text-indigo-600' : 'text-gray-500'}`} />
-            <span className={`text-xs mt-1 ${showMobileMenu ? 'text-indigo-600' : 'text-gray-500'}`}>
+            <MoreHorizontal className={`h-6 w-6 ${
+              showMobileMenu ? 'text-[#8B5E34]' : 'text-gray-500'
+            }`} />
+            <span className={`text-xs mt-1 ${
+              showMobileMenu ? 'text-[#8B5E34]' : 'text-gray-500'
+            }`}>
               More
             </span>
           </button>
