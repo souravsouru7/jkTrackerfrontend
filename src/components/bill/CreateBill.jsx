@@ -118,7 +118,7 @@ const CreateBill = () => {
   return (
     <>
     <Navbar/>
-    <div className="min-h-screen bg-gradient-to-br from-[#F5EBE0] via-[#E6CCB2] to-[#DDB892]">
+    <div className="min-h-screen bg-gradient-to-br from-[#F5EBE0] via-[#E6CCB2] to-[#DDB892] pt-14 md:pt-0">
       <div className="p-2 sm:p-4 md:p-8 max-w-7xl mx-auto">
         <div className="bg-white/30 backdrop-blur-md rounded-2xl shadow-xl border border-[#B08968]/20 p-3 sm:p-6 md:p-8">
           {/* Company Header */}

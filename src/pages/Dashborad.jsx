@@ -16,6 +16,7 @@ import {
   selectProject,
   deleteProject,
 } from "../store/slice/projectSlice";
+import { fetchEntries } from '../store/slice/entrySlice';
 import { Menu, X, Plus, Trash2, ChevronRight } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -42,6 +43,14 @@ const containerVariants = {
 };
 
 const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1
+  }
+};
+
+const cardVariants = {
   hidden: { y: 20, opacity: 0 },
   visible: {
     y: 0,
@@ -166,12 +175,17 @@ const ProjectList = React.memo(({ projects, selectedProject, onSelectProject, on
 ));
 
 const FinancialSummary = React.memo(({ summary, selectedProject }) => {
+  const [showExpenseDetails, setShowExpenseDetails] = useState(false);
+  const dispatch = useDispatch();
+  const { entries } = useSelector(state => state.entries);
+  const [loading, setLoading] = useState(false);
+
   const budget = Number(selectedProject?.budget) || 0;
   const totalIncome = Number(summary?.totalIncome) || 0;
   const totalExpenses = Number(summary?.totalExpenses) || 0;
   const netBalance = Number(summary?.netBalance) || 0;
   const remainingPayment = Math.max(budget - totalIncome, 0);
-  
+
   const cards = [
     {
       title: "Budget",
@@ -191,7 +205,8 @@ const FinancialSummary = React.memo(({ summary, selectedProject }) => {
         <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
-      )
+      ),
+      onClick: () => setShowExpenseDetails(true)
     },
     {
       title: "Payment Received",
@@ -215,63 +230,158 @@ const FinancialSummary = React.memo(({ summary, selectedProject }) => {
     }
   ];
 
-  const MobileView = () => (
-    <div className="block sm:hidden p-4 space-y-6">
-      {cards.map((card, index) => (
-        <motion.div
-          key={card.title}
-          variants={itemVariants}
-          whileTap={{ scale: 0.98 }}
-          className={`relative overflow-hidden bg-gradient-to-br ${card.gradient} rounded-2xl p-4 text-white shadow-lg`}
-        >
-          <div className="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8">
-            <motion.div
-              initial={{ rotate: 0, opacity: 0.1 }}
-              animate={{ rotate: 360, opacity: 0.2 }}
-              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-              className="w-full h-full"
-            >
-              {card.icon}
-            </motion.div>
-          </div>
-          <div className="relative z-10">
-            <div className="mb-2">
-              {card.icon}
-            </div>
-            <h3 className="text-xs font-medium text-white/80 mb-1">{card.title}</h3>
-            <p className="text-lg font-bold">
-              ₹{card.value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-            </p>
-          </div>
-        </motion.div>
-      ))}
-    </div>
-  );
+  useEffect(() => {
+    if (showExpenseDetails && selectedProject?._id) {
+      setLoading(true);
+      dispatch(fetchEntries())
+        .then(() => setLoading(false))
+        .catch(() => setLoading(false));
+    }
+  }, [showExpenseDetails, selectedProject?._id, dispatch]);
 
-  const DesktopView = () => (
-    <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4">
-      {cards.map((card) => (
-        <motion.div
-          key={card.title}
-          variants={itemVariants}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className={`bg-gradient-to-br ${card.gradient} rounded-xl p-4 shadow-sm text-white`}
-        >
-          <h3 className="text-sm font-medium text-white/80">{card.title}</h3>
-          <p className="text-2xl font-bold mt-2">
-            ₹{card.value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-          </p>
-        </motion.div>
-      ))}
-    </div>
-  );
+  const expenseEntries = useMemo(() => {
+    return entries?.filter(entry => entry.type.toLowerCase() === 'expense') || [];
+  }, [entries]);
+
+  console.log('Expense Entries:', expenseEntries); // Debug log
 
   return (
-    <motion.div variants={containerVariants}>
-      <MobileView />
-      <DesktopView />
-    </motion.div>
+    <>
+      {/* Mobile View */}
+      <div className="block sm:hidden p-4 space-y-6">
+        {cards.map((card, index) => (
+          <motion.div
+            key={index}
+            variants={cardVariants}
+            custom={index}
+            onClick={card.onClick}
+            className={`p-4 rounded-lg bg-gradient-to-r ${card.gradient} text-white cursor-pointer`}
+          >
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-sm font-medium mb-1">{card.title}</p>
+                <h3 className="text-2xl font-bold">
+                  ₹{card.value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                </h3>
+              </div>
+              {card.icon}
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Desktop View */}
+      <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4">
+        {cards.map((card, index) => (
+          <motion.div
+            key={index}
+            variants={cardVariants}
+            custom={index}
+            onClick={card.onClick}
+            className={`p-4 rounded-lg bg-gradient-to-r ${card.gradient} text-white cursor-pointer`}
+          >
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-sm font-medium mb-1">{card.title}</p>
+                <h3 className="text-2xl font-bold">
+                  ₹{card.value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                </h3>
+              </div>
+              {card.icon}
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Expense Modal */}
+      <AnimatePresence>
+        {showExpenseDetails && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+              onClick={() => setShowExpenseDetails(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, x: '100%' }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: '100%' }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="fixed top-0 right-0 h-full w-full sm:w-[90%] max-w-md bg-white shadow-xl z-50 overflow-hidden flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center p-4 border-b border-gray-100">
+                <h2 className="text-xl font-semibold text-[#7F5539]">Expense Details</h2>
+                <button 
+                  onClick={() => setShowExpenseDetails(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <X size={24} className="text-gray-500" />
+                </button>
+              </div>
+              <div className="p-4 space-y-6 overflow-y-auto flex-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="bg-[#7F5539]/10 p-4 rounded-lg">
+                    <h3 className="text-sm font-medium text-[#7F5539] mb-2">Total Expenses</h3>
+                    <p className="text-2xl font-bold text-[#7F5539]">
+                      ₹{totalExpenses.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                  <div className="bg-[#7F5539]/5 p-4 rounded-lg">
+                    <h3 className="text-sm font-medium text-[#7F5539] mb-2">Budget Utilization</h3>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                      <div
+                        className="bg-[#7F5539] h-2.5 rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min((totalExpenses / budget) * 100, 100)}%` }}
+                      />
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      {Math.round((totalExpenses / budget) * 100)}% of budget used
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-[#7F5539] mb-4">All Expenses</h3>
+                  <div className="space-y-3">
+                    {loading ? (
+                      <div className="flex justify-center items-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#7F5539]"></div>
+                      </div>
+                    ) : expenseEntries && expenseEntries.length > 0 ? (
+                      expenseEntries.map((expense, index) => (
+                        <div
+                          key={expense._id || index}
+                          className="bg-white rounded-lg p-4 shadow-sm border border-gray-100 hover:border-[#7F5539]/30 transition-colors"
+                        >
+                          <div className="flex justify-between items-center gap-4">
+                            <div>
+                              <h4 className="text-lg font-bold text-[#7F5539]">{expense.category || 'No category'}</h4>
+                              <p className="text-sm text-gray-500">
+                                {expense.date ? new Date(expense.date).toLocaleDateString() : 'No date'}
+                              </p>
+                            </div>
+                            <p className="text-lg font-semibold text-[#7F5539] whitespace-nowrap">
+                              ₹{Number(expense.amount || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                            </p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        No expenses found
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   );
 });
 
@@ -757,111 +867,117 @@ const Dashboard = () => {
   }, [refreshData]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#F5EBE0] via-[#E6CCB2] to-[#DDB892]">
+    <div className="min-h-screen bg-[#FDF8F3]">
       <Navbar />
-
-      <main className="container mx-auto px-4 py-8 pb-24">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-[#7F5539]">Financial Summary</h1>
-          <p className="text-sm text-gray-600 mt-1">
-            Track your overall expenses and income across all projects
-          </p>
-        </div>
-
-        <div className="bg-white/80 rounded-xl p-6 shadow-lg backdrop-blur-sm mb-6">
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold text-[#7F5539]">Income & Expense Overview</h2>
-            <p className="text-sm text-gray-500">Current financial status</p>
-          </div>
-          <FinancialOverview overall={overall} />
-        </div>
-
-        <section className="bg-white/80 rounded-xl p-4 mb-6">
-          <h2 className="text-lg font-semibold text-[#7F5539] mb-4">Create Project</h2>
-          <div className="space-y-4">
-            <input
-              type="text"
-              value={newProjectName}
-              onChange={(e) => setNewProjectName(e.target.value)}
-              placeholder="Project Name"
-              className="w-full px-4 py-3 rounded-lg bg-white border border-[#B08968]/20"
-            />
-            <input
-              type="text"
-              value={newProjectDescription}
-              onChange={(e) => setNewProjectDescription(e.target.value)}
-              placeholder="Description"
-              className="w-full px-4 py-3 rounded-lg bg-white border border-[#B08968]/20"
-            />
-            <input
-              type="number"
-              value={newProjectBudget}
-              onChange={(e) => setNewProjectBudget(e.target.value)}
-              placeholder="Budget"
-              className="w-full px-4 py-3 rounded-lg bg-white border border-[#B08968]/20"
-            />
-            <button
-              onClick={handleCreateProject}
-              className="w-full py-3 bg-[#B08968] text-white rounded-lg"
-            >
-              Create Project
-            </button>
-          </div>
-        </section>
-
-        <section className="bg-white/80 rounded-xl p-4 mb-6">
-          <h2 className="text-lg font-semibold text-[#7F5539] mb-4">Your Projects</h2>
-          <ProjectList
-            projects={projects}
-            selectedProject={selectedProject}
-            onSelectProject={handleSelectProject}
-            onDeleteProject={handleDeleteProject}
-          />
-        </section>
-
-        {selectedProject && (
-          <>
-            <FinancialSummary summary={balanceSummary} selectedProject={selectedProject} />
-            <Charts
-              monthlyExpenses={monthlyExpenses}
-              incomeVsExpense={incomeVsExpense}
-              categoryAnalysis={categoryAnalysis}
-              colorPalette={colorPalette}
-            />
-          </>
-        )}
-
-        <button
-          onClick={() => setIsEntryModalOpen(true)}
-          className="fixed bottom-6 right-6 w-14 h-14 bg-[#B08968] text-white rounded-full shadow-xl flex items-center justify-center"
+      <div className="md:hidden h-14" /> {/* Spacer for mobile header */}
+      <div className="container mx-auto px-4 pt-4 pb-20 md:py-8">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
         >
-          <Plus size={24} />
-        </button>
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-[#7F5539]">Financial Summary</h1>
+            <p className="text-sm text-gray-600 mt-1">
+              Track your overall expenses and income across all projects
+            </p>
+          </div>
 
-        <AnimatePresence>
-          {showNotification && (
-            <Toast message={notificationMessage} type={notificationType} />
-          )}
-        </AnimatePresence>
+          <div className="bg-white/80 rounded-xl p-6 shadow-lg backdrop-blur-sm mb-6">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold text-[#7F5539]">Income & Expense Overview</h2>
+              <p className="text-sm text-gray-500">Current financial status</p>
+            </div>
+            <FinancialOverview overall={overall} />
+          </div>
 
-        <Suspense fallback={<div>Loading...</div>}>
-          {isEntryModalOpen && (
-            <EntryForm onClose={handleEntryModalClose} projectId={selectedProject?._id} onSuccess={() => {
-              setIsEntryModalOpen(false);
-              showToast("Entry added successfully", "success");
-              // Refresh data
-              if (selectedProject && userId) {
-                const projectId = selectedProject._id;
-                dispatch(fetchMonthlyExpenses({ userId, projectId }));
-                dispatch(fetchIncomeVsExpense({ userId, projectId }));
-                dispatch(fetchCategoryExpenses({ userId, projectId }));
-                dispatch(fetchCategoryAnalysis({ userId, projectId }));
-                dispatch(fetchBalanceSummary(userId));
-              }
-            }} />
+          <section className="bg-white/80 rounded-xl p-4 mb-6">
+            <h2 className="text-lg font-semibold text-[#7F5539] mb-4">Create Project</h2>
+            <div className="space-y-4">
+              <input
+                type="text"
+                value={newProjectName}
+                onChange={(e) => setNewProjectName(e.target.value)}
+                placeholder="Project Name"
+                className="w-full px-4 py-3 rounded-lg bg-white border border-[#B08968]/20"
+              />
+              <input
+                type="text"
+                value={newProjectDescription}
+                onChange={(e) => setNewProjectDescription(e.target.value)}
+                placeholder="Description"
+                className="w-full px-4 py-3 rounded-lg bg-white border border-[#B08968]/20"
+              />
+              <input
+                type="number"
+                value={newProjectBudget}
+                onChange={(e) => setNewProjectBudget(e.target.value)}
+                placeholder="Budget"
+                className="w-full px-4 py-3 rounded-lg bg-white border border-[#B08968]/20"
+              />
+              <button
+                onClick={handleCreateProject}
+                className="w-full py-3 bg-[#B08968] text-white rounded-lg"
+              >
+                Create Project
+              </button>
+            </div>
+          </section>
+
+          <section className="bg-white/80 rounded-xl p-4 mb-6">
+            <h2 className="text-lg font-semibold text-[#7F5539] mb-4">Your Projects</h2>
+            <ProjectList
+              projects={projects}
+              selectedProject={selectedProject}
+              onSelectProject={handleSelectProject}
+              onDeleteProject={handleDeleteProject}
+            />
+          </section>
+
+          {selectedProject && (
+            <>
+              <FinancialSummary summary={balanceSummary} selectedProject={selectedProject} />
+              <Charts
+                monthlyExpenses={monthlyExpenses}
+                incomeVsExpense={incomeVsExpense}
+                categoryAnalysis={categoryAnalysis}
+                colorPalette={colorPalette}
+              />
+            </>
           )}
-        </Suspense>
-      </main>
+
+          <button
+            onClick={() => setIsEntryModalOpen(true)}
+            className="fixed bottom-6 right-6 w-14 h-14 bg-[#B08968] text-white rounded-full shadow-xl flex items-center justify-center"
+          >
+            <Plus size={24} />
+          </button>
+
+          <AnimatePresence>
+            {showNotification && (
+              <Toast message={notificationMessage} type={notificationType} />
+            )}
+          </AnimatePresence>
+
+          <Suspense fallback={<div>Loading...</div>}>
+            {isEntryModalOpen && (
+              <EntryForm onClose={handleEntryModalClose} projectId={selectedProject?._id} onSuccess={() => {
+                setIsEntryModalOpen(false);
+                showToast("Entry added successfully", "success");
+                // Refresh data
+                if (selectedProject && userId) {
+                  const projectId = selectedProject._id;
+                  dispatch(fetchMonthlyExpenses({ userId, projectId }));
+                  dispatch(fetchIncomeVsExpense({ userId, projectId }));
+                  dispatch(fetchCategoryExpenses({ userId, projectId }));
+                  dispatch(fetchCategoryAnalysis({ userId, projectId }));
+                  dispatch(fetchBalanceSummary(userId));
+                }
+              }} />
+            )}
+          </Suspense>
+        </motion.div>
+      </div>
     </div>
   );
 };
