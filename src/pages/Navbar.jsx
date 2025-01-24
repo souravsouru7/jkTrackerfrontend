@@ -4,6 +4,7 @@ import { useDispatch } from "react-redux";
 import { logout } from "../store/slice/authSlice";
 import { LogOut, FileText, Calculator, PlusCircle, Menu, X, LayoutDashboard, MoreHorizontal, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import './Navbar.css';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -60,11 +61,14 @@ const Navbar = () => {
       {/* Mobile Top Logo */}
       <div className="md:hidden fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-md border-b border-[#8B5E34]/20 z-50">
         <div className="flex justify-center items-center h-14">
-          <img 
-            src="/logo.png"   
-            alt="JK Interiors Logo" 
-            className="h-10 w-auto object-contain"
-          />
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="logo-text mobile-logo"
+          >
+            <span className="text-gradient">JK</span>
+            <span className="text-gradient-alt">Tracker</span>
+          </motion.div>
         </div>
       </div>
 
@@ -73,11 +77,18 @@ const Navbar = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex-shrink-0 flex items-center">
-              <img 
-                src="/logo.png" 
-                alt="JK Interiors Logo" 
-                className="h-12 w-auto object-contain"
-              />
+              <motion.div
+                className="logo-text desktop-logo"
+                onClick={() => navigate('/dashboard')}
+                whileHover={{ 
+                  scale: 1.05,
+                  textShadow: "0 0 8px rgba(139, 94, 52, 0.3)"
+                }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <span className="text-gradient">JK</span>
+                <span className="text-gradient-alt">Trackr</span>
+              </motion.div>
             </div>
             
             <div className="hidden md:block">
