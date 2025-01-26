@@ -4,6 +4,7 @@ import { useDispatch } from "react-redux";
 import { logout } from "../store/slice/authSlice";
 import { LogOut, FileText, Calculator, PlusCircle, Menu, X, LayoutDashboard, MoreHorizontal, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import JKLogo from '../components/common/JKLogo';
 import './Navbar.css';
 
 const Navbar = () => {
@@ -59,35 +60,30 @@ const Navbar = () => {
   return (
     <>
       {/* Mobile Top Logo */}
-      <div className="md:hidden fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-md border-b border-[#8B5E34]/20 z-50">
+      <div className="md:hidden fixed top-0 left-0 right-0 bg-white z-50">
         <div className="flex justify-center items-center h-14">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="logo-text mobile-logo"
+            className="flex justify-center items-center py-2"
           >
-            <span className="text-gradient">JK</span>
-            <span className="text-gradient-alt">Tracker</span>
+            <JKLogo size="90" />
           </motion.div>
         </div>
       </div>
 
       {/* Desktop Navigation */}
-      <nav className="bg-white/90 backdrop-blur-md border-b border-[#8B5E34]/20 sticky top-0 z-40 hidden md:block">
+      <nav className="bg-white border-b border-[#8B5E34]/20 sticky top-0 z-40 hidden md:block">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex-shrink-0 flex items-center">
               <motion.div
-                className="logo-text desktop-logo"
+                className="flex items-center cursor-pointer"
                 onClick={() => navigate('/dashboard')}
-                whileHover={{ 
-                  scale: 1.05,
-                  textShadow: "0 0 8px rgba(139, 94, 52, 0.3)"
-                }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
-                <span className="text-gradient">JK</span>
-                <span className="text-gradient-alt">Trackr</span>
+                <JKLogo size="90" />
               </motion.div>
             </div>
             
