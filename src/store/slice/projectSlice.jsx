@@ -42,12 +42,32 @@ export const createProject = createAsyncThunk('projects/createProject', async (p
 
 export const deleteProject = createAsyncThunk(
   'projects/deleteProject',
-  async ({projectId, userId}) => {
+  async (projectId, { getState }) => {
     try {
-      await axios.delete(`${API_URL}/api/projects/${projectId}?userId=${userId}`, {
+      const userId = JSON.parse(localStorage.getItem('user'))._id;
+      await axios.delete(`${API_URL}/api/projects/${projectId}`, {
         headers: getAuthHeader()
       });
       return projectId;
+    } catch (error) {
+      if (error.response?.status === 401) {
+        throw new Error('Unauthorized access');
+      }
+      throw error;
+    }
+  }
+);
+
+export const updateProjectBudget = createAsyncThunk(
+  'projects/updateProjectBudget',
+  async ({ projectId, budget }) => {
+    try {
+      const response = await axios.put(
+        `${API_URL}/api/projects/${projectId}/budget`,
+        { budget: Number(budget) },
+        { headers: getAuthHeader() }
+      );
+      return response.data.project;
     } catch (error) {
       if (error.response?.status === 401) {
         throw new Error('Unauthorized access');
@@ -99,6 +119,23 @@ const projectSlice = createSlice({
         }
       })
       .addCase(deleteProject.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.error.message;
+      })
+      .addCase(updateProjectBudget.pending, (state) => {
+        state.status = 'loading';
+      })
+      .addCase(updateProjectBudget.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        const index = state.projects.findIndex(p => p._id === action.payload._id);
+        if (index !== -1) {
+          state.projects[index] = action.payload;
+        }
+        if (state.selectedProject?._id === action.payload._id) {
+          state.selectedProject = action.payload;
+        }
+      })
+      .addCase(updateProjectBudget.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.error.message;
       });

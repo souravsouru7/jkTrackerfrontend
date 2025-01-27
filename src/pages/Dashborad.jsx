@@ -15,6 +15,7 @@ import {
   createProject,
   selectProject,
   deleteProject,
+  updateProjectBudget,
 } from "../store/slice/projectSlice";
 import { fetchEntries } from '../store/slice/entrySlice';
 import { Menu, X, Plus, Trash2, ChevronRight } from "lucide-react";
@@ -141,38 +142,110 @@ const MobileMenu = React.memo(({ isOpen, setIsOpen, navigate, dispatch }) => {
   );
 });
 
-const ProjectList = React.memo(({ projects, selectedProject, onSelectProject, onDeleteProject }) => (
-  <motion.div
-    variants={containerVariants}
-    initial="hidden"
-    animate="visible"
-    className="space-y-2"
-  >
-    {projects.map((project) => (
-      <motion.div
-        key={project._id}
-        variants={itemVariants}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        className={`flex items-center justify-between p-3 rounded-lg ${
-          selectedProject?._id === project._id ? 'bg-[#B08968] text-white' : 'bg-white'
-        }`}
-      >
-        <span onClick={() => onSelectProject(project)} className="flex-1 cursor-pointer">
-          {project.name}
-        </span>
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={() => onDeleteProject(project._id)}
-          className="ml-2"
+const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject }) => {
+  const dispatch = useDispatch();
+  const [editingBudget, setEditingBudget] = useState(null);
+  const [budgetValue, setBudgetValue] = useState("");
+
+  const handleBudgetEdit = (project) => {
+    setEditingBudget(project._id);
+    setBudgetValue(project.budget.toString());
+  };
+
+  const handleBudgetSave = async (projectId) => {
+    if (budgetValue.trim() && !isNaN(budgetValue)) {
+      try {
+        await dispatch(updateProjectBudget({ projectId, budget: Number(budgetValue) })).unwrap();
+        setEditingBudget(null);
+      } catch (error) {
+        console.error('Failed to update budget:', error);
+      }
+    }
+  };
+
+  const handleBudgetCancel = () => {
+    setEditingBudget(null);
+    setBudgetValue("");
+  };
+
+  return (
+    <motion.div variants={containerVariants} className="space-y-4">
+      {projects.map((project) => (
+        <motion.div
+          key={project._id}
+          variants={itemVariants}
+          className={`p-4 rounded-lg shadow-md ${
+            selectedProject?._id === project._id
+              ? "bg-[#B08968]/20 border-2 border-[#B08968]"
+              : "bg-white"
+          }`}
         >
-          <Trash2 size={20} />
-        </motion.button>
-      </motion.div>
-    ))}
-  </motion.div>
-));
+          <div className="flex justify-between items-center">
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-[#7F5539]">{project.name}</h3>
+              <p className="text-sm text-gray-600">{project.description}</p>
+              
+              {editingBudget === project._id ? (
+                <div className="mt-2 flex items-center space-x-2">
+                  <input
+                    type="number"
+                    value={budgetValue}
+                    onChange={(e) => setBudgetValue(e.target.value)}
+                    className="px-2 py-1 border rounded-md text-sm w-32"
+                    placeholder="Enter budget"
+                  />
+                  <button
+                    onClick={() => handleBudgetSave(project._id)}
+                    className="px-2 py-1 bg-green-500 text-white rounded-md text-sm"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={handleBudgetCancel}
+                    className="px-2 py-1 bg-gray-500 text-white rounded-md text-sm"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <div className="mt-2 flex items-center space-x-2">
+                  <span className="text-sm text-gray-600">
+                    Budget: ${project.budget.toLocaleString()}
+                  </span>
+                  <button
+                    onClick={() => handleBudgetEdit(project)}
+                    className="text-sm text-[#B08968] hover:text-[#7F5539]"
+                  >
+                    Edit
+                  </button>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => onSelect(project)}
+                className="p-2 text-[#B08968] hover:text-[#7F5539]"
+              >
+                <ChevronRight size={20} />
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => onDelete(project._id)}
+                className="p-2 text-red-500 hover:text-red-700"
+              >
+                <Trash2 size={20} />
+              </motion.button>
+            </div>
+          </div>
+        </motion.div>
+      ))}
+    </motion.div>
+  );
+});
 
 const FinancialSummary = React.memo(({ summary, selectedProject }) => {
   const [showExpenseDetails, setShowExpenseDetails] = useState(false);
@@ -833,12 +906,23 @@ const Dashboard = () => {
     if (!window.confirm("Are you sure you want to delete this project?")) return;
 
     try {
-      await dispatch(deleteProject({ projectId, userId })).unwrap();
+      await dispatch(deleteProject(projectId)).unwrap();
+      
+      // Clear selected project if it was deleted
+      if (selectedProject?._id === projectId) {
+        dispatch(selectProject(null));
+        localStorage.removeItem('selectedProject');
+      }
+      
+      // Refresh projects list
+      dispatch(fetchProjects(userId));
+      
       showToast("Project deleted successfully", "success");
     } catch (error) {
+      console.error('Delete project error:', error);
       showToast("Failed to delete project", "error");
     }
-  }, [dispatch, userId, showToast]);
+  }, [dispatch, userId, selectedProject, showToast]);
 
   const handleSelectProject = useCallback((project) => {
     dispatch(selectProject(project));
@@ -928,9 +1012,9 @@ const Dashboard = () => {
             <h2 className="text-lg font-semibold text-[#7F5539] mb-4">Your Projects</h2>
             <ProjectList
               projects={projects}
+              onDelete={handleDeleteProject}
+              onSelect={handleSelectProject}
               selectedProject={selectedProject}
-              onSelectProject={handleSelectProject}
-              onDeleteProject={handleDeleteProject}
             />
           </section>
 

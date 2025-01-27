@@ -14,8 +14,10 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showCreateDropdown, setShowCreateDropdown] = useState(false);
   const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
   const dropdownRef = useRef(null);
+  const createDropdownRef = useRef(null);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -27,6 +29,9 @@ const Navbar = () => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setShowDropdown(false);
       }
+      if (createDropdownRef.current && !createDropdownRef.current.contains(event.target)) {
+        setShowCreateDropdown(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -36,24 +41,31 @@ const Navbar = () => {
   const navItems = [
     { name: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
     { name: "Entries", icon: FileText, path: "/entries" },
-    { name: "Balance Sheet", icon: Calculator, path: "/balance-sheet" },
-    { name: "Create Bill", icon: PlusCircle, path: "/create-bill" }
+    { name: "Create Bill", icon: PlusCircle, path: "/create-bill" },
+    { name: "Balance Sheet", icon: Calculator, path: "/balance-sheet" }
   ];
 
   const mobileNavItems = [
     { name: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
     { name: "Entries", icon: FileText, path: "/entries" },
-    { name: "Balance Sheet", icon: Calculator, path: "/balance-sheet" },
-    { name: "Create Bill", icon: PlusCircle, path: "/create-bill" }
+    { name: "Create", icon: PlusCircle, path: "create" },
+    { name: "Balance Sheet", icon: Calculator, path: "/balance-sheet" }
   ];
 
-  const handleNavigation = (path) => {
-    if (path === 'more') {
+  const handleNavigation = (path, documentType) => {
+    if (path === 'create') {
+      setShowCreateDropdown(!showCreateDropdown);
+    } else if (path === 'more') {
       setShowMobileMenu(!showMobileMenu);
     } else {
-      navigate(path);
+      if (path === '/create-bill' && documentType) {
+        navigate(path, { state: { documentType } });
+      } else {
+        navigate(path);
+      }
       setIsOpen(false);
       setShowMobileMenu(false);
+      setShowCreateDropdown(false);
     }
   };
 
@@ -67,7 +79,7 @@ const Navbar = () => {
             animate={{ opacity: 1, y: 0 }}
             className="flex justify-center items-center py-2"
           >
-            <JKLogo size="90" />
+            <JKLogo size="90" className='md:hidden fixed top-'/>
           </motion.div>
         </div>
       </div>
@@ -123,20 +135,65 @@ const Navbar = () => {
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
         <div className="flex justify-between items-center px-4 py-2">
           {mobileNavItems.map((item, index) => (
-            <button
-              key={index}
-              onClick={() => handleNavigation(item.path)}
-              className="flex flex-col items-center justify-center w-16 py-1"
-            >
-              <item.icon className={`h-6 w-6 ${
-                location.pathname === item.path ? 'text-[#8B5E34]' : 'text-gray-500'
-              }`} />
-              <span className={`text-xs mt-1 ${
-                location.pathname === item.path ? 'text-[#8B5E34]' : 'text-gray-500'
-              }`}>
-                {item.name}
-              </span>
-            </button>
+            <div key={index} className="relative">
+              <button
+                onClick={() => handleNavigation(item.path)}
+                className="flex flex-col items-center justify-center w-16 py-1"
+              >
+                <item.icon className={`h-6 w-6 ${
+                  (location.pathname === item.path || (item.path === 'create' && showCreateDropdown)) 
+                  ? 'text-[#8B5E34]' : 'text-gray-500'
+                }`} />
+                <span className={`text-xs mt-1 ${
+                  (location.pathname === item.path || (item.path === 'create' && showCreateDropdown))
+                  ? 'text-[#8B5E34]' : 'text-gray-500'
+                }`}>
+                  {item.name}
+                </span>
+              </button>
+              
+              {/* Create Dropdown */}
+              {item.path === 'create' && showCreateDropdown && (
+                <div 
+                  ref={createDropdownRef}
+                  className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-48 bg-white rounded-lg shadow-lg border border-[#B08968]/20 py-2"
+                >
+                  <button
+                    onClick={() => handleNavigation('/create-bill', 'Invoice')}
+                    className={`w-full px-4 py-2 text-left text-sm hover:bg-[#F5EBE0] flex items-center gap-2 ${
+                      location.pathname === '/create-bill' && location.state?.documentType === 'Invoice'
+                        ? 'text-[#8B5E34] bg-[#F5EBE0]'
+                        : 'text-[#7F5539]'
+                    }`}
+                  >
+                    <FileText size={16} />
+                    Create Invoice
+                  </button>
+                  <button
+                    onClick={() => handleNavigation('/create-bill', 'Estimate')}
+                    className={`w-full px-4 py-2 text-left text-sm hover:bg-[#F5EBE0] flex items-center gap-2 ${
+                      location.pathname === '/create-bill' && location.state?.documentType === 'Estimate'
+                        ? 'text-[#8B5E34] bg-[#F5EBE0]'
+                        : 'text-[#7F5539]'
+                    }`}
+                  >
+                    <FileText size={16} />
+                    Create Estimate
+                  </button>
+                  <button
+                    onClick={() => handleNavigation('/create-bill', 'Quotation')}
+                    className={`w-full px-4 py-2 text-left text-sm hover:bg-[#F5EBE0] flex items-center gap-2 ${
+                      location.pathname === '/create-bill' && location.state?.documentType === 'Quotation'
+                        ? 'text-[#8B5E34] bg-[#F5EBE0]'
+                        : 'text-[#7F5539]'
+                    }`}
+                  >
+                    <FileText size={16} />
+                    Create Quotation
+                  </button>
+                </div>
+              )}
+            </div>
           ))}
           <div className="relative" ref={dropdownRef}>
             <button

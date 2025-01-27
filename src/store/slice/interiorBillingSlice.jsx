@@ -6,6 +6,7 @@ const initialState = {
   loading: false,
   error: null,
   currentBill: null,
+  documentType: null,
   loadingStates: {
     fetchBills: false,
     createBill: false,
@@ -75,8 +76,13 @@ export const createBill = createAsyncThunk(
   'interiorBilling/createBill',
   async (billData, { rejectWithValue }) => {
     try {
-      const response = await API.post('/api/interior/bills', billData);
-      // The response directly contains the bill data
+      // Ensure documentType is set, default to 'Invoice' if not provided
+      const billDataWithType = {
+        ...billData,
+        documentType: billData.documentType || 'Invoice'
+      };
+      
+      const response = await API.post('/api/interior/bills', billDataWithType);
       if (!response.data || !response.data._id) {
         throw new Error('Invalid response from server');
       }
@@ -93,7 +99,13 @@ export const updateBill = createAsyncThunk(
   'interiorBilling/updateBill',
   async ({ id, billData }, { rejectWithValue }) => {
     try {
-      const response = await API.put(`/api/interior/bills/${id}`, billData);
+      // Ensure documentType is included in the update
+      const billDataWithType = {
+        ...billData,
+        documentType: billData.documentType || 'Invoice'
+      };
+      
+      const response = await API.put(`/api/interior/bills/${id}`, billDataWithType);
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);

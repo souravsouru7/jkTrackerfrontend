@@ -2,14 +2,20 @@ import React, { useState, useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import { createBill, generatePDF } from '../../store/slice/interiorBillingSlice';
 import { Plus, Trash2, FileText, List } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../../pages/Navbar';
 
 const CreateBill = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Get document type from location state or default to 'Invoice'
+  const [documentType, setDocumentType] = useState(location.state?.documentType || 'Invoice');
+
   const [formData, setFormData] = useState({
     billNumber: '',
+    documentType: location.state?.documentType || 'Invoice',
     billDate: new Date().toISOString().split('T')[0],
     title: 'Mr',
     clientName: '',
@@ -141,7 +147,34 @@ const CreateBill = () => {
             </div>
           </div>
 
+          {/* Document Type Header */}
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold text-[#7F5539]">Create New {documentType}</h2>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
+            {/* Document Type Selection */}
+            <div className="mb-4">
+              <label className="block text-[#7F5539] text-sm font-bold mb-2">
+                Document Type
+              </label>
+              <select
+                className="w-full px-3 py-2 bg-white/50 border border-[#B08968]/20 rounded-lg text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                value={documentType}
+                onChange={(e) => {
+                  const newType = e.target.value;
+                  setDocumentType(newType);
+                  setFormData(prev => ({ ...prev, documentType: newType }));
+                  // Update the URL state when document type changes
+                  navigate('.', { state: { documentType: newType }, replace: true });
+                }}
+              >
+                <option value="Invoice">Invoice</option>
+                <option value="Quotation">Quotation</option>
+                <option value="Estimate">Estimate</option>
+              </select>
+            </div>
+
             {/* Client and Bill Details */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               <div className="space-y-3 sm:space-y-4">
@@ -159,7 +192,7 @@ const CreateBill = () => {
                   <input
                     type="text"
                     placeholder="Client Name"
-                    className="flex-1 px-3 sm:px-4 py-2 sm:py-3 bg-white/50 border border-[#B08968]/20 rounded-lg text-sm sm:text-base text-[#7F5539] placeholder-[#9C6644] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                    className="flex-1 px-3 sm:px-4 py-2 sm:py-3 bg-white/50 border border-[#B08968]/20 rounded-lg text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
                     value={formData.clientName}
                     onChange={(e) => setFormData({...formData, clientName: e.target.value})}
                     required
@@ -168,7 +201,7 @@ const CreateBill = () => {
                 <input
                   type="email"
                   placeholder="Client Email"
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/50 border border-[#B08968]/20 rounded-lg text-sm sm:text-base text-[#7F5539] placeholder-[#9C6644] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/50 border border-[#B08968]/20 rounded-lg text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
                   value={formData.clientEmail}
                   onChange={(e) => setFormData({...formData, clientEmail: e.target.value})}
                   required
@@ -176,7 +209,7 @@ const CreateBill = () => {
                 <input
                   type="tel"
                   placeholder="Client Phone"
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/50 border border-[#B08968]/20 rounded-lg text-sm sm:text-base text-[#7F5539] placeholder-[#9C6644] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/50 border border-[#B08968]/20 rounded-lg text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
                   value={formData.clientPhone}
                   onChange={(e) => setFormData({...formData, clientPhone: e.target.value})}
                   required
@@ -184,7 +217,7 @@ const CreateBill = () => {
                 <textarea
                   placeholder="Client Address"
                   rows="3"
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/50 border border-[#B08968]/20 rounded-lg text-sm sm:text-base text-[#7F5539] placeholder-[#9C6644] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/50 border border-[#B08968]/20 rounded-lg text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
                   value={formData.clientAddress}
                   onChange={(e) => setFormData({...formData, clientAddress: e.target.value})}
                   required
@@ -446,7 +479,7 @@ const CreateBill = () => {
               className="w-full p-3 sm:p-4 bg-[#B08968] text-white text-sm sm:text-base rounded-lg font-medium hover:bg-[#9C6644] transform hover:translate-y-[-2px] hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2"
             >
               <FileText size={20} />
-              <span>Generate Estimate</span>
+              <span>Generate {documentType}</span>
             </button>
           </form>
 
