@@ -333,7 +333,11 @@ const FinancialSummary = React.memo(({ summary, selectedProject }) => {
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-sm font-medium mb-1">{card.title}</p>
-                <h3 className="text-2xl font-bold">
+                <h3 className={`font-bold ${
+                  card.title === "Payment Received" ? "text-3xl" : 
+                  card.title === "Total Balance" ? "text-2xl" : 
+                  "text-xl"
+                }`}>
                   ₹{card.value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                 </h3>
               </div>
@@ -975,7 +979,7 @@ const Dashboard = () => {
             <FinancialOverview overall={overall} />
           </div>
 
-          <section className="bg-white/80 rounded-xl p-4 mb-6">
+          <section className="hidden md:block bg-white/80 rounded-xl p-4 mb-6">
             <h2 className="text-lg font-semibold text-[#7F5539] mb-4">Create Project</h2>
             <div className="space-y-4">
               <input

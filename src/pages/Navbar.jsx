@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logout } from "../store/slice/authSlice";
-import { LogOut, FileText, Calculator, PlusCircle, Menu, X, LayoutDashboard, MoreHorizontal, Plus } from 'lucide-react';
+import { LogOut, FileText, Calculator, PlusCircle, Menu, X, LayoutDashboard, MoreHorizontal, Plus, Receipt } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import JKLogo from '../components/common/JKLogo';
 import './Navbar.css';
@@ -16,12 +16,51 @@ const Navbar = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [showCreateDropdown, setShowCreateDropdown] = useState(false);
   const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
+  const [projectName, setProjectName] = useState('');
+  const [description, setDescription] = useState('');
+  const [budget, setBudget] = useState('');
   const dropdownRef = useRef(null);
   const createDropdownRef = useRef(null);
+  const modalRef = useRef(null);
 
   const handleLogout = () => {
     dispatch(logout());
     navigate('/login');
+  };
+
+  const handleCreateProject = async (e) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('token');
+      const userId = JSON.parse(localStorage.getItem('user'))._id;
+      
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/projects`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: projectName,
+          description,
+          budget: Number(budget),
+          userId
+        })
+      });
+
+      if (response.ok) {
+        setShowCreateProjectModal(false);
+        setProjectName('');
+        setDescription('');
+        setBudget('');
+        // Optionally refresh the page or update projects list
+        window.location.reload();
+      } else {
+        console.error('Failed to create project');
+      }
+    } catch (error) {
+      console.error('Error creating project:', error);
+    }
   };
 
   useEffect(() => {
@@ -31,6 +70,9 @@ const Navbar = () => {
       }
       if (createDropdownRef.current && !createDropdownRef.current.contains(event.target)) {
         setShowCreateDropdown(false);
+      }
+      if (modalRef.current && !modalRef.current.contains(event.target)) {
+        setShowCreateProjectModal(false);
       }
     };
 
@@ -42,6 +84,7 @@ const Navbar = () => {
     { name: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
     { name: "Entries", icon: FileText, path: "/entries" },
     { name: "Create Bill", icon: PlusCircle, path: "/create-bill" },
+    { name: "Payment Bill", icon: Receipt, path: "/payment-bill" },
     { name: "Balance Sheet", icon: Calculator, path: "/balance-sheet" }
   ];
 
@@ -72,14 +115,14 @@ const Navbar = () => {
   return (
     <>
       {/* Mobile Top Logo */}
-      <div className="md:hidden fixed top-0 left-0 right-0 bg-white z-50">
-        <div className="flex justify-center items-center h-14">
+      <div className="md:hidden fixed top-0 left-0 right-0 bg-white z-50 border-b border-[#8B5E34]/20">
+        <div className="flex justify-center items-center h-16">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex justify-center items-center py-2"
+            className="flex justify-center items-center py-3"
           >
-            <JKLogo size="90" className='md:hidden fixed top-'/>
+            <JKLogo size="90" className="md:hidden mt-1" />
           </motion.div>
         </div>
       </div>
@@ -191,6 +234,18 @@ const Navbar = () => {
                     <FileText size={16} />
                     Create Quotation
                   </button>
+                  <div className="w-full h-px bg-[#B08968]/20 my-2"></div>
+                  <button
+                    onClick={() => handleNavigation('/payment-bill')}
+                    className={`w-full px-4 py-2 text-left text-sm hover:bg-[#F5EBE0] flex items-center gap-2 ${
+                      location.pathname === '/payment-bill'
+                        ? 'text-[#8B5E34] bg-[#F5EBE0]'
+                        : 'text-[#7F5539]'
+                    }`}
+                  >
+                    <Receipt size={16} />
+                    Payment Bill
+                  </button>
                 </div>
               )}
             </div>
@@ -200,16 +255,13 @@ const Navbar = () => {
               onClick={() => setShowDropdown(!showDropdown)}
               className="flex flex-col items-center justify-center w-16 py-1"
             >
-              <MoreHorizontal className={`h-6 w-6 ${
-                showDropdown ? 'text-[#8B5E34]' : 'text-gray-500'
-              }`} />
-              <span className={`text-xs mt-1 ${
-                showDropdown ? 'text-[#8B5E34]' : 'text-gray-500'
-              }`}>
+              <MoreHorizontal className={`h-6 w-6 ${showDropdown ? 'text-[#8B5E34]' : 'text-gray-500'}`} />
+              <span className={`text-xs mt-1 ${showDropdown ? 'text-[#8B5E34]' : 'text-gray-500'}`}>
                 More
               </span>
             </button>
-            
+
+            {/* More Dropdown */}
             {showDropdown && (
               <div className="absolute bottom-full right-0 mb-2 w-48 bg-white rounded-lg shadow-lg border border-[#B08968]/20 py-2">
                 <button
@@ -217,14 +269,15 @@ const Navbar = () => {
                     setShowCreateProjectModal(true);
                     setShowDropdown(false);
                   }}
-                  className="w-full px-4 py-2 text-left text-sm text-[#7F5539] hover:bg-[#F5EBE0] flex items-center gap-2"
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-[#F5EBE0] flex items-center gap-2 text-[#7F5539]"
                 >
                   <Plus size={16} />
                   Create Project
                 </button>
+                <div className="w-full h-px bg-[#B08968]/20 my-2"></div>
                 <button
                   onClick={handleLogout}
-                  className="w-full px-4 py-2 text-left text-sm text-[#7F5539] hover:bg-[#F5EBE0] flex items-center gap-2"
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 flex items-center gap-2 text-red-600"
                 >
                   <LogOut size={16} />
                   Logout
@@ -236,53 +289,72 @@ const Navbar = () => {
       </nav>
 
       {/* Create Project Modal */}
-      {showCreateProjectModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <h2 className="text-xl font-semibold text-[#7F5539] mb-4">Create New Project</h2>
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              // Add your project creation logic here
-              setShowCreateProjectModal(false);
-            }}>
-              <div className="space-y-4">
-                <input
-                  type="text"
-                  placeholder="Project Name"
-                  className="w-full px-4 py-2 rounded-lg border border-[#B08968]/20"
-                  required
-                />
-                <input
-                  type="text"
-                  placeholder="Description"
-                  className="w-full px-4 py-2 rounded-lg border border-[#B08968]/20"
-                />
-                <input
-                  type="number"
-                  placeholder="Budget"
-                  className="w-full px-4 py-2 rounded-lg border border-[#B08968]/20"
-                  required
-                />
-                <div className="flex gap-3">
-                  <button
-                    type="submit"
-                    className="flex-1 py-2 bg-[#7F5539] text-white rounded-lg hover:bg-[#9C6644] transition-colors"
-                  >
-                    Create
-                  </button>
+      <AnimatePresence>
+        {showCreateProjectModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              ref={modalRef}
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-lg shadow-xl w-full max-w-md p-6"
+            >
+              <h2 className="text-xl font-semibold text-[#7F5539] mb-4">Create New Project</h2>
+              <form onSubmit={handleCreateProject} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Project Name</label>
+                  <input
+                    type="text"
+                    value={projectName}
+                    onChange={(e) => setProjectName(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:border-[#7F5539]"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <input
+                    type="text"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:border-[#7F5539]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Budget</label>
+                  <input
+                    type="number"
+                    value={budget}
+                    onChange={(e) => setBudget(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:border-[#7F5539]"
+                    required
+                  />
+                </div>
+                <div className="flex gap-3 pt-2">
                   <button
                     type="button"
                     onClick={() => setShowCreateProjectModal(false)}
-                    className="flex-1 py-2 border border-[#7F5539] text-[#7F5539] rounded-lg hover:bg-[#F5EBE0] transition-colors"
+                    className="flex-1 py-2 border border-[#7F5539] text-[#7F5539] rounded hover:bg-[#7F5539]/10"
                   >
                     Cancel
                   </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-2 bg-[#7F5539] text-white rounded hover:bg-[#7F5539]/90"
+                  >
+                    Create
+                  </button>
                 </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 };
