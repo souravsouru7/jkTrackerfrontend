@@ -99,13 +99,15 @@ export const updateBill = createAsyncThunk(
   'interiorBilling/updateBill',
   async ({ id, billData }, { rejectWithValue }) => {
     try {
-      // Ensure documentType is included in the update
-      const billDataWithType = {
+      // Transform customerName to clientName for backend compatibility
+      const transformedData = {
         ...billData,
+        clientName: billData.customerName,
         documentType: billData.documentType || 'Invoice'
       };
+      delete transformedData.customerName; // Remove the old field
       
-      const response = await API.put(`/api/interior/bills/${id}`, billDataWithType);
+      const response = await API.put(`/api/interior/bills/${id}`, transformedData);
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);

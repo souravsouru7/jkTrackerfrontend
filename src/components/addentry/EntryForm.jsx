@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { addEntry, updateEntry } from "../../store/slice/entrySlice";
 import { fetchProjects } from "../../store/slice/projectSlice";
-import { Plus, Mic, MicOff, AlertCircle, X } from "lucide-react";
+import { Plus, Mic, MicOff, AlertCircle, X, FileText } from "lucide-react";
 
 // Entry Form Component
 const EntryForm = ({ entry, onClose }) => {
@@ -31,6 +31,9 @@ const EntryForm = ({ entry, onClose }) => {
   const [recognition, setRecognition] = useState(null);
   const [feedback, setFeedback] = useState("");
   const [showCustomCategory, setShowCustomCategory] = useState(false);
+
+  // Add state for payment bill
+  const [generateBill, setGenerateBill] = useState(false);
 
   // Category Options
   const categoryOptions = {
@@ -66,6 +69,13 @@ const EntryForm = ({ entry, onClose }) => {
       customCategory: "",
     }));
     setShowCustomCategory(false);
+  }, [formData.type]);
+
+  // Reset generateBill when type changes
+  useEffect(() => {
+    if (formData.type !== 'Income') {
+      setGenerateBill(false);
+    }
   }, [formData.type]);
 
   // Handle category change
@@ -227,17 +237,16 @@ const EntryForm = ({ entry, onClose }) => {
         userId: userId,
         amount: parseFloat(formData.amount),
         date: new Date().toISOString(),
+        // Only include generateBill if type is Income and checkbox is checked
+        ...(formData.type === 'Income' && { generateBill })
       };
 
       if (entry) {
-        await dispatch(
-          updateEntry({ id: entry._id, updates: entryData })
-        ).unwrap();
+        await dispatch(updateEntry({ id: entry._id, updates: entryData})).unwrap();
       } else {
         await dispatch(addEntry(entryData)).unwrap();
       }
 
-      // Call onClose after successful submission
       if (onClose) {
         onClose();
       }
@@ -430,6 +439,27 @@ const EntryForm = ({ entry, onClose }) => {
                   />
                 </div>
               </div>
+
+              {/* Only show Payment Bill Generation Option for Income entries */}
+              {formData.type === 'Income' && (
+                <div className="sm:col-span-2">
+                  <label className="flex items-center space-x-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={generateBill}
+                      onChange={(e) => setGenerateBill(e.target.checked)}
+                      className="form-checkbox h-5 w-5 text-[#B08968] rounded border-[#B08968]/30 focus:ring-[#B08968]"
+                    />
+                    <span className="text-[#7F5539] flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      Generate Payment Bill
+                    </span>
+                  </label>
+                  <p className="text-sm text-[#B08968] mt-1 ml-8">
+                    A PDF payment bill will be generated and downloaded automatically
+                  </p>
+                </div>
+              )}
             </div>
           </form>
         </div>

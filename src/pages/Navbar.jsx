@@ -84,7 +84,6 @@ const Navbar = () => {
     { name: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
     { name: "Entries", icon: FileText, path: "/entries" },
     { name: "Create Bill", icon: PlusCircle, path: "/create-bill" },
-    { name: "Payment Bill", icon: Receipt, path: "/payment-bill" },
     { name: "Balance Sheet", icon: Calculator, path: "/balance-sheet" }
   ];
 

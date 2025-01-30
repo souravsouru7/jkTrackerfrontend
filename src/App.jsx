@@ -10,7 +10,7 @@ import BalanceSheet from './components/balance/BalanceSheet';
 import CreateBill from './components/bill/CreateBill';
 import EditBill from './components/bill/EditBill';
 import BillsList from './components/bill/BillsList';
-import PaymentBill from './pages/PaymentBill';
+
 
 // PrivateRoute Component
 const PrivateRoute = ({ element }) => {
@@ -70,10 +70,7 @@ function App() {
                     path="/bills" 
                     element={<PrivateRoute element={<BillsList />} />} 
                 />
-                <Route 
-                    path="/payment-bill" 
-                    element={<PrivateRoute element={<PaymentBill />} />} 
-                />
+             
             </Routes>
         </Router>
     );

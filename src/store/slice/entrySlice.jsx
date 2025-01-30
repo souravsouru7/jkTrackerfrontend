@@ -64,7 +64,32 @@ export const addEntry = createAsyncThunk(
       }
 
       const { data } = await API.post('/entries', validatedEntry);
-      return validateEntry(data);
+      
+      // Only handle PDF download if it's an income entry AND generateBill is true
+      if (data.paymentBill && validatedEntry.type === 'Income' && validatedEntry.generateBill === true) {
+        // Convert base64 to Blob directly without using Buffer
+        const byteCharacters = atob(data.paymentBill.data);
+        const byteNumbers = new Array(byteCharacters.length);
+        
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        
+        const byteArray = new Uint8Array(byteNumbers);
+        const pdfBlob = new Blob([byteArray], { type: 'application/pdf' });
+        
+        // Create download link
+        const url = window.URL.createObjectURL(pdfBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `payment-bill-${data.entry._id}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }
+
+      return validateEntry(data.entry || data);
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);
     }
