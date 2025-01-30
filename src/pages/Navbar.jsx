@@ -233,18 +233,6 @@ const Navbar = () => {
                     <FileText size={16} />
                     Create Quotation
                   </button>
-                  <div className="w-full h-px bg-[#B08968]/20 my-2"></div>
-                  <button
-                    onClick={() => handleNavigation('/payment-bill')}
-                    className={`w-full px-4 py-2 text-left text-sm hover:bg-[#F5EBE0] flex items-center gap-2 ${
-                      location.pathname === '/payment-bill'
-                        ? 'text-[#8B5E34] bg-[#F5EBE0]'
-                        : 'text-[#7F5539]'
-                    }`}
-                  >
-                    <Receipt size={16} />
-                    Payment Bill
-                  </button>
                 </div>
               )}
             </div>
@@ -273,7 +261,6 @@ const Navbar = () => {
                   <Plus size={16} />
                   Create Project
                 </button>
-                <div className="w-full h-px bg-[#B08968]/20 my-2"></div>
                 <button
                   onClick={handleLogout}
                   className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 flex items-center gap-2 text-red-600"
