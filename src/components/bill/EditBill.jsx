@@ -14,12 +14,15 @@ const EditBill = () => {
   const [formData, setFormData] = useState({
     billNumber: '',
     billDate: new Date().toISOString().split('T')[0],
-    customerName: '',
+    title: 'Mr',
+    clientName: '',
+    clientEmail: '',
+    clientPhone: '',
+    clientAddress: '',
     items: [{
       particular: '',
       description: 'Providing and fixing of Table with 12mm plywood with necessary laminate and hardware',
       unit: 'Sft',
-      
       width: 0,
       height: 0,
       sft: 0,
@@ -117,8 +120,8 @@ const EditBill = () => {
   return (
     <>
       <Navbar/>
-      <div className="min-h-screen bg-gradient-to-br from-[#F5EBE0] via-[#E6CCB2] to-[#DDB892]">
-        <div className="p-4 md:p-8 max-w-7xl mx-auto">
+      <div className="min-h-screen bg-gradient-to-br from-[#F5EBE0] via-[#E6CCB2] to-[#DDB892] pt-16 md:pt-0">
+        <div className="p-4 md:p-8 max-w-7xl mx-auto pb-20 md:pb-8">
           <div className="bg-white/30 backdrop-blur-md rounded-2xl shadow-xl border border-[#B08968]/20 p-6 md:p-8">
             {message.text && (
               <div className={`mb-4 p-4 rounded-lg ${
@@ -135,18 +138,94 @@ const EditBill = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Customer Details */}
-              <div className="space-y-4">
-                <label className="block">
-                  <span className="text-[#7F5539] font-medium">Customer Name</span>
-                  <input
-                    type="text"
-                    value={formData.customerName}
-                    onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-[#B08968] shadow-sm focus:border-[#7F5539] focus:ring focus:ring-[#7F5539] focus:ring-opacity-50"
-                    required
-                  />
-                </label>
+              {/* Bill Details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-4">
+                  <h2 className="text-xl font-semibold text-[#7F5539]">Bill Details</h2>
+                  
+                  <label className="block">
+                    <span className="text-[#7F5539]">Bill Number</span>
+                    <input
+                      type="text"
+                      value={formData.billNumber}
+                      disabled
+                      className="mt-1 block w-full rounded-md border-[#B08968] bg-gray-100 shadow-sm"
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="text-[#7F5539]">Bill Date</span>
+                    <input
+                      type="date"
+                      value={formData.billDate}
+                      onChange={(e) => setFormData({ ...formData, billDate: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-[#B08968] shadow-sm focus:border-[#7F5539] focus:ring focus:ring-[#7F5539] focus:ring-opacity-50"
+                    />
+                  </label>
+                </div>
+
+                {/* Customer Details */}
+                <div className="space-y-4">
+                  <h2 className="text-xl font-semibold text-[#7F5539]">Customer Details</h2>
+                  
+                  <div className="flex gap-4">
+                    <label className="block w-24">
+                      <span className="text-[#7F5539]">Title</span>
+                      <select
+                        value={formData.title}
+                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                        className="mt-1 block w-full rounded-md border-[#B08968] shadow-sm focus:border-[#7F5539] focus:ring focus:ring-[#7F5539] focus:ring-opacity-50"
+                      >
+                        <option value="Mr">Mr</option>
+                        <option value="Ms">Ms</option>
+                      </select>
+                    </label>
+
+                    <label className="block flex-1">
+                      <span className="text-[#7F5539]">Name</span>
+                      <input
+                        type="text"
+                        value={formData.clientName}
+                        onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
+                        className="mt-1 block w-full rounded-md border-[#B08968] shadow-sm focus:border-[#7F5539] focus:ring focus:ring-[#7F5539] focus:ring-opacity-50"
+                        required
+                      />
+                    </label>
+                  </div>
+
+                  <label className="block">
+                    <span className="text-[#7F5539]">Email</span>
+                    <input
+                      type="email"
+                      value={formData.clientEmail}
+                      onChange={(e) => setFormData({ ...formData, clientEmail: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-[#B08968] shadow-sm focus:border-[#7F5539] focus:ring focus:ring-[#7F5539] focus:ring-opacity-50"
+                      required
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="text-[#7F5539]">Phone</span>
+                    <input
+                      type="tel"
+                      value={formData.clientPhone}
+                      onChange={(e) => setFormData({ ...formData, clientPhone: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-[#B08968] shadow-sm focus:border-[#7F5539] focus:ring focus:ring-[#7F5539] focus:ring-opacity-50"
+                      required
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="text-[#7F5539]">Address</span>
+                    <textarea
+                      value={formData.clientAddress}
+                      onChange={(e) => setFormData({ ...formData, clientAddress: e.target.value })}
+                      rows="3"
+                      className="mt-1 block w-full rounded-md border-[#B08968] shadow-sm focus:border-[#7F5539] focus:ring focus:ring-[#7F5539] focus:ring-opacity-50"
+                      required
+                    />
+                  </label>
+                </div>
               </div>
 
               {/* Items */}
@@ -278,8 +357,8 @@ const EditBill = () => {
                 </div>
               </div>
 
-              {/* Submit Button */}
-              <div className="flex justify-end space-x-4">
+              {/* Submit Buttons */}
+              <div className="flex justify-end space-x-4 mb-4 md:mb-0">
                 <button
                   type="button"
                   onClick={() => navigate('/bills')}

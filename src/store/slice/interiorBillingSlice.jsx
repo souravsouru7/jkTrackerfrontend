@@ -102,7 +102,7 @@ export const updateBill = createAsyncThunk(
       // Transform customerName to clientName for backend compatibility
       const transformedData = {
         ...billData,
-        clientName: billData.customerName,
+        clientName: billData.clientName,
         documentType: billData.documentType || 'Invoice'
       };
       delete transformedData.customerName; // Remove the old field

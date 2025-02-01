@@ -18,7 +18,7 @@ import {
   updateProjectBudget,
 } from "../store/slice/projectSlice";
 import { fetchEntries } from '../store/slice/entrySlice';
-import { Menu, X, Plus, Trash2, ChevronRight } from "lucide-react";
+import { Menu, X, Plus, Trash2, ChevronRight, DollarSign, TrendingUp, TrendingDown } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   PieChart, Pie, Cell, ResponsiveContainer,
@@ -146,10 +146,12 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject 
   const dispatch = useDispatch();
   const [editingBudget, setEditingBudget] = useState(null);
   const [budgetValue, setBudgetValue] = useState("");
+  const [showActions, setShowActions] = useState(null);
 
   const handleBudgetEdit = (project) => {
     setEditingBudget(project._id);
     setBudgetValue(project.budget.toString());
+    setShowActions(null);
   };
 
   const handleBudgetSave = async (projectId) => {
@@ -168,20 +170,32 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject 
     setBudgetValue("");
   };
 
+  // Close actions menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.project-actions')) {
+        setShowActions(null);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
   return (
     <motion.div variants={containerVariants} className="space-y-4">
       {projects.map((project) => (
         <motion.div
           key={project._id}
           variants={itemVariants}
-          className={`p-4 rounded-lg shadow-md ${
+          className={`p-4 rounded-lg shadow-md relative ${
             selectedProject?._id === project._id
               ? "bg-[#B08968]/20 border-2 border-[#B08968]"
               : "bg-white"
           }`}
         >
           <div className="flex justify-between items-center">
-            <div className="flex-1">
+            <div className="flex-1" onClick={() => onSelect(project)}>
               <h3 className="text-lg font-semibold text-[#7F5539]">{project.name}</h3>
               <p className="text-sm text-gray-600">{project.description}</p>
               
@@ -208,38 +222,62 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject 
                   </button>
                 </div>
               ) : (
-                <div className="mt-2 flex items-center space-x-2">
-                  <span className="text-sm text-gray-600">
-                    Budget: ${project.budget.toLocaleString()}
-                  </span>
-                  <button
-                    onClick={() => handleBudgetEdit(project)}
-                    className="text-sm text-[#B08968] hover:text-[#7F5539]"
-                  >
-                    Edit
-                  </button>
-                </div>
+                <p className="mt-2 text-sm text-gray-600">
+                  Budget: ${project.budget.toLocaleString()}
+                </p>
               )}
             </div>
             
-            <div className="flex items-center space-x-2">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => onSelect(project)}
-                className="p-2 text-[#B08968] hover:text-[#7F5539]"
-              >
-                <ChevronRight size={20} />
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => onDelete(project._id)}
-                className="p-2 text-red-500 hover:text-red-700"
-              >
-                <Trash2 size={20} />
-              </motion.button>
-            </div>
+            {selectedProject?._id === project._id && (
+              <div className="relative project-actions">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowActions(showActions === project._id ? null : project._id);
+                  }}
+                  className="p-2 text-[#B08968] hover:text-[#7F5539]"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+                    />
+                  </svg>
+                </motion.button>
+
+                {showActions === project._id && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-10"
+                  >
+                    <button
+                      onClick={() => handleBudgetEdit(project)}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Edit Budget
+                    </button>
+                    <button
+                      onClick={() => onDelete(project._id)}
+                      className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100"
+                    >
+                      Delete Project
+                    </button>
+                  </motion.div>
+                )}
+              </div>
+            )}
           </div>
         </motion.div>
       ))}
@@ -247,98 +285,102 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject 
   );
 });
 
-const FinancialSummary = React.memo(({ summary, selectedProject }) => {
-  const [showExpenseDetails, setShowExpenseDetails] = useState(false);
-  const dispatch = useDispatch();
-  const { entries } = useSelector(state => state.entries);
-  const [loading, setLoading] = useState(false);
-
-  const budget = Number(selectedProject?.budget) || 0;
-  const totalIncome = Number(summary?.totalIncome) || 0;
-  const totalExpenses = Number(summary?.totalExpenses) || 0;
-  const netBalance = Number(summary?.netBalance) || 0;
-  const remainingPayment = Math.max(budget - totalIncome, 0);
-
+const FinancialSummary = React.memo(({ summary }) => {
   const cards = [
     {
-      title: "Budget",
-      value: budget,
+      title: "Total Balance",
+      value: summary?.totalBalance || 0,
       gradient: "from-[#B08968] to-[#9C6644]",
-      icon: (
-        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      )
+      icon: <DollarSign className="w-8 h-8 text-white/80" />,
+      onClick: () => {}
+    },
+    {
+      title: "Total Income",
+      value: summary?.totalIncome || 0,
+      gradient: "from-[#9C6644] to-[#7F5539]",
+      icon: <TrendingUp className="w-6 h-6 text-white/80" />,
+      onClick: () => {}
     },
     {
       title: "Total Expenses",
-      value: totalExpenses,
-      gradient: "from-[#7F5539] to-[#6B4423]",
-      icon: (
-        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-      onClick: () => setShowExpenseDetails(true)
-    },
-    {
-      title: "Payment Received",
-      value: totalIncome,
-      gradient: "from-[#9C6644] to-[#8B4513]",
-      icon: (
-        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-        </svg>
-      )
-    },
-    {
-      title: "Remaining Payment",
-      value: remainingPayment,
-      gradient: "from-[#B08968] to-[#9C6644]",
-      icon: (
-        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      )
+      value: summary?.totalExpenses || 0,
+      gradient: "from-[#7F5539] to-[#B08968]",
+      icon: <TrendingDown className="w-6 h-6 text-white/80" />,
+      onClick: () => {}
     }
   ];
 
-  useEffect(() => {
-    if (showExpenseDetails && selectedProject?._id) {
-      setLoading(true);
-      dispatch(fetchEntries())
-        .then(() => setLoading(false))
-        .catch(() => setLoading(false));
-    }
-  }, [showExpenseDetails, selectedProject?._id, dispatch]);
-
-  const expenseEntries = useMemo(() => {
-    return entries?.filter(entry => entry.type.toLowerCase() === 'expense') || [];
-  }, [entries]);
-
-  console.log('Expense Entries:', expenseEntries); // Debug log
-
   return (
-    <>
+    <div className="p-4">
       {/* Mobile View */}
-      <div className="block sm:hidden p-4 space-y-6">
+      <div className="block md:hidden space-y-4">
+        {/* Large Total Balance Card */}
+        <motion.div
+          variants={cardVariants}
+          className={`p-6 rounded-xl bg-gradient-to-r from-[#B08968] to-[#9C6644] text-white`}
+        >
+          <div className="flex justify-between items-start mb-2">
+          <div>
+                <p className="text-sm font-medium opacity-90">Total Income</p>
+                <h3 className="text-xl font-bold mt-1">
+                  ₹{(summary?.totalIncome || 0).toLocaleString('en-IN')}
+                </h3>
+              </div>
+            <DollarSign className="w-8 h-8 text-white/80" />
+          </div>
+          <button className="mt-4 text-sm text-white/80 flex items-center gap-1">
+            View Details <ChevronRight size={16} />
+          </button>
+        </motion.div>
+
+        {/* Income and Expense Cards Grid */}
+        <div className="grid grid-cols-2 gap-4">
+          <motion.div
+            variants={cardVariants}
+            className="p-4 rounded-xl bg-gradient-to-r from-[#9C6644] to-[#7F5539] text-white"
+          >
+            <div className="flex justify-between items-center">
+            <div>
+              <p className="text-lg font-medium opacity-90">Total Balance</p>
+              <h3 className="text-4xl font-bold mt-2">
+                ₹{(summary?.totalBalance || 0).toLocaleString('en-IN')}
+              </h3>
+            </div>
+              
+              <TrendingUp className="w-6 h-6 text-white/80" />
+            </div>
+          </motion.div>
+
+          <motion.div
+            variants={cardVariants}
+            className="p-4 rounded-xl bg-gradient-to-r from-[#7F5539] to-[#B08968] text-white"
+          >
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-sm font-medium opacity-90">Total Expenses</p>
+                <h3 className="text-xl font-bold mt-1">
+                  ₹{(summary?.totalExpenses || 0).toLocaleString('en-IN')}
+                </h3>
+              </div>
+              <TrendingDown className="w-6 h-6 text-white/80" />
+            </div>
+          </motion.div>
+        </div>
+      </div>
+
+      {/* Desktop View - remains unchanged */}
+      <div className="hidden md:grid md:grid-cols-3 gap-4">
         {cards.map((card, index) => (
           <motion.div
             key={index}
             variants={cardVariants}
-            custom={index}
-            onClick={card.onClick}
-            className={`p-4 rounded-lg bg-gradient-to-r ${card.gradient} text-white cursor-pointer`}
+            className={`p-6 rounded-xl bg-gradient-to-r ${card.gradient} text-white`}
           >
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-sm font-medium mb-1">{card.title}</p>
-                <h3 className={`font-bold ${
-                  card.title === "Payment Received" ? "text-3xl" : 
-                  card.title === "Total Balance" ? "text-2xl" : 
-                  "text-xl"
-                }`}>
-                  ₹{card.value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                <p className="text-lg font-medium">{card.title}</p>
+                <h3 className="text-2xl font-bold mt-2">
+                  ₹{card.value.toLocaleString('en-IN')}
                 </h3>
               </div>
               {card.icon}
@@ -346,119 +388,7 @@ const FinancialSummary = React.memo(({ summary, selectedProject }) => {
           </motion.div>
         ))}
       </div>
-
-      {/* Desktop View */}
-      <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4">
-        {cards.map((card, index) => (
-          <motion.div
-            key={index}
-            variants={cardVariants}
-            custom={index}
-            onClick={card.onClick}
-            className={`p-4 rounded-lg bg-gradient-to-r ${card.gradient} text-white cursor-pointer`}
-          >
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="text-sm font-medium mb-1">{card.title}</p>
-                <h3 className="text-2xl font-bold">
-                  ₹{card.value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-                </h3>
-              </div>
-              {card.icon}
-            </div>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Expense Modal */}
-      <AnimatePresence>
-        {showExpenseDetails && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
-              onClick={() => setShowExpenseDetails(false)}
-            />
-            <motion.div
-              initial={{ opacity: 0, x: '100%' }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: '100%' }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="fixed top-0 right-0 h-full w-full sm:w-[90%] max-w-md bg-white shadow-xl z-50 overflow-hidden flex flex-col"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex justify-between items-center p-4 border-b border-gray-100">
-                <h2 className="text-xl font-semibold text-[#7F5539]">Expense Details</h2>
-                <button 
-                  onClick={() => setShowExpenseDetails(false)}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  <X size={24} className="text-gray-500" />
-                </button>
-              </div>
-              <div className="p-4 space-y-6 overflow-y-auto flex-1">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="bg-[#7F5539]/10 p-4 rounded-lg">
-                    <h3 className="text-sm font-medium text-[#7F5539] mb-2">Total Expenses</h3>
-                    <p className="text-2xl font-bold text-[#7F5539]">
-                      ₹{totalExpenses.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-                    </p>
-                  </div>
-                  <div className="bg-[#7F5539]/5 p-4 rounded-lg">
-                    <h3 className="text-sm font-medium text-[#7F5539] mb-2">Budget Utilization</h3>
-                    <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
-                      <div
-                        className="bg-[#7F5539] h-2.5 rounded-full transition-all duration-500"
-                        style={{ width: `${Math.min((totalExpenses / budget) * 100, 100)}%` }}
-                      />
-                    </div>
-                    <p className="text-sm text-gray-600">
-                      {Math.round((totalExpenses / budget) * 100)}% of budget used
-                    </p>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold text-[#7F5539] mb-4">All Expenses</h3>
-                  <div className="space-y-3">
-                    {loading ? (
-                      <div className="flex justify-center items-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#7F5539]"></div>
-                      </div>
-                    ) : expenseEntries && expenseEntries.length > 0 ? (
-                      expenseEntries.map((expense, index) => (
-                        <div
-                          key={expense._id || index}
-                          className="bg-white rounded-lg p-4 shadow-sm border border-gray-100 hover:border-[#7F5539]/30 transition-colors"
-                        >
-                          <div className="flex justify-between items-center gap-4">
-                            <div>
-                              <h4 className="text-lg font-bold text-[#7F5539]">{expense.category || 'No category'}</h4>
-                              <p className="text-sm text-gray-500">
-                                {expense.date ? new Date(expense.date).toLocaleDateString() : 'No date'}
-                              </p>
-                            </div>
-                            <p className="text-lg font-semibold text-[#7F5539] whitespace-nowrap">
-                              ₹{Number(expense.amount || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-                            </p>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-center py-8 text-gray-500">
-                        No expenses found
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </>
+    </div>
   );
 });
 
@@ -1024,7 +954,7 @@ const Dashboard = () => {
 
           {selectedProject && (
             <>
-              <FinancialSummary summary={balanceSummary} selectedProject={selectedProject} />
+              <FinancialSummary summary={balanceSummary} />
               <Charts
                 monthlyExpenses={monthlyExpenses}
                 incomeVsExpense={incomeVsExpense}

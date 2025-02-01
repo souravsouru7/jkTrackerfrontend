@@ -127,18 +127,21 @@ const CreateBill = () => {
     <div className="min-h-screen bg-gradient-to-br from-[#F5EBE0] via-[#E6CCB2] to-[#DDB892] pt-14 md:pt-0">
       <div className="p-2 sm:p-4 md:p-8 max-w-7xl mx-auto">
         <div className="bg-white/30 backdrop-blur-md rounded-2xl shadow-xl border border-[#B08968]/20 p-3 sm:p-6 md:p-8">
-          {/* Company Header */}
-          <div className="mb-8 text-center relative">
+          {/* Company Header - Updated for better mobile layout */}
+          <div className="mb-8 text-center relative pt-12 sm:pt-0"> {/* Added pt-12 for mobile */}
             <button
               onClick={(e) => {
                 e.preventDefault();
                 navigate('/bills');
               }}
-              className="absolute left-0 top-0 flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-[#7F5539] text-white text-sm sm:text-base rounded-lg hover:bg-[#9C6644] transition-colors duration-300"
+              className="absolute left-0 -top-2 sm:top-0 flex items-center gap-2 px-2 py-1 sm:px-4 sm:py-2 bg-[#7F5539] text-white text-xs sm:text-base rounded-lg hover:bg-[#9C6644] transition-colors duration-300 whitespace-nowrap"
             >
-              <List size={16} /> <span className="hidden sm:inline">View All Bills</span>
+              <List size={14} className="sm:size-16" /> 
+              <span>View Bills</span> {/* Removed conditional rendering for better mobile display */}
             </button>
-            <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold text-[#7F5539] mb-2">{formData.companyDetails.name}</h1>
+
+            {/* Rest of the header content */}
+            <h1 className="text-xl sm:text-4xl md:text-5xl font-bold text-[#7F5539] mb-2">{formData.companyDetails.name}</h1>
             <p className="text-sm sm:text-base text-[#9C6644]">{formData.companyDetails.address}</p>
             <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mt-2">
               {formData.companyDetails.phones.map(phone => (
