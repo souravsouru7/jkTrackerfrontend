@@ -47,32 +47,27 @@ const AIChatModal = () => {
 
   return (
     <>
-      {/* Draggable Chat Toggle Button */}
-      <motion.button
-        drag
-        dragMomentum={false}
-        dragConstraints={{
-          top: -window.innerHeight + 40,
-          left: -window.innerWidth + 40,
-          right: window.innerWidth - 40,
-          bottom: window.innerHeight - 40
-        }}
-        initial={{ x: position.x, y: position.y }}
-        animate={{ x: position.x, y: position.y }}
-        onDragEnd={(event, info) => {
-          const newPosition = {
-            x: position.x + info.offset.x,
-            y: position.y + info.offset.y
-          };
-          setPosition(newPosition);
-        }}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95, cursor: 'grabbing' }}
-        onClick={() => dispatch(toggleChat())}
-        className="fixed top-0 left-0 w-10 h-10 bg-[#9C6644]/90 hover:bg-[#7F5539] text-white rounded-full shadow-lg flex items-center justify-center z-50 transition-colors duration-200 cursor-grab"
-      >
-        <MessageSquare size={20} />
-      </motion.button>
+      {/* Chat Toggle Button - Moved higher up */}
+      {!isOpen && (
+        <div className="fixed bottom-40 right-4 z-[9999]">
+          <motion.button
+            drag
+            dragMomentum={false}
+            dragConstraints={{
+              top: -window.innerHeight + 40,
+              left: -window.innerWidth + 40,
+              right: 0,
+              bottom: 0
+            }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => dispatch(toggleChat())}
+            className="w-9 h-9 bg-[#B08968] hover:bg-[#9C6644] text-white rounded-full shadow-lg flex items-center justify-center transition-colors duration-200"
+          >
+            <MessageSquare size={16} />
+          </motion.button>
+        </div>
+      )}
 
       {/* Chat Modal */}
       <AnimatePresence>
@@ -82,20 +77,23 @@ const AIChatModal = () => {
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="fixed bottom-24 right-6 w-96 h-[500px] bg-white rounded-lg shadow-2xl flex flex-col z-40"
+            className="fixed inset-0 md:inset-auto md:bottom-24 md:right-6 md:w-96 md:h-[500px] bg-white flex flex-col rounded-lg shadow-lg"
+            style={{ zIndex: 9998 }}
           >
             {/* Header */}
-            <div className="flex justify-between items-center p-4 border-b">
+            <div className="flex justify-between items-center p-4 border-b bg-white sticky top-0 z-10">
               <h3 className="text-lg font-semibold text-[#7F5539]">AI Assistant</h3>
-              <button
-                onClick={() => dispatch(toggleChat())}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X size={20} />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => dispatch(toggleChat())}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X size={20} />
+                </button>
+              </div>
             </div>
 
-            {/* Messages */}
+            {/* Messages Container */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {messages.map((msg, index) => (
                 <div key={index} className="space-y-2">
@@ -125,26 +123,26 @@ const AIChatModal = () => {
               <div ref={chatEndRef} />
             </div>
 
-            {/* Input */}
-            <form onSubmit={handleSubmit} className="p-4 border-t">
-              <div className="flex gap-2">
+            {/* Input Box - Fixed at bottom */}
+            <div className="border-t bg-white p-4 sticky bottom-0 z-10">
+              <form onSubmit={handleSubmit} className="relative">
                 <input
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Type your message..."
-                  className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-[#B08968]"
+                  className="w-full pr-12 pl-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:border-[#B08968]"
                   disabled={loading}
                 />
                 <button
                   type="submit"
                   disabled={loading}
-                  className="bg-[#B08968] text-white p-2 rounded-lg hover:bg-[#9C6644] transition-colors"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-[#B08968] text-white p-2 rounded-lg hover:bg-[#9C6644] transition-colors"
                 >
                   <Send size={20} />
                 </button>
-              </div>
-            </form>
+              </form>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
