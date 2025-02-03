@@ -28,6 +28,7 @@ import {
 import { fetchFinancialSummary } from '../store/slice/fincialSlice';
 import FinancialOverview from './FinancialOverview';
 import Navbar from './Navbar';
+import AIChatModal from '../components/AIChatModal';
 
 const EntryForm = lazy(() => import("../components/addentry/EntryForm"));
 
@@ -321,11 +322,12 @@ const FinancialSummary = React.memo(({ summary }) => {
         >
           <div className="flex justify-between items-start mb-2">
           <div>
-                <p className="text-sm font-medium opacity-90">Total Income</p>
-                <h3 className="text-xl font-bold mt-1">
-                  ₹{(summary?.totalIncome || 0).toLocaleString('en-IN')}
-                </h3>
-              </div>
+              <p className="text-lg font-medium opacity-90">Total Balance</p>
+              <h3 className="text-4xl font-bold mt-2">
+                ₹{(summary?.totalBalance || 0).toLocaleString('en-IN')}
+              </h3>
+            </div>
+         
             <DollarSign className="w-8 h-8 text-white/80" />
           </div>
           <button className="mt-4 text-sm text-white/80 flex items-center gap-1">
@@ -341,11 +343,11 @@ const FinancialSummary = React.memo(({ summary }) => {
           >
             <div className="flex justify-between items-center">
             <div>
-              <p className="text-lg font-medium opacity-90">Total Balance</p>
-              <h3 className="text-4xl font-bold mt-2">
-                ₹{(summary?.totalBalance || 0).toLocaleString('en-IN')}
-              </h3>
-            </div>
+                <p className="text-sm font-medium opacity-90">Total Income</p>
+                <h3 className="text-xl font-bold mt-1">
+                  ₹{(summary?.totalIncome || 0).toLocaleString('en-IN')}
+                </h3>
+              </div>
               
               <TrendingUp className="w-6 h-6 text-white/80" />
             </div>
@@ -966,7 +968,7 @@ const Dashboard = () => {
 
           <button
             onClick={() => setIsEntryModalOpen(true)}
-            className="fixed bottom-6 right-6 w-14 h-14 bg-[#B08968] text-white rounded-full shadow-xl flex items-center justify-center"
+            className="fixed md:bottom-6 bottom-20 right-6 w-14 h-14 bg-[#B08968] text-white rounded-full shadow-xl flex items-center justify-center z-50"
           >
             <Plus size={24} />
           </button>
@@ -996,6 +998,7 @@ const Dashboard = () => {
           </Suspense>
         </motion.div>
       </div>
+      <AIChatModal />
     </div>
   );
 };

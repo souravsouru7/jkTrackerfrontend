@@ -7,6 +7,8 @@ import analyticsReducer from './slice/analyticsSlice';
 import projectReducer from './slice/projectSlice';
 import interiorBillingSlice from "./slice/interiorBillingSlice"
 import summaryReducer from './slice/fincialSlice';
+import chatReducer from './slice/chatSlice';
+
 const store = configureStore({
     reducer: {
         auth: authReducer,
@@ -15,8 +17,8 @@ const store = configureStore({
         analytics: analyticsReducer,
         projects: projectReducer,
         interiorBilling: interiorBillingSlice,
-        summary: summaryReducer
-
+        summary: summaryReducer,
+        chat: chatReducer
     },
 });
 

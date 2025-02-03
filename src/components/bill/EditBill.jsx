@@ -13,8 +13,9 @@ const EditBill = () => {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [formData, setFormData] = useState({
     billNumber: '',
+    documentType: 'Invoice',
     billDate: new Date().toISOString().split('T')[0],
-    title: 'Mr',
+    title: 'None',
     clientName: '',
     clientEmail: '',
     clientPhone: '',
@@ -138,6 +139,24 @@ const EditBill = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Document Type Selection */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-4">
+                  <label className="block">
+                    <span className="text-[#7F5539]">Document Type</span>
+                    <select
+                      value={formData.documentType}
+                      onChange={(e) => setFormData({ ...formData, documentType: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-[#B08968] shadow-sm focus:border-[#7F5539] focus:ring focus:ring-[#7F5539] focus:ring-opacity-50"
+                    >
+                      <option value="Invoice">Invoice</option>
+                      <option value="Estimate">Estimate</option>
+                      <option value="Quotation">Quotation</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+
               {/* Bill Details */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-4">
@@ -176,6 +195,7 @@ const EditBill = () => {
                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                         className="mt-1 block w-full rounded-md border-[#B08968] shadow-sm focus:border-[#7F5539] focus:ring focus:ring-[#7F5539] focus:ring-opacity-50"
                       >
+                        <option value="None">None</option>
                         <option value="Mr">Mr</option>
                         <option value="Ms">Ms</option>
                       </select>

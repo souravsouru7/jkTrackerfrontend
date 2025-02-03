@@ -17,7 +17,7 @@ const CreateBill = () => {
     billNumber: '',
     documentType: location.state?.documentType || 'Invoice',
     billDate: new Date().toISOString().split('T')[0],
-    title: 'Mr',
+    title: 'None',
     clientName: '',
     clientEmail: '',
     clientPhone: '',
@@ -189,6 +189,7 @@ const CreateBill = () => {
                     onChange={(e) => setFormData({...formData, title: e.target.value})}
                     required
                   >
+                    <option value="None">None</option>
                     <option value="Mr">Mr</option>
                     <option value="Ms">Ms</option>
                   </select>
