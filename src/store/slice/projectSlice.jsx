@@ -6,7 +6,7 @@ const API_URL = config.API_URL;
 
 const getAuthHeader = () => {
   const token = localStorage.getItem('token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  return token ? { 'x-auth-token': token } : {};
 };
 
 export const fetchProjects = createAsyncThunk('projects/fetchProjects', async (userId) => {

@@ -6,7 +6,7 @@ const BASE_URL = config.API_URL;
 
 const getAuthHeader = () => {
   const token = localStorage.getItem('token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  return token ? { 'x-auth-token': token } : {};
 };
 
 // Helper function to format monthly expenses data

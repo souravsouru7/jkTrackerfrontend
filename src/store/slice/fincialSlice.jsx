@@ -11,7 +11,7 @@ export const fetchFinancialSummary = createAsyncThunk(
     const response = await axios.get(
       `${API_URL}/api/projects/project-summary?userId=${userId}`,
       {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 'x-auth-token': token }
       }
     );
     return response.data;
