@@ -25,11 +25,12 @@ export const fetchProjects = createAsyncThunk('projects/fetchProjects', async (u
 
 export const createProject = createAsyncThunk('projects/createProject', async (projectData) => {
   try {
+    const token = localStorage.getItem('token');
     const response = await axios.post(`${API_URL}/api/projects`, {
       ...projectData,
       budget: Number(projectData.budget) || 0
     }, {
-      headers: getAuthHeader()
+      headers: { 'x-auth-token': token }
     });
     return response.data.project;
   } catch (error) {

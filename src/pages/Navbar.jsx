@@ -38,7 +38,7 @@ const Navbar = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'x-auth-token': token
         },
         body: JSON.stringify({
           name: projectName,
@@ -56,7 +56,9 @@ const Navbar = () => {
         // Optionally refresh the page or update projects list
         window.location.reload();
       } else {
-        console.error('Failed to create project');
+        const error = await response.json();
+        console.error('Failed to create project:', error);
+        throw new Error(error.message || 'Failed to create project');
       }
     } catch (error) {
       console.error('Error creating project:', error);
