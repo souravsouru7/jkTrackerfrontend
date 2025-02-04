@@ -5,11 +5,12 @@ import config from '../../config';
 
 const API_URL = config.API_URL;
 
+// Fetch summary for selected project
 export const fetchBalanceSummary = createAsyncThunk(
   'balanceSheet/fetchSummary',
   async (userId, { getState }) => {
     const selectedProject = getState().projects.selectedProject;
-    if (!selectedProject) return { totalIncome: 0, totalExpenses: 0, netBalance: 0 };
+    if (!selectedProject) return null;
 
     const response = await axios.get(`${API_URL}/balance-sheet/summary`, {
       params: {
@@ -20,122 +21,89 @@ export const fetchBalanceSummary = createAsyncThunk(
     return response.data;
   }
 );
-export const fetchOverallSummary = createAsyncThunk(
-  'balanceSheet/fetchOverallSummary',
+
+// Fetch overall summary across all projects
+export const fetchTotalCalculations = createAsyncThunk(
+  'balanceSheet/fetchTotalCalculations',
   async (userId) => {
-    const response = await axios.get(`${API_URL}/balance-sheet/overall-summary`, {
+    const response = await axios.get(`${API_URL}/balance-sheet/user/total-calculations`, {
       params: { userId }
     });
     return response.data;
   }
 );
 
-export const fetchMonthlyBreakdown = createAsyncThunk(
-  'balanceSheet/fetchMonthly',
-  async ({ userId, year }, { getState }) => {
-    const selectedProject = getState().projects.selectedProject;
-    if (!selectedProject) return [];
-
-    const response = await axios.get(`${API_URL}/balance-sheet/monthly`, {
-      params: { 
-        userId,
-        year,
-        projectId: selectedProject._id 
-      }
+// Fetch detailed project balance sheet
+export const fetchProjectDetails = createAsyncThunk(
+  'balanceSheet/fetchProjectDetails',
+  async ({ userId, projectId }) => {
+    const response = await axios.get(`${API_URL}/balance-sheet/project-details/${projectId}`, {
+      params: { userId }
     });
     return response.data;
   }
 );
 
-export const fetchYearlyBreakdown = createAsyncThunk(
-  'balanceSheet/fetchYearly',
-  async (userId, { getState }) => {
-    const selectedProject = getState().projects.selectedProject;
-    if (!selectedProject) return [];
-
-    const response = await axios.get(`${API_URL}/balance-sheet/yearly`, {
-      params: { 
-        userId,
-        projectId: selectedProject._id 
-      }
-    });
-    return response.data;
-  }
-);
 const balanceSheetSlice = createSlice({
   name: 'balanceSheet',
   initialState: {
-    summary: { totalIncome: 0, totalExpenses: 0, netBalance: 0 },
-    monthlyData: [],
-    overallSummary: {
-      overall: { totalIncome: 0, totalExpenses: 0, netBalance: 0 },
-      projectWise: []
-    },
-    monthly: {
-      data: [],
+    summary: {
+      data: null,
       loading: false,
-      error: null,
+      error: null
     },
-    yearly: {
-      data: [],
+    totalCalculations: {
+      data: null,
       loading: false,
-      error: null,
+      error: null
     },
+    projectDetails: {
+      data: null,
+      loading: false,
+      error: null
+    }
   },
   reducers: {},
   extraReducers: (builder) => {
-    // Summary reducers
     builder
+      // Summary reducers
       .addCase(fetchBalanceSummary.pending, (state) => {
         state.summary.loading = true;
         state.summary.error = null;
       })
       .addCase(fetchBalanceSummary.fulfilled, (state, action) => {
         state.summary.loading = false;
-        state.summary.totalIncome = action.payload.totalIncome;
-        state.summary.totalExpenses = action.payload.totalExpenses;
-        state.summary.netBalance = action.payload.netBalance;
+        state.summary.data = action.payload;
       })
       .addCase(fetchBalanceSummary.rejected, (state, action) => {
         state.summary.loading = false;
         state.summary.error = action.error.message;
       })
-      // Monthly reducers
-      .addCase(fetchMonthlyBreakdown.pending, (state) => {
-        state.monthly.loading = true;
-        state.monthly.error = null;
+      // Total calculations reducers
+      .addCase(fetchTotalCalculations.pending, (state) => {
+        state.totalCalculations.loading = true;
+        state.totalCalculations.error = null;
       })
-      .addCase(fetchMonthlyBreakdown.fulfilled, (state, action) => {
-        state.monthly.loading = false;
-        state.monthly.data = action.payload;
+      .addCase(fetchTotalCalculations.fulfilled, (state, action) => {
+        state.totalCalculations.loading = false;
+        state.totalCalculations.data = action.payload.data;
       })
-      .addCase(fetchMonthlyBreakdown.rejected, (state, action) => {
-        state.monthly.loading = false;
-        state.monthly.error = action.error.message;
+      .addCase(fetchTotalCalculations.rejected, (state, action) => {
+        state.totalCalculations.loading = false;
+        state.totalCalculations.error = action.error.message;
       })
-      // Yearly reducers
-      .addCase(fetchYearlyBreakdown.pending, (state) => {
-        state.yearly.loading = true;
-        state.yearly.error = null;
+      // Project details reducers
+      .addCase(fetchProjectDetails.pending, (state) => {
+        state.projectDetails.loading = true;
+        state.projectDetails.error = null;
       })
-      .addCase(fetchYearlyBreakdown.fulfilled, (state, action) => {
-        state.yearly.loading = false;
-        state.yearly.data = action.payload;
+      .addCase(fetchProjectDetails.fulfilled, (state, action) => {
+        state.projectDetails.loading = false;
+        state.projectDetails.data = action.payload.data;
       })
-      .addCase(fetchYearlyBreakdown.rejected, (state, action) => {
-        state.yearly.loading = false;
-        state.yearly.error = action.error.message;
-      })
-      .addCase(fetchOverallSummary.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(fetchOverallSummary.fulfilled, (state, action) => {
-        state.loading = false;
-        state.overallSummary = action.payload;
-      })
-      .addCase(fetchOverallSummary.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message;
+      .addCase(fetchProjectDetails.rejected, (state, action) => {
+        state.projectDetails.loading = false;
+        state.projectDetails.error = action.error.message;
       });
   },
 });

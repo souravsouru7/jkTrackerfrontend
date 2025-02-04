@@ -16,13 +16,24 @@ const initialState = {
   }
 };
 
+// Add this helper function at the top
+const getAuthHeader = () => {
+  const token = localStorage.getItem('token');
+  return token ? { 'x-auth-token': token } : {};
+};
+
 export const fetchAllBills = createAsyncThunk(
   'interiorBilling/fetchAllBills',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await API.get('/api/interior/bills');
+      const response = await API.get('/api/interior/bills', {
+        headers: getAuthHeader()
+      });
       return response.data.data;
     } catch (error) {
+      if (error.response?.status === 401) {
+        throw new Error('Unauthorized access');
+      }
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch bills');
     }
   }
@@ -32,9 +43,14 @@ export const fetchBillById = createAsyncThunk(
   'interiorBilling/fetchBillById',
   async (id, { rejectWithValue }) => {
     try {
-      const response = await API.get(`/api/interior/bills/${id}`);
+      const response = await API.get(`/api/interior/bills/${id}`, {
+        headers: getAuthHeader()
+      });
       return response.data;
     } catch (error) {
+      if (error.response?.status === 401) {
+        throw new Error('Unauthorized access');
+      }
       return rejectWithValue(error.response.data);
     }
   }
@@ -45,6 +61,7 @@ export const generatePDF = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       const response = await API.get(`/api/interior/bills/${id}/pdf`, {
+        headers: getAuthHeader(),
         responseType: 'blob'
       });
 
@@ -67,6 +84,9 @@ export const generatePDF = createAsyncThunk(
       
       return id;
     } catch (error) {
+      if (error.response?.status === 401) {
+        throw new Error('Unauthorized access');
+      }
       return rejectWithValue(error.response?.data || 'Failed to generate PDF');
     }
   }
@@ -82,13 +102,18 @@ export const createBill = createAsyncThunk(
         documentType: billData.documentType || 'Invoice'
       };
       
-      const response = await API.post('/api/interior/bills', billDataWithType);
+      const response = await API.post('/api/interior/bills', billDataWithType, {
+        headers: getAuthHeader()
+      });
       if (!response.data || !response.data._id) {
         throw new Error('Invalid response from server');
       }
 
       return response.data;
     } catch (error) {
+      if (error.response?.status === 401) {
+        throw new Error('Unauthorized access');
+      }
       console.error('Create bill error:', error);
       return rejectWithValue(error.response?.data?.message || error.message || 'Failed to create bill');
     }
@@ -107,9 +132,14 @@ export const updateBill = createAsyncThunk(
       };
       delete transformedData.customerName; // Remove the old field
       
-      const response = await API.put(`/api/interior/bills/${id}`, transformedData);
+      const response = await API.put(`/api/interior/bills/${id}`, transformedData, {
+        headers: getAuthHeader()
+      });
       return response.data.data;
     } catch (error) {
+      if (error.response?.status === 401) {
+        throw new Error('Unauthorized access');
+      }
       return rejectWithValue(error.response.data);
     }
   }
