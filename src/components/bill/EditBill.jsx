@@ -289,22 +289,37 @@ const EditBill = () => {
 
                 <DragDropContext onDragEnd={onDragEnd}>
                   <Droppable droppableId="items">
-                    {(provided) => (
-                      <div {...provided.droppableProps} ref={provided.innerRef}>
+                    {(provided, snapshot) => (
+                      <div 
+                        {...provided.droppableProps} 
+                        ref={provided.innerRef}
+                        className={`space-y-4 ${snapshot.isDraggingOver ? 'bg-[#7F5539]/10 rounded-lg p-2' : ''}`}
+                      >
                         {formData.items.map((item, index) => (
                           <Draggable key={index} draggableId={`item-${index}`} index={index}>
-                            {(provided) => (
+                            {(provided, snapshot) => (
                               <div
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
-                                className="mb-4"
+                                className={`mb-4 ${
+                                  snapshot.isDragging 
+                                    ? 'shadow-lg ring-2 ring-[#7F5539] rounded-lg' 
+                                    : ''
+                                }`}
+                                style={{
+                                  ...provided.draggableProps.style,
+                                  touchAction: 'none' // Prevents scrolling while dragging on mobile
+                                }}
                               >
-                                <div className="p-4 bg-white/50 rounded-lg space-y-4">
+                                <div className={`p-4 bg-white/50 rounded-lg space-y-4 ${
+                                  snapshot.isDragging ? 'opacity-90' : ''
+                                }`}>
                                   <div className="flex justify-between items-center">
-                                    <div className="flex items-center gap-2">
-                                      <div {...provided.dragHandleProps} className="cursor-move">
-                                        <List size={16} className="text-[#7F5539]" />
-                                      </div>
+                                    <div 
+                                      {...provided.dragHandleProps} 
+                                      className="flex items-center gap-2 touch-none cursor-grab active:cursor-grabbing"
+                                    >
+                                      <List size={16} className="text-[#7F5539]" />
                                       <h3 className="font-medium text-[#7F5539]">Item {index + 1}</h3>
                                     </div>
                                     {index > 0 && (
@@ -412,6 +427,53 @@ const EditBill = () => {
                 <div className="inline-block bg-[#7F5539]/10 rounded-lg p-4">
                   <span className="text-[#7F5539] font-medium mr-4">Grand Total:</span>
                   <span className="text-[#7F5539] font-bold text-xl">₹{grandTotal.toFixed(2)}</span>
+                </div>
+              </div>
+
+              {/* Terms and Conditions */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-semibold text-[#7F5539]">Terms & Conditions</h2>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({
+                      ...formData,
+                      termsAndConditions: [...formData.termsAndConditions, '']
+                    })}
+                    className="flex items-center gap-2 px-4 py-2 bg-[#7F5539] text-white rounded-lg hover:bg-[#9C6644] transition-colors"
+                  >
+                    <Plus size={16} /> Add Term
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {formData.termsAndConditions.map((term, index) => (
+                    <div key={index} className="flex gap-2">
+                      <div className="flex-grow">
+                        <div className="flex items-start gap-2">
+                          <span className="text-[#7F5539] font-medium mt-3">{index + 1}.</span>
+                          <textarea
+                            value={term}
+                            onChange={(e) => {
+                              const newTerms = [...formData.termsAndConditions];
+                              newTerms[index] = e.target.value;
+                              setFormData({ ...formData, termsAndConditions: newTerms });
+                            }}
+                            className="w-full px-4 py-2 bg-white/50 border border-[#B08968]/20 rounded-lg text-[#7F5539] placeholder-[#9C6644] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300 min-h-[60px]"
+                          />
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newTerms = formData.termsAndConditions.filter((_, i) => i !== index);
+                          setFormData({ ...formData, termsAndConditions: newTerms });
+                        }}
+                        className="text-red-500 hover:text-red-700 transition-colors duration-300 mt-3"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
 

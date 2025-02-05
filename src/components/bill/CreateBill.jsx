@@ -127,32 +127,32 @@ const CreateBill = () => {
     <div className="min-h-screen bg-gradient-to-br from-[#F5EBE0] via-[#E6CCB2] to-[#DDB892] pt-14 md:pt-0">
       <div className="p-2 sm:p-4 md:p-8 max-w-7xl mx-auto">
         <div className="bg-white/30 backdrop-blur-md rounded-2xl shadow-xl border border-[#B08968]/20 p-3 sm:p-6 md:p-8">
-          {/* Company Header - Updated for better mobile layout */}
-          <div className="mb-8 text-center relative pt-12 sm:pt-0"> {/* Added pt-12 for mobile */}
+          {/* Company Header - Updated for better PC layout */}
+          <div className="mb-8 text-center relative">
             <button
               onClick={(e) => {
                 e.preventDefault();
                 navigate('/bills');
               }}
-              className="absolute left-0 -top-2 sm:top-0 flex items-center gap-2 px-2 py-1 sm:px-4 sm:py-2 bg-[#7F5539] text-white text-xs sm:text-base rounded-lg hover:bg-[#9C6644] transition-colors duration-300 whitespace-nowrap"
+              className="absolute left-0 top-0 flex items-center gap-2 px-4 py-2 bg-[#7F5539] text-white rounded-lg hover:bg-[#9C6644] transition-colors duration-300"
             >
-              <List size={14} className="sm:size-16" /> 
-              <span>View Bills</span> {/* Removed conditional rendering for better mobile display */}
+              <List size={18} />
+              <span className="text-base">View Bills</span>
             </button>
 
-            {/* Rest of the header content */}
-            <h1 className="text-xl sm:text-4xl md:text-5xl font-bold text-[#7F5539] mb-2">{formData.companyDetails.name}</h1>
-            <p className="text-sm sm:text-base text-[#9C6644]">{formData.companyDetails.address}</p>
-            <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mt-2">
+            {/* Company Details */}
+            <h1 className="text-5xl font-bold text-[#7F5539] mb-3">{formData.companyDetails.name}</h1>
+            <p className="text-lg text-[#9C6644] mb-2">{formData.companyDetails.address}</p>
+            <div className="flex justify-center gap-6">
               {formData.companyDetails.phones.map(phone => (
-                <p key={phone} className="text-sm sm:text-base text-[#7F5539]">{phone}</p>
+                <p key={phone} className="text-lg text-[#7F5539]">{phone}</p>
               ))}
             </div>
           </div>
 
           {/* Document Type Header */}
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-[#7F5539]">Create New {documentType}</h2>
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-[#7F5539]">Create New {documentType}</h2>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
