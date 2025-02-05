@@ -4,6 +4,7 @@ import { updateBill, fetchBillById, clearCurrentBill } from '../../store/slice/i
 import { Plus, Trash2, FileText, List } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Navbar from '../../pages/Navbar';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 
 const EditBill = () => {
   const dispatch = useDispatch();
@@ -108,6 +109,19 @@ const EditBill = () => {
     } catch (error) {
       setMessage({ type: 'error', text: error.message || 'Failed to update bill' });
     }
+  };
+
+  const onDragEnd = (result) => {
+    if (!result.destination) return;
+    
+    const items = Array.from(formData.items);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+    
+    setFormData(prev => ({
+      ...prev,
+      items: items
+    }));
   };
 
   if (loading) {
@@ -273,100 +287,124 @@ const EditBill = () => {
                   </button>
                 </div>
 
-                {formData.items.map((item, index) => (
-                  <div key={index} className="p-4 bg-white/50 rounded-lg space-y-4">
-                    <div className="flex justify-between">
-                      <h3 className="font-medium text-[#7F5539]">Item {index + 1}</h3>
-                      {index > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => setFormData(prev => ({
-                            ...prev,
-                            items: prev.items.filter((_, i) => i !== index)
-                          }))}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      )}
-                    </div>
+                <DragDropContext onDragEnd={onDragEnd}>
+                  <Droppable droppableId="items">
+                    {(provided) => (
+                      <div {...provided.droppableProps} ref={provided.innerRef}>
+                        {formData.items.map((item, index) => (
+                          <Draggable key={index} draggableId={`item-${index}`} index={index}>
+                            {(provided) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                className="mb-4"
+                              >
+                                <div className="p-4 bg-white/50 rounded-lg space-y-4">
+                                  <div className="flex justify-between items-center">
+                                    <div className="flex items-center gap-2">
+                                      <div {...provided.dragHandleProps} className="cursor-move">
+                                        <List size={16} className="text-[#7F5539]" />
+                                      </div>
+                                      <h3 className="font-medium text-[#7F5539]">Item {index + 1}</h3>
+                                    </div>
+                                    {index > 0 && (
+                                      <button
+                                        type="button"
+                                        onClick={() => setFormData(prev => ({
+                                          ...prev,
+                                          items: prev.items.filter((_, i) => i !== index)
+                                        }))}
+                                        className="text-red-500 hover:text-red-700"
+                                      >
+                                        <Trash2 size={16} />
+                                      </button>
+                                    )}
+                                  </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <label className="block">
-                        <span className="text-[#7F5539]">Particular</span>
-                        <input
-                          type="text"
-                          value={item.particular}
-                          onChange={(e) => handleItemChange(index, 'particular', e.target.value)}
-                          className="mt-1 block w-full rounded-md border-[#B08968] shadow-sm focus:border-[#7F5539] focus:ring focus:ring-[#7F5539] focus:ring-opacity-50"
-                        />
-                      </label>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <label className="block">
+                                      <span className="text-[#7F5539]">Particular</span>
+                                      <input
+                                        type="text"
+                                        value={item.particular}
+                                        onChange={(e) => handleItemChange(index, 'particular', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-[#B08968] shadow-sm focus:border-[#7F5539] focus:ring focus:ring-[#7F5539] focus:ring-opacity-50"
+                                      />
+                                    </label>
 
-                      <label className="block">
-                        <span className="text-[#7F5539]">Description</span>
-                        <input
-                          type="text"
-                          value={item.description}
-                          onChange={(e) => handleItemChange(index, 'description', e.target.value)}
-                          className="mt-1 block w-full rounded-md border-[#B08968] shadow-sm focus:border-[#7F5539] focus:ring focus:ring-[#7F5539] focus:ring-opacity-50"
-                        />
-                      </label>
+                                    <label className="block">
+                                      <span className="text-[#7F5539]">Description</span>
+                                      <input
+                                        type="text"
+                                        value={item.description}
+                                        onChange={(e) => handleItemChange(index, 'description', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-[#B08968] shadow-sm focus:border-[#7F5539] focus:ring focus:ring-[#7F5539] focus:ring-opacity-50"
+                                      />
+                                    </label>
 
-                      <label className="block">
-                        <span className="text-[#7F5539]">Unit</span>
-                        <select
-                          value={item.unit}
-                          onChange={(e) => handleItemChange(index, 'unit', e.target.value)}
-                          className="mt-1 block w-full rounded-md border-[#B08968] shadow-sm focus:border-[#7F5539] focus:ring focus:ring-[#7F5539] focus:ring-opacity-50"
-                        >
-                          <option value="Sft">Sft</option>
-                          <option value="Ls">Ls</option>
-                        </select>
-                      </label>
+                                    <label className="block">
+                                      <span className="text-[#7F5539]">Unit</span>
+                                      <select
+                                        value={item.unit}
+                                        onChange={(e) => handleItemChange(index, 'unit', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-[#B08968] shadow-sm focus:border-[#7F5539] focus:ring focus:ring-[#7F5539] focus:ring-opacity-50"
+                                      >
+                                        <option value="Sft">Sft</option>
+                                        <option value="Ls">Ls</option>
+                                      </select>
+                                    </label>
 
-                      {item.unit === 'Sft' && (
-                        <>
-                          <label className="block">
-                            <span className="text-[#7F5539]">Width</span>
-                            <input
-                              type="number"
-                              value={item.width}
-                              onChange={(e) => handleItemChange(index, 'width', parseFloat(e.target.value) || 0)}
-                              className="mt-1 block w-full rounded-md border-[#B08968] shadow-sm focus:border-[#7F5539] focus:ring focus:ring-[#7F5539] focus:ring-opacity-50"
-                            />
-                          </label>
+                                    {item.unit === 'Sft' && (
+                                      <>
+                                        <label className="block">
+                                          <span className="text-[#7F5539]">Width</span>
+                                          <input
+                                            type="number"
+                                            value={item.width}
+                                            onChange={(e) => handleItemChange(index, 'width', parseFloat(e.target.value) || 0)}
+                                            className="mt-1 block w-full rounded-md border-[#B08968] shadow-sm focus:border-[#7F5539] focus:ring focus:ring-[#7F5539] focus:ring-opacity-50"
+                                          />
+                                        </label>
 
-                          <label className="block">
-                            <span className="text-[#7F5539]">Height</span>
-                            <input
-                              type="number"
-                              value={item.height}
-                              onChange={(e) => handleItemChange(index, 'height', parseFloat(e.target.value) || 0)}
-                              className="mt-1 block w-full rounded-md border-[#B08968] shadow-sm focus:border-[#7F5539] focus:ring focus:ring-[#7F5539] focus:ring-opacity-50"
-                            />
-                          </label>
-                        </>
-                      )}
+                                        <label className="block">
+                                          <span className="text-[#7F5539]">Height</span>
+                                          <input
+                                            type="number"
+                                            value={item.height}
+                                            onChange={(e) => handleItemChange(index, 'height', parseFloat(e.target.value) || 0)}
+                                            className="mt-1 block w-full rounded-md border-[#B08968] shadow-sm focus:border-[#7F5539] focus:ring focus:ring-[#7F5539] focus:ring-opacity-50"
+                                          />
+                                        </label>
+                                      </>
+                                    )}
 
-                      <label className="block">
-                        <span className="text-[#7F5539]">Price Per Unit</span>
-                        <input
-                          type="number"
-                          value={item.pricePerUnit}
-                          onChange={(e) => handleItemChange(index, 'pricePerUnit', parseFloat(e.target.value) || 0)}
-                          className="mt-1 block w-full rounded-md border-[#B08968] shadow-sm focus:border-[#7F5539] focus:ring focus:ring-[#7F5539] focus:ring-opacity-50"
-                        />
-                      </label>
+                                    <label className="block">
+                                      <span className="text-[#7F5539]">Price Per Unit</span>
+                                      <input
+                                        type="number"
+                                        value={item.pricePerUnit}
+                                        onChange={(e) => handleItemChange(index, 'pricePerUnit', parseFloat(e.target.value) || 0)}
+                                        className="mt-1 block w-full rounded-md border-[#B08968] shadow-sm focus:border-[#7F5539] focus:ring focus:ring-[#7F5539] focus:ring-opacity-50"
+                                      />
+                                    </label>
 
-                      <div className="block">
-                        <span className="text-[#7F5539]">Total</span>
-                        <div className="mt-1 block w-full p-2 bg-gray-50 rounded-md border border-[#B08968]">
-                          ₹{item.total.toFixed(2)}
-                        </div>
+                                    <div className="block">
+                                      <span className="text-[#7F5539]">Total</span>
+                                      <div className="mt-1 block w-full p-2 bg-gray-50 rounded-md border border-[#B08968]">
+                                        ₹{item.total.toFixed(2)}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
                       </div>
-                    </div>
-                  </div>
-                ))}
+                    )}
+                  </Droppable>
+                </DragDropContext>
               </div>
 
               {/* Grand Total */}
