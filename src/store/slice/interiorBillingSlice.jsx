@@ -145,6 +145,29 @@ export const updateBill = createAsyncThunk(
   }
 );
 
+export const duplicateBill = createAsyncThunk(
+  'interiorBilling/duplicateBill',
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await API.post(`/api/interior/bills/${id}/duplicate`, {}, {
+        headers: getAuthHeader()
+      });
+      
+      // Fetch all bills after successful duplication to get updated list
+      const updatedBillsResponse = await API.get('/api/interior/bills', {
+        headers: getAuthHeader()
+      });
+      
+      return updatedBillsResponse.data.data;
+    } catch (error) {
+      if (error.response?.status === 401) {
+        throw new Error('Unauthorized access');
+      }
+      return rejectWithValue(error.response?.data?.message || 'Failed to duplicate bill');
+    }
+  }
+);
+
 const interiorBillingSlice = createSlice({
   name: 'interiorBilling',
   initialState,
@@ -244,6 +267,20 @@ const interiorBillingSlice = createSlice({
         state.loadingStates.generatePDF = false;
         state.loading = false;
         state.error = action.payload || 'Failed to generate PDF';
+      })
+      // Duplicate bill
+      .addCase(duplicateBill.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(duplicateBill.fulfilled, (state, action) => {
+        state.loading = false;
+        // Replace entire bills array with new data
+        state.bills = action.payload;
+      })
+      .addCase(duplicateBill.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || 'Failed to duplicate bill';
       });
   }
 });

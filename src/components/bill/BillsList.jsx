@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchAllBills, generatePDF } from '../../store/slice/interiorBillingSlice';
+import { fetchAllBills, generatePDF, duplicateBill } from '../../store/slice/interiorBillingSlice';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Eye, Plus, Edit } from 'lucide-react';
+import { FileText, Eye, Plus, Edit, Copy } from 'lucide-react';
 import Navbar from '../../pages/Navbar';
 import Loader from '../../loading/Loader';
 
@@ -43,6 +43,16 @@ const BillsList = () => {
     }
   };
 
+  const handleDuplicateBill = async (id) => {
+    try {
+      await dispatch(duplicateBill(id)).unwrap();
+      // Optionally refresh the bills list
+      dispatch(fetchAllBills());
+    } catch (error) {
+      setPdfError(error.message || 'Failed to duplicate bill');
+    }
+  };
+
   return (
     <>
       <Navbar />
@@ -77,6 +87,7 @@ const BillsList = () => {
                   <thead>
                     <tr className="bg-[#B08968]/10">
                       <th className="px-4 py-2 text-left text-[#7F5539]">Bill Number</th>
+                      <th className="px-4 py-2 text-left text-[#7F5539]">Type</th>
                       <th className="px-4 py-2 text-left text-[#7F5539]">Date</th>
                       <th className="px-4 py-2 text-left text-[#7F5539]">Customer Name</th>
                       <th className="px-4 py-2 text-left text-[#7F5539]">Grand Total</th>
@@ -86,19 +97,44 @@ const BillsList = () => {
                   <tbody>
                     {bills.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="px-4 py-2 text-center">
+                        <td colSpan={6} className="px-4 py-2 text-center">
                           No bills found
                         </td>
                       </tr>
                     ) : (
                       bills.map((bill) => (
-                        <tr key={bill._id} className="border-b border-[#B08968]/10 hover:bg-[#B08968]/5">
-                          <td className="px-4 py-2">{bill.billNumber}</td>
+                        <tr 
+                          key={bill._id} 
+                          className={`border-b border-[#B08968]/10 hover:bg-[#B08968]/5 ${
+                            bill.billType === 'DUPLICATE' ? 'bg-[#7F5539]/5' : ''
+                          }`}
+                        >
+                          <td className="px-4 py-2">
+                            <div className="flex items-center gap-2">
+                              {bill.billNumber}
+                              {bill.billType === 'DUPLICATE' ? (
+                                <span className="px-2 py-1 text-xs bg-[#7F5539] text-white rounded-full">
+                                  COPY
+                                </span>
+                              ) : (
+                                <span className="px-2 py-1 text-xs bg-green-600 text-white rounded-full">
+                                  ORIGINAL
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-2">
+                            {bill.documentType}
+                            {bill.originalBillId && (
+                              <span className="ml-2 text-xs text-[#7F5539]">
+                                (Copy of {bill.originalBillId.billNumber})
+                              </span>
+                            )}
+                          </td>
                           <td className="px-4 py-2">{new Date(bill.date).toLocaleDateString()}</td>
                           <td className="px-4 py-2">{bill.clientName}</td>
                           <td className="px-4 py-2">₹{bill.grandTotal ? bill.grandTotal.toFixed(2) : '0.00'}</td>
                           <td className="px-4 py-2 space-x-2">
-                         
                             <button
                               onClick={() => handleEditBill(bill._id)}
                               className="text-[#7F5539] hover:text-[#9C6644]"
@@ -113,6 +149,13 @@ const BillsList = () => {
                               title="Download PDF"
                             >
                               <FileText size={20} />
+                            </button>
+                            <button
+                              onClick={() => handleDuplicateBill(bill._id)}
+                              className="text-[#7F5539] hover:text-[#9C6644]"
+                              title="Duplicate Bill"
+                            >
+                              <Copy size={20} />
                             </button>
                           </td>
                         </tr>
