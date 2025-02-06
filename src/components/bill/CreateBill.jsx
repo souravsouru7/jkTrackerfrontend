@@ -124,28 +124,30 @@ const CreateBill = () => {
   return (
     <>
     <Navbar/>
-    <div className="min-h-screen bg-gradient-to-br from-[#F5EBE0] via-[#E6CCB2] to-[#DDB892] pt-14 md:pt-0">
+    <div className="min-h-screen bg-gradient-to-br from-[#F5EBE0] via-[#E6CCB2] to-[#DDB892] pt-20 md:pt-24">
       <div className="p-2 sm:p-4 md:p-8 max-w-7xl mx-auto">
         <div className="bg-white/30 backdrop-blur-md rounded-2xl shadow-xl border border-[#B08968]/20 p-3 sm:p-6 md:p-8">
-          {/* Company Header - Updated for better PC layout */}
-          <div className="mb-8 text-center relative">
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                navigate('/bills');
-              }}
-              className="absolute left-0 top-0 flex items-center gap-2 px-4 py-2 bg-[#7F5539] text-white rounded-lg hover:bg-[#9C6644] transition-colors duration-300"
-            >
-              <List size={18} />
-              <span className="text-base">View Bills</span>
-            </button>
+          {/* Company Header - Updated for better mobile layout */}
+          <div className="mb-8 text-center">
+            <div className="flex justify-start mb-4">
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate('/bills');
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-[#7F5539] text-white rounded-lg hover:bg-[#9C6644] transition-colors duration-300"
+              >
+                <List size={18} />
+                <span className="text-base">View Bills</span>
+              </button>
+            </div>
 
             {/* Company Details */}
-            <h1 className="text-5xl font-bold text-[#7F5539] mb-3">{formData.companyDetails.name}</h1>
-            <p className="text-lg text-[#9C6644] mb-2">{formData.companyDetails.address}</p>
-            <div className="flex justify-center gap-6">
+            <h1 className="text-3xl sm:text-5xl font-bold text-[#7F5539] mb-3">{formData.companyDetails.name}</h1>
+            <p className="text-base sm:text-lg text-[#9C6644] mb-2">{formData.companyDetails.address}</p>
+            <div className="flex justify-center gap-4 sm:gap-6">
               {formData.companyDetails.phones.map(phone => (
-                <p key={phone} className="text-lg text-[#7F5539]">{phone}</p>
+                <p key={phone} className="text-base sm:text-lg text-[#7F5539]">{phone}</p>
               ))}
             </div>
           </div>
