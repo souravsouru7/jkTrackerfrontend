@@ -6,12 +6,14 @@ import {
   fetchTotalCalculations,
   fetchProjectDetails,
 } from '../../store/slice/balanceSheetSlice';
+import { selectProject } from '../../store/slice/projectSlice';
 import Navbar from "../../pages/Navbar";
 
 const BalanceSheet = () => {
   const dispatch = useDispatch();
   const selectedProject = useSelector((state) => state.projects.selectedProject);
-  const { summary, totalCalculations, projectDetails } = useSelector((state) => state.balanceSheet);
+  const projects = useSelector((state) => state.projects.projects);
+  const { summary, totalCalculations, projectDetails, loading } = useSelector((state) => state.balanceSheet);
   
   const user = JSON.parse(localStorage.getItem('user'));
   const userId = user?._id || user?.id;
@@ -25,6 +27,39 @@ const BalanceSheet = () => {
       }
     }
   }, [dispatch, userId, selectedProject?._id]);
+
+  const handleProjectChange = (projectId) => {
+    const project = projects.find(p => p._id === projectId);
+    if (project) {
+      dispatch(selectProject(project));
+      localStorage.setItem('selectedProject', JSON.stringify(project));
+    }
+  };
+
+  // Loading skeleton animation
+  const LoadingSkeleton = () => (
+    <div className="animate-pulse space-y-6">
+      <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="h-24 bg-gray-200 rounded-lg"></div>
+        ))}
+      </div>
+    </div>
+  );
+
+  if (loading) {
+    return (
+      <>
+        <Navbar />
+        <div className="min-h-screen bg-[#F5EBE0] pt-16 pb-20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            <LoadingSkeleton />
+          </div>
+        </div>
+      </>
+    );
+  }
 
   if (!selectedProject) {
     return (
@@ -69,17 +104,45 @@ const BalanceSheet = () => {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-[#F5EBE0] pt-16 pb-20">
+      <div className="min-h-screen bg-[#F5EBE0] pt-16 pb-20 overflow-y-auto scroll-smooth">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-6">
-          {/* Header */}
-          <div className="mb-4">
-            <h1 className="text-2xl font-semibold text-[#7F5539]">Balance Sheet</h1>
-            <p className="text-sm text-[#9C6644]">Track your financial overview</p>
-          </div>
+          {/* Header with fade-in animation */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mb-4"
+          >
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-2xl font-semibold text-[#7F5539]">Balance Sheet</h1>
+                <p className="text-sm text-[#9C6644]">Track your financial overview</p>
+              </div>
+              <div className="w-64">
+                <select
+                  value={selectedProject?._id || ''}
+                  onChange={(e) => handleProjectChange(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg border border-[#B08968] bg-white text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent"
+                >
+                  <option value="">Select Project</option>
+                  {projects.map((project) => (
+                    <option key={project._id} value={project._id}>
+                      {project.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </motion.div>
 
-          {/* Project Details Section */}
+          {/* Project Details Section with slide-up animation */}
           {selectedProject && projectDetails.data && (
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-300"
+            >
               <div className="mb-4">
                 <h2 className="text-xl font-semibold text-[#7F5539]">{projectDetails.data.projectDetails.name}</h2>
                 <p className="text-sm text-[#9C6644]">{projectDetails.data.projectDetails.description}</p>
@@ -133,12 +196,17 @@ const BalanceSheet = () => {
                   ))}
                 </div>
               </div>
-            </div>
+            </motion.div>
           )}
 
-          {/* Overall Summary Section */}
+          {/* Overall Summary Section with fade-in animation */}
           {totalCalculations.data && (
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-300"
+            >
               <h2 className="text-xl font-semibold text-[#7F5539] mb-4">Overall Summary</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-green-50 p-4 rounded-lg">
@@ -160,7 +228,7 @@ const BalanceSheet = () => {
                   </p>
                 </div>
               </div>
-            </div>
+            </motion.div>
           )}
         </div>
       </div>

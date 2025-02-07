@@ -254,10 +254,47 @@ const FinancialSummary = React.memo(({ summary, selectedProject }) => {
   const [loading, setLoading] = useState(false);
 
   const budget = Number(selectedProject?.budget) || 0;
-  const totalIncome = Number(summary?.totalIncome) || 0;
-  const totalExpenses = Number(summary?.totalExpenses) || 0;
-  const netBalance = Number(summary?.netBalance) || 0;
+  console.log('Budget:', budget, 'Type:', typeof budget);
+  
+  // Fetch entries when component mounts or when project changes
+  useEffect(() => {
+    if (selectedProject?._id) {
+      setLoading(true);
+      dispatch(fetchEntries(selectedProject._id))
+      
+        .then(() => setLoading(false))
+        .catch((error) => {
+          console.error('Error fetching entries:', error);
+          setLoading(false);
+        });
+    }
+  }, [dispatch, selectedProject?._id]);
+
+  // Calculate totals from entries
+  const totalExpenses = useMemo(() => {
+    const total = entries
+      ?.filter(entry => entry.type.toLowerCase() === 'expense')
+      .reduce((sum, entry) => sum + Number(entry.amount || 0), 0) || 0;
+    console.log('Total Expenses:', total, 'Type:', typeof total);
+    return total;
+  }, [entries]);
+
+  const totalIncome = useMemo(() => {
+    return entries
+      ?.filter(entry => entry.type.toLowerCase() === 'income')
+      .reduce((sum, entry) => sum + Number(entry.amount || 0), 0) || 0;
+  }, [entries]);
+
+  // Calculate remaining payment based on budget and received payments
   const remainingPayment = Math.max(budget - totalIncome, 0);
+
+  // Calculate budget utilization percentage
+  const budgetUtilization = useMemo(() => {
+    if (!budget || budget <= 0) return 0;
+    const percentage = (totalExpenses / budget) * 100;
+    console.log('Budget:', budget, 'Total Expenses:', totalExpenses, 'Utilization:', percentage);
+    return Math.min(Math.round(percentage), 100);
+  }, [budget, totalExpenses]);
 
   const cards = [
     {
@@ -302,15 +339,6 @@ const FinancialSummary = React.memo(({ summary, selectedProject }) => {
       )
     }
   ];
-
-  useEffect(() => {
-    if (showExpenseDetails && selectedProject?._id) {
-      setLoading(true);
-      dispatch(fetchEntries())
-        .then(() => setLoading(false))
-        .catch(() => setLoading(false));
-    }
-  }, [showExpenseDetails, selectedProject?._id, dispatch]);
 
   const expenseEntries = useMemo(() => {
     return entries?.filter(entry => entry.type.toLowerCase() === 'expense') || [];
@@ -400,23 +428,19 @@ const FinancialSummary = React.memo(({ summary, selectedProject }) => {
               </div>
               <div className="p-4 space-y-6 overflow-y-auto flex-1">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="bg-[#7F5539]/10 p-4 rounded-lg">
-                    <h3 className="text-sm font-medium text-[#7F5539] mb-2">Total Expenses</h3>
-                    <p className="text-2xl font-bold text-[#7F5539]">
-                      ₹{totalExpenses.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-                    </p>
-                  </div>
                   <div className="bg-[#7F5539]/5 p-4 rounded-lg">
-                    <h3 className="text-sm font-medium text-[#7F5539] mb-2">Budget Utilization</h3>
-                    <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
-                      <div
-                        className="bg-[#7F5539] h-2.5 rounded-full transition-all duration-500"
-                        style={{ width: `${Math.min((totalExpenses / budget) * 100, 100)}%` }}
-                      />
+                    <h3 className="text-sm font-medium text-[#7F5539] mb-2">Budget Overview</h3>
+                    <div className="space-y-1">
+                      <p className="text-sm text-gray-600">
+                        Budget: ₹{budget.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Expenses: ₹{totalExpenses.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Remaining: ₹{Math.max(budget - totalExpenses, 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                      </p>
                     </div>
-                    <p className="text-sm text-gray-600">
-                      {Math.round((totalExpenses / budget) * 100)}% of budget used
-                    </p>
                   </div>
                 </div>
 
@@ -891,17 +915,22 @@ const Dashboard = () => {
     if (!newProjectName) return;
 
     try {
+      // Ensure budget is converted to number
+      const budget = Number(newProjectBudget) || 0;
+      console.log('Creating project with budget:', budget);
+      
       await dispatch(createProject({
         userId,
         name: newProjectName,
         description: newProjectDescription,
-        budget: newProjectBudget
+        budget: budget // Make sure this is a number
       })).unwrap();
       setNewProjectName("");
       setNewProjectDescription("");
       setNewProjectBudget("");
       showToast("Project created successfully", "success");
     } catch (error) {
+      console.error('Error creating project:', error);
       showToast("Failed to create project", "error");
     }
   }, [dispatch, userId, newProjectName, newProjectDescription, newProjectBudget, showToast]);

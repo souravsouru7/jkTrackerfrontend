@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchOverallSummary } from '../../store/slice/balanceSheetSlice';
+import { motion } from 'framer-motion';
 
 const OverallSummary = () => {
   const dispatch = useDispatch();
@@ -13,14 +14,37 @@ const OverallSummary = () => {
     }
   }, [dispatch, user]);
 
+  const LoadingSkeleton = () => (
+    <div className="space-y-8 animate-pulse">
+      <div className="bg-gray-800/90 p-6 rounded-xl">
+        <div className="h-8 bg-gray-700 rounded w-1/4 mb-4"></div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-24 bg-gray-700 rounded-lg"></div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
   if (loading) {
-    return <div className="text-white">Loading...</div>;
+    return <LoadingSkeleton />;
   }
 
   return (
-    <div className="space-y-8">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-8"
+    >
       {/* Overall Summary Card */}
-      <div className="bg-gray-800/90 p-6 rounded-xl shadow-lg">
+      <motion.div
+        initial={{ y: 20 }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="bg-gray-800/90 p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+      >
         <h2 className="text-2xl font-bold text-white mb-4">Overall Summary</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-green-500/20 p-4 rounded-lg">
@@ -36,10 +60,15 @@ const OverallSummary = () => {
             <p className="text-2xl text-white">${overallSummary.overall.netBalance.toLocaleString()}</p>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Project-wise Breakdown */}
-      <div className="bg-gray-800/90 p-6 rounded-xl shadow-lg">
+      <motion.div
+        initial={{ y: 20 }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="bg-gray-800/90 p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+      >
         <h2 className="text-2xl font-bold text-white mb-4">Project-wise Breakdown</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-white">
@@ -53,7 +82,13 @@ const OverallSummary = () => {
             </thead>
             <tbody>
               {overallSummary.projectWise.map((project, index) => (
-                <tr key={index} className="border-b border-gray-700/50 hover:bg-gray-700/30">
+                <motion.tr
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.1 }}
+                  key={index}
+                  className="border-b border-gray-700/50 hover:bg-gray-700/30 transition-colors duration-200"
+                >
                   <td className="p-2">{project.projectName}</td>
                   <td className="text-right p-2 text-green-400">
                     ${project.income.toLocaleString()}
@@ -66,13 +101,13 @@ const OverallSummary = () => {
                       ${project.balance.toLocaleString()}
                     </span>
                   </td>
-                </tr>
+                </motion.tr>
               ))}
             </tbody>
           </table>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 

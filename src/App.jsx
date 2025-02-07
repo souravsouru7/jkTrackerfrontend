@@ -10,6 +10,7 @@ import BalanceSheet from './components/balance/BalanceSheet';
 import CreateBill from './components/bill/CreateBill';
 import EditBill from './components/bill/EditBill';
 import BillsList from './components/bill/BillsList';
+import { Toaster } from 'react-hot-toast';
 
 
 // PrivateRoute Component
@@ -34,45 +35,70 @@ const PublicRoute = ({ element }) => {
 
 function App() {
     return (
-        <Router>
-            <Routes>
-                {/* Redirect root path to login */}
-                <Route path="/" element={<Navigate to="/login" />} />
-                <Route
-                    path="/login"
-                    element={<PublicRoute element={<Login />} />}
-                />
-                <Route
-                    path="/signup"
-                    element={<PublicRoute element={<Signup />} />}
-                />
-                <Route
-                    path="/dashboard"
-                    element={<PrivateRoute element={<Dashboard />} />}
-                />
-                <Route
-                    path="/entries"
-                    element={<PrivateRoute element={<Main />} />}
-                />
-                <Route
-                    path="/balance-sheet"
-                    element={<PrivateRoute element={<BalanceSheet />} />}
-                />
-                <Route 
-                    path="/create-bill" 
-                    element={<PrivateRoute element={<CreateBill />} />} 
-                />
-                <Route 
-                    path="/edit-bill/:id" 
-                    element={<PrivateRoute element={<EditBill />} />} 
-                />
-                <Route 
-                    path="/bills" 
-                    element={<PrivateRoute element={<BillsList />} />} 
-                />
-             
-            </Routes>
-        </Router>
+        <>
+            <Toaster
+                position="top-center"
+                toastOptions={{
+                    duration: 3000,
+                    style: {
+                        background: '#FDF8F3',
+                        color: '#7F5539',
+                        border: '1px solid rgba(176, 137, 104, 0.2)',
+                    },
+                    success: {
+                        iconTheme: {
+                            primary: '#7F5539',
+                            secondary: '#FDF8F3',
+                        },
+                    },
+                    error: {
+                        iconTheme: {
+                            primary: '#EF4444',
+                            secondary: '#FDF8F3',
+                        },
+                    },
+                }}
+            />
+            <Router>
+                <Routes>
+                    {/* Redirect root path to login */}
+                    <Route path="/" element={<Navigate to="/login" />} />
+                    <Route
+                        path="/login"
+                        element={<PublicRoute element={<Login />} />}
+                    />
+                    <Route
+                        path="/signup"
+                        element={<PublicRoute element={<Signup />} />}
+                    />
+                    <Route
+                        path="/dashboard"
+                        element={<PrivateRoute element={<Dashboard />} />}
+                    />
+                    <Route
+                        path="/entries"
+                        element={<PrivateRoute element={<Main />} />}
+                    />
+                    <Route
+                        path="/balance-sheet"
+                        element={<PrivateRoute element={<BalanceSheet />} />}
+                    />
+                    <Route 
+                        path="/create-bill" 
+                        element={<PrivateRoute element={<CreateBill />} />} 
+                    />
+                    <Route 
+                        path="/edit-bill/:id" 
+                        element={<PrivateRoute element={<EditBill />} />} 
+                    />
+                    <Route 
+                        path="/bills" 
+                        element={<PrivateRoute element={<BillsList />} />} 
+                    />
+                 
+                </Routes>
+            </Router>
+        </>
     );
 }
 

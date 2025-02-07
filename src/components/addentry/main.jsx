@@ -22,12 +22,26 @@ const ExpenseTracker = () => {
   });
   const [showFilters, setShowFilters] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isEntryLoading, setIsEntryLoading] = useState(false);
 
   useEffect(() => {
-    dispatch(fetchEntries());
+    document.documentElement.style.scrollBehavior = 'smooth';
+    
+    const loadEntries = async () => {
+      setIsLoading(true);
+      await dispatch(fetchEntries());
+      setIsLoading(false);
+    };
+    
+    loadEntries();
+    
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      document.documentElement.style.scrollBehavior = 'auto';
+    };
   }, [dispatch]);
 
   useEffect(() => {
@@ -127,9 +141,11 @@ const ExpenseTracker = () => {
 
   const categories = ['All', ...new Set(entries.map(entry => entry.category))];
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this entry?')) {
-      dispatch(deleteEntry(id));
+      setIsEntryLoading(true);
+      await dispatch(deleteEntry(id));
+      setIsEntryLoading(false);
     }
   };
 
@@ -308,14 +324,38 @@ const ExpenseTracker = () => {
             )}
           </AnimatePresence>
 
-          {/* Entries List - Mobile Optimized */}
+          {/* Entries List - Enhanced Loading States */}
           <div className="space-y-3">
-            {filteredEntries.map((entry) => (
+            {isLoading ? (
+              // Loading skeleton
+              [...Array(5)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="bg-white rounded-lg shadow-md overflow-hidden animate-pulse"
+                >
+                  <div className="p-4">
+                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  </div>
+                </motion.div>
+              ))
+            ) : filteredEntries.map((entry) => (
               <motion.div
                 key={entry._id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-lg shadow-md overflow-hidden"
+                exit={{ opacity: 0, y: -20 }}
+                layout
+                transition={{ 
+                  duration: 0.2,
+                  layout: { duration: 0.2 }
+                }}
+                className={`bg-white rounded-lg shadow-md overflow-hidden ${
+                  isEntryLoading ? 'opacity-50' : ''
+                }`}
               >
                 <div className="p-4">
                   <div className="flex items-start justify-between">
@@ -360,19 +400,25 @@ const ExpenseTracker = () => {
         </div>
       </div>
 
-      {/* Entry Form Modal */}
+      {/* Entry Form Modal - Enhanced Transitions */}
       <AnimatePresence>
         {showForm && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
             className="fixed inset-0 bg-black/50 z-50 flex items-end md:items-center justify-center"
           >
             <motion.div
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
+              transition={{ 
+                type: "spring",
+                damping: 25,
+                stiffness: 300
+              }}
               className="w-full md:w-auto md:min-w-[500px] bg-white rounded-t-2xl md:rounded-2xl shadow-xl"
             >
               <div className="p-4">
