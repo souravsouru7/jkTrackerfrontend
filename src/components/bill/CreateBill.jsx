@@ -17,6 +17,15 @@ const CreateBill = () => {
   // Get document type from location state or default to 'Invoice'
   const [documentType, setDocumentType] = useState(location.state?.documentType || 'Invoice');
 
+  const [predefinedDescriptions] = useState([
+    'Providing and fixing 18mm HDHMR & Hafele hardware with required Adhesive\'s and selected laminates',
+    'Providing and fixing 18mm HDHMR & Hafele Hardware with required Adhesive\'s and Selected Acrylic laminates',
+    'Providing and fixing of Havels wires with required electrical items includes \nLights (Philips, Crompton, Wipro)\nSwitch board (GM, Gold medal)',
+    'Providing and installing 2 coats of Royal Asian Paints with selected colours',
+    'Providing and fixing of selected wall cladding with Ganesh',
+    'Providing and fixing with Natural stone (limestone) wall cladding and unit box'
+  ]);
+
   const [formData, setFormData] = useState({
     billNumber: '',
     documentType: location.state?.documentType || 'Invoice',
@@ -327,11 +336,25 @@ const CreateBill = () => {
                               />
                             </td>
                             <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
-                              <textarea
-                                className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300 min-h-[60px]"
-                                value={item.description}
-                                onChange={(e) => handleItemChange(index, 'description', e.target.value)}
-                              />
+                              <div className="space-y-2">
+                                <select
+                                  className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                  value={item.description}
+                                  onChange={(e) => handleItemChange(index, 'description', e.target.value)}
+                                >
+                                  <option value="">Select or type a description</option>
+                                  {predefinedDescriptions.map((desc, i) => (
+                                    <option key={i} value={desc}>{desc}</option>
+                                  ))}
+                                </select>
+                                {item.description === "" && (
+                                  <textarea
+                                    className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300 min-h-[60px]"
+                                    placeholder="Or type a custom description"
+                                    onChange={(e) => handleItemChange(index, 'description', e.target.value)}
+                                  />
+                                )}
+                              </div>
                             </td>
                             <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
                               <select

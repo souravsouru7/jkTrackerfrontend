@@ -44,6 +44,27 @@ const EditBill = () => {
     ]
   });
 
+  const [predefinedDescriptions] = useState([
+    'Providing and fixing 18mm HDHMR & Hafele hardware with required Adhesive\'s and selected laminates',
+    'Providing and fixing 18mm HDHMR & Hafele Hardware with required Adhesive\'s and Selected Acrylic laminates',
+    'Providing and fixing of Havels wires with required electrical items includes \nLights (Philips, Crompton, Wipro)\nSwitch board (GM, Gold medal)',
+    'Providing and installing 2 coats of Royal Asian Paints with selected colours',
+    'Providing and fixing of selected wall cladding with Ganesh',
+    'Providing and fixing with Natural stone (limestone) wall cladding and unit box'
+  ]);
+
+  const [predefinedTerms] = useState([
+    'It will take 2 days to start the work in site after getting the basic advance, because we need to finalise the concept and drawings as per the concept selected',
+    'The work will be completed within the specified timeline once started',
+    'All materials used will be of high quality and as per industry standards',
+    'Any changes to the design after work commencement may incur additional charges',
+    'Payment terms are non-negotiable and must be adhered to as per the agreement',
+    'Warranty period is 1 year from the date of completion for any manufacturing defects',
+    'The company is not responsible for any damage caused by natural calamities or misuse'
+  ]);
+
+  const [selectedTerms, setSelectedTerms] = useState({});
+
   useEffect(() => {
     dispatch(fetchBillById(id));
     return () => {
@@ -53,12 +74,20 @@ const EditBill = () => {
 
   useEffect(() => {
     if (currentBill) {
+      const initialSelectedTerms = {};
+      currentBill.termsAndConditions.forEach(term => {
+        const index = predefinedTerms.indexOf(term);
+        if (index !== -1) {
+          initialSelectedTerms[index] = true;
+        }
+      });
+      setSelectedTerms(initialSelectedTerms);
       setFormData({
         ...currentBill,
         billDate: new Date(currentBill.date).toISOString().split('T')[0]
       });
     }
-  }, [currentBill]);
+  }, [currentBill, predefinedTerms]);
 
   // Existing calculation functions
   const calculateItemTotal = useCallback((item) => {
@@ -375,12 +404,24 @@ const EditBill = () => {
 
                                     <label className="block">
                                       <span className="text-[#7F5539]">Description</span>
-                                      <input
-                                        type="text"
+                                      <select
                                         value={item.description}
                                         onChange={(e) => handleItemChange(index, 'description', e.target.value)}
                                         className="mt-1 block w-full rounded-md border-[#B08968] shadow-sm focus:border-[#7F5539] focus:ring focus:ring-[#7F5539] focus:ring-opacity-50"
-                                      />
+                                      >
+                                        <option value="">Select or type a description</option>
+                                        {predefinedDescriptions.map((desc, i) => (
+                                          <option key={i} value={desc}>{desc}</option>
+                                        ))}
+                                      </select>
+                                      {item.description === "" && (
+                                        <input
+                                          type="text"
+                                          placeholder="Or type a custom description"
+                                          onChange={(e) => handleItemChange(index, 'description', e.target.value)}
+                                          className="mt-2 block w-full rounded-md border-[#B08968] shadow-sm focus:border-[#7F5539] focus:ring focus:ring-[#7F5539] focus:ring-opacity-50"
+                                        />
+                                      )}
                                     </label>
 
                                     <label className="block">
@@ -488,44 +529,41 @@ const EditBill = () => {
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <h2 className="text-xl font-semibold text-[#7F5539]">Terms & Conditions</h2>
-                  <button
-                    type="button"
-                    onClick={() => setFormData({
-                      ...formData,
-                      termsAndConditions: [...formData.termsAndConditions, '']
-                    })}
-                    className="flex items-center gap-2 px-4 py-2 bg-[#7F5539] text-white rounded-lg hover:bg-[#9C6644] transition-colors"
-                  >
-                    <Plus size={16} /> Add Term
-                  </button>
                 </div>
                 <div className="space-y-2">
-                  {formData.termsAndConditions.map((term, index) => (
-                    <div key={index} className="flex gap-2">
+                  {predefinedTerms.map((term, index) => (
+                    <div key={index} className="flex gap-2 items-start">
+                      <input
+                        type="checkbox"
+                        checked={selectedTerms[index] || false}
+                        onChange={(e) => {
+                          const newSelectedTerms = { ...selectedTerms };
+                          if (e.target.checked) {
+                            newSelectedTerms[index] = true;
+                          } else {
+                            delete newSelectedTerms[index];
+                          }
+                          setSelectedTerms(newSelectedTerms);
+                          
+                          const selectedTermsList = Object.keys(newSelectedTerms)
+                            .map(idx => predefinedTerms[parseInt(idx)])
+                            .filter(Boolean);
+                          
+                          setFormData(prev => ({
+                            ...prev,
+                            termsAndConditions: selectedTermsList
+                          }));
+                        }}
+                        className="mt-1 rounded text-[#7F5539] focus:ring-[#7F5539]"
+                      />
                       <div className="flex-grow">
                         <div className="flex items-start gap-2">
-                          <span className="text-[#7F5539] font-medium mt-3">{index + 1}.</span>
-                          <textarea
-                            value={term}
-                            onChange={(e) => {
-                              const newTerms = [...formData.termsAndConditions];
-                              newTerms[index] = e.target.value;
-                              setFormData({ ...formData, termsAndConditions: newTerms });
-                            }}
-                            className="w-full px-4 py-2 bg-white/50 border border-[#B08968]/20 rounded-lg text-[#7F5539] placeholder-[#9C6644] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300 min-h-[60px]"
-                          />
+                          <span className="text-[#7F5539] font-medium">{index + 1}.</span>
+                          <div className="w-full px-4 py-2 bg-white/50 border border-[#B08968]/20 rounded-lg text-[#7F5539]">
+                            {term}
+                          </div>
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const newTerms = formData.termsAndConditions.filter((_, i) => i !== index);
-                          setFormData({ ...formData, termsAndConditions: newTerms });
-                        }}
-                        className="text-red-500 hover:text-red-700 transition-colors duration-300 mt-3"
-                      >
-                        <Trash2 size={16} />
-                      </button>
                     </div>
                   ))}
                 </div>
