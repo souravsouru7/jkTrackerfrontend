@@ -88,6 +88,10 @@ const EditBill = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Add loading state
+    setMessage({ type: 'loading', text: 'Updating bill...' });
+    
     const updatedPaymentTerms = formData.paymentTerms.map(term => ({
       ...term,
       amount: term.note === 'Token' ? term.amount : (grandTotal * term.percentage) / 100
@@ -102,12 +106,20 @@ const EditBill = () => {
     try {
       await dispatch(updateBill({ id, billData })).unwrap();
       setMessage({ type: 'success', text: 'Bill updated successfully!' });
-      // Wait for 1 second to show the success message before redirecting
+      
+      // Add fade-out animation before navigation
+      const form = document.querySelector('form');
+      form.classList.add('animate-fadeOut');
+      
       setTimeout(() => {
         navigate('/bills');
-      }, 1000);
+      }, 800); // Increased timeout to allow animation to complete
     } catch (error) {
       setMessage({ type: 'error', text: error.message || 'Failed to update bill' });
+      // Shake animation on error
+      const form = document.querySelector('form');
+      form.classList.add('animate-shake');
+      setTimeout(() => form.classList.remove('animate-shake'), 500);
     }
   };
 
@@ -139,12 +151,23 @@ const EditBill = () => {
         <div className="p-4 md:p-8 max-w-7xl mx-auto pb-20 md:pb-8">
           <div className="bg-white/30 backdrop-blur-md rounded-2xl shadow-xl border border-[#B08968]/20 p-6 md:p-8">
             {message.text && (
-              <div className={`mb-4 p-4 rounded-lg ${
-                message.type === 'success' 
-                  ? 'bg-green-100 border border-green-400 text-green-700' 
-                  : 'bg-red-100 border border-red-400 text-red-700'
-              }`}>
-                {message.text}
+              <div 
+                className={`mb-4 p-4 rounded-lg animate-fadeIn ${
+                  message.type === 'success' 
+                    ? 'bg-green-100 border border-green-400 text-green-700' 
+                    : message.type === 'error'
+                    ? 'bg-red-100 border border-red-400 text-red-700'
+                    : message.type === 'loading'
+                    ? 'bg-blue-100 border border-blue-400 text-blue-700'
+                    : ''
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  {message.type === 'loading' && (
+                    <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full" />
+                  )}
+                  {message.text}
+                </div>
               </div>
             )}
             <div className="mb-8 text-center">
@@ -152,7 +175,10 @@ const EditBill = () => {
               <p className="text-[#9C6644] mt-2">Update the bill details below</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form 
+              onSubmit={handleSubmit} 
+              className="space-y-6 transition-opacity duration-800 ease-in-out"
+            >
               {/* Document Type Selection */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-4">
@@ -409,6 +435,34 @@ const EditBill = () => {
                                         ₹{item.total.toFixed(2)}
                                       </div>
                                     </div>
+                                  </div>
+
+                                  {/* Add this button at the bottom of each item */}
+                                  <div className="flex justify-center pt-4 border-t border-[#7F5539]/10 mt-4">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const newItems = [...formData.items];
+                                        newItems.splice(index + 1, 0, {
+                                          particular: '',
+                                          description: '',
+                                          unit: 'Sft',
+                                          width: 0,
+                                          height: 0,
+                                          sft: 0,
+                                          pricePerUnit: 0,
+                                          total: 0
+                                        });
+                                        setFormData(prev => ({ ...prev, items: newItems }));
+                                      }}
+                                      className="w-full md:w-auto px-4 py-2 bg-[#7F5539]/5 text-[#7F5539] rounded-lg 
+                                      hover:bg-[#7F5539] hover:text-white transition-all duration-300 
+                                      flex items-center justify-center gap-2 font-medium
+                                      shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+                                    >
+                                      <Plus size={16} className="flex-shrink-0" /> 
+                                      <span>Add Item Below</span>
+                                    </button>
                                   </div>
                                 </div>
                               </div>
