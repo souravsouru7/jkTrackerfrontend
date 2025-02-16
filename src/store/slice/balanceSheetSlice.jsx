@@ -44,6 +44,44 @@ export const fetchProjectDetails = createAsyncThunk(
   }
 );
 
+// Generate PDF balance sheet with selected items
+export const generateBalanceSheetPDF = createAsyncThunk(
+  'balanceSheet/generatePDF',
+  async ({ userId, projectId, selectedItems }) => {
+    // Transform selected items into categories format expected by backend
+    const categories = [...new Set(selectedItems.map(item => item.category))];
+    
+    const response = await axios.post(
+      `${API_URL}/balance-sheet/generate-pdf`,
+      { 
+        userId, 
+        projectId, 
+        selectedCategories: categories,
+        selectedItems: selectedItems 
+      },
+      {
+        responseType: 'blob',
+        headers: {
+          'Accept': 'application/pdf'
+        }
+      }
+    );
+    
+    // Create blob URL and trigger download
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'balance-sheet.pdf');
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+    
+    return true;
+  }
+);
+
 const balanceSheetSlice = createSlice({
   name: 'balanceSheet',
   initialState: {
@@ -61,9 +99,30 @@ const balanceSheetSlice = createSlice({
       data: null,
       loading: false,
       error: null
+    },
+    pdfGeneration: {
+      loading: false,
+      error: null
+    },
+    selectedItems: []
+  },
+  reducers: {
+    toggleSelectedItem: (state, action) => {
+      const item = action.payload;
+      const existingIndex = state.selectedItems.findIndex(
+        i => i.id === item.id && i.type === item.type
+      );
+      
+      if (existingIndex >= 0) {
+        state.selectedItems.splice(existingIndex, 1);
+      } else {
+        state.selectedItems.push(item);
+      }
+    },
+    clearSelectedItems: (state) => {
+      state.selectedItems = [];
     }
   },
-  reducers: {},
   extraReducers: (builder) => {
     builder
       // Summary reducers
@@ -104,8 +163,23 @@ const balanceSheetSlice = createSlice({
       .addCase(fetchProjectDetails.rejected, (state, action) => {
         state.projectDetails.loading = false;
         state.projectDetails.error = action.error.message;
+      })
+      // PDF Generation reducers
+      .addCase(generateBalanceSheetPDF.pending, (state) => {
+        state.pdfGeneration.loading = true;
+        state.pdfGeneration.error = null;
+      })
+      .addCase(generateBalanceSheetPDF.fulfilled, (state) => {
+        state.pdfGeneration.loading = false;
+      })
+      .addCase(generateBalanceSheetPDF.rejected, (state, action) => {
+        state.pdfGeneration.loading = false;
+        state.pdfGeneration.error = action.error.message;
       });
   },
 });
+
+// Export actions
+export const { toggleSelectedItem, clearSelectedItems } = balanceSheetSlice.actions;
 
 export default balanceSheetSlice.reducer;
