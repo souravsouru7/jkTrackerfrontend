@@ -28,7 +28,8 @@ export const createProject = createAsyncThunk('projects/createProject', async (p
     const token = localStorage.getItem('token');
     const response = await axios.post(`${API_URL}/api/projects`, {
       ...projectData,
-      budget: Number(projectData.budget) || 0
+      budget: Number(projectData.budget) || 0,
+      status: 'inProgress' // Default status
     }, {
       headers: { 'x-auth-token': token }
     });
@@ -78,6 +79,43 @@ export const updateProjectBudget = createAsyncThunk(
   }
 );
 
+export const updateProjectStatus = createAsyncThunk(
+  'projects/updateProjectStatus',
+  async ({ projectId, status }) => {
+    try {
+      const response = await axios.put(
+        `${API_URL}/api/projects/${projectId}/status`,
+        { status },
+        { headers: getAuthHeader() }
+      );
+      return response.data.project;
+    } catch (error) {
+      if (error.response?.status === 401) {
+        throw new Error('Unauthorized access');
+      }
+      throw error;
+    }
+  }
+);
+
+export const fetchProjectsByStatus = createAsyncThunk(
+  'projects/fetchProjectsByStatus',
+  async (status) => {
+    try {
+      const response = await axios.get(
+        `${API_URL}/api/projects/by-status/${status}`,
+        { headers: getAuthHeader() }
+      );
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 401) {
+        throw new Error('Unauthorized access');
+      }
+      throw error;
+    }
+  }
+);
+
 const projectSlice = createSlice({
   name: 'projects',
   initialState: {
@@ -85,6 +123,11 @@ const projectSlice = createSlice({
     selectedProject: null,
     status: 'idle',
     error: null,
+    projectsByStatus: {
+      inProgress: [],
+      progress: [],
+      finished: []
+    },
   },
   reducers: {
     selectProject: (state, action) => {
@@ -139,6 +182,19 @@ const projectSlice = createSlice({
       .addCase(updateProjectBudget.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.error.message;
+      })
+      .addCase(updateProjectStatus.fulfilled, (state, action) => {
+        const index = state.projects.findIndex(p => p._id === action.payload._id);
+        if (index !== -1) {
+          state.projects[index] = action.payload;
+        }
+        if (state.selectedProject?._id === action.payload._id) {
+          state.selectedProject = action.payload;
+        }
+      })
+      .addCase(fetchProjectsByStatus.fulfilled, (state, action) => {
+        const status = action.meta.arg;
+        state.projectsByStatus[status] = action.payload;
       });
   },
 });

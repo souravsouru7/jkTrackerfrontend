@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateBill, fetchBillById, clearCurrentBill } from '../../store/slice/interiorBillingSlice';
 import { Plus, Trash2, FileText, List } from 'lucide-react';
@@ -65,6 +65,9 @@ const EditBill = () => {
 
   const [selectedTerms, setSelectedTerms] = useState({});
 
+  const [discountType, setDiscountType] = useState('amount');
+  const [discountValue, setDiscountValue] = useState(0);
+
   useEffect(() => {
     dispatch(fetchBillById(id));
     return () => {
@@ -82,9 +85,23 @@ const EditBill = () => {
         }
       });
       setSelectedTerms(initialSelectedTerms);
+      const discountType = currentBill.discount > 0 
+        ? (currentBill.discount / currentBill.grandTotal) * 100 > 1 
+          ? 'percentage' 
+          : 'amount'
+        : 'amount';
+      
+      const discountValue = discountType === 'percentage'
+        ? (currentBill.discount / currentBill.grandTotal) * 100
+        : currentBill.discount;
+
+      setDiscountType(discountType);
+      setDiscountValue(discountValue);
       setFormData({
         ...currentBill,
-        billDate: new Date(currentBill.date).toISOString().split('T')[0]
+        billDate: new Date(currentBill.date).toISOString().split('T')[0],
+        discountType,
+        discountValue
       });
     }
   }, [currentBill, predefinedTerms]);
@@ -114,6 +131,13 @@ const EditBill = () => {
   }, [calculateItemTotal]);
 
   const grandTotal = formData.items.reduce((sum, item) => sum + item.total, 0);
+
+  const finalAmount = useMemo(() => {
+    const discount = discountType === 'percentage'
+      ? (grandTotal * discountValue) / 100
+      : discountValue;
+    return grandTotal - discount;
+  }, [grandTotal, discountType, discountValue]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -518,10 +542,71 @@ const EditBill = () => {
               </div>
 
               {/* Grand Total */}
-              <div className="text-right">
-                <div className="inline-block bg-[#7F5539]/10 rounded-lg p-4">
-                  <span className="text-[#7F5539] font-medium mr-4">Grand Total:</span>
-                  <span className="text-[#7F5539] font-bold text-xl">₹{grandTotal.toFixed(2)}</span>
+              <div className="mt-4 space-y-4">
+                {/* Subtotal */}
+                <div className="text-right">
+                  <div className="inline-block bg-[#B08968]/10 p-3 sm:p-4 rounded-lg">
+                    <span className="text-lg sm:text-xl font-semibold text-[#7F5539]">
+                      SUBTOTAL: ₹ {grandTotal.toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Discount Section */}
+                <div className="flex flex-col md:flex-row gap-4 items-end justify-end">
+                  <div className="flex gap-4 items-center">
+                    <label className="space-y-1">
+                      <span className="text-[#7F5539] text-sm font-medium">Discount Type</span>
+                      <select
+                        value={discountType}
+                        onChange={(e) => {
+                          setDiscountType(e.target.value);
+                          setDiscountValue(0);
+                          setFormData(prev => ({
+                            ...prev,
+                            discountType: e.target.value,
+                            discountValue: 0
+                          }));
+                        }}
+                        className="block w-40 px-3 py-2 bg-white/50 border border-[#B08968]/20 rounded-lg 
+                                  text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968]"
+                      >
+                        <option value="amount">Fixed Amount</option>
+                        <option value="percentage">Percentage</option>
+                      </select>
+                    </label>
+                    
+                    <label className="space-y-1">
+                      <span className="text-[#7F5539] text-sm font-medium">
+                        Discount {discountType === 'percentage' ? '(%)' : '(₹)'}
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        max={discountType === 'percentage' ? "100" : grandTotal}
+                        value={discountValue}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value) || 0;
+                          setDiscountValue(value);
+                          setFormData(prev => ({
+                            ...prev,
+                            discountValue: value
+                          }));
+                        }}
+                        className="block w-32 px-3 py-2 bg-white/50 border border-[#B08968]/20 rounded-lg 
+                                  text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968]"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Final Amount */}
+                <div className="text-right">
+                  <div className="inline-block bg-[#7F5539] p-3 sm:p-4 rounded-lg">
+                    <span className="text-lg sm:text-xl font-semibold text-white">
+                      FINAL AMOUNT: ₹ {finalAmount.toLocaleString('en-IN')}
+                    </span>
+                  </div>
                 </div>
               </div>
 

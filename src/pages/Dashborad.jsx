@@ -16,6 +16,8 @@ import {
   selectProject,
   deleteProject,
   updateProjectBudget,
+  fetchProjectsByStatus, // Add this import
+  updateProjectStatus, // Add this import
 } from "../store/slice/projectSlice";
 import { fetchEntries } from '../store/slice/entrySlice';
 import { Menu, X, Plus, Trash2, ChevronRight } from "lucide-react";
@@ -28,6 +30,13 @@ import {
 import { fetchFinancialSummary } from '../store/slice/fincialSlice';
 import FinancialOverview from './FinancialOverview';
 import Navbar from './Navbar';
+import {
+  fetchUnconnectedBills,
+  fetchProjectBills,
+  connectBillToProject,
+  disconnectBillFromProject
+} from '../store/slice/interiorBillingSlice';
+import ProjectStatusTabs from '../components/ProjectStatusTabs';
 
 const EntryForm = lazy(() => import("../components/addentry/EntryForm"));
 
@@ -142,10 +151,79 @@ const MobileMenu = React.memo(({ isOpen, setIsOpen, navigate, dispatch }) => {
   );
 });
 
-const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject }) => {
+const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject, showToast }) => {
   const dispatch = useDispatch();
   const [editingBudget, setEditingBudget] = useState(null);
   const [budgetValue, setBudgetValue] = useState("");
+  const [showBillModal, setShowBillModal] = useState(false);
+  const [selectedProjectForBills, setSelectedProjectForBills] = useState(null);
+  const [isLoadingBills, setIsLoadingBills] = useState(false);
+  const [error, setError] = useState(null);
+
+  const statusOptions = {
+    inProgress: 'In Progress',
+    progress: 'Under Review',
+    finished: 'Completed'
+  };
+
+  const handleStatusChange = async (projectId, newStatus) => {
+    try {
+      await dispatch(updateProjectStatus({ projectId, status: newStatus })).unwrap();
+      showToast("Project status updated successfully", "success");
+    } catch (error) {
+      console.error('Failed to update status:', error);
+      showToast("Failed to update project status", "error");
+    }
+  };
+
+  const { unconnectedBills, projectBills, loadingStates } = useSelector(state => state.interiorBilling);
+
+  const handleShowBills = async (project) => {
+    setError(null);
+    setIsLoadingBills(true);
+    setSelectedProjectForBills(project);
+    setShowBillModal(true);
+
+    try {
+      console.log('Fetching bills for project:', project._id);
+      await Promise.all([
+        dispatch(fetchUnconnectedBills()).unwrap(),
+        dispatch(fetchProjectBills(project._id)).unwrap()
+      ]);
+    } catch (err) {
+      console.error('Error fetching bills:', err);
+      setError('Failed to load bills. Please try again.');
+    } finally {
+      setIsLoadingBills(false);
+    }
+  };
+
+  const handleConnectBill = async (billId) => {
+    if (selectedProjectForBills) {
+      try {
+        await dispatch(connectBillToProject({
+          billId,
+          projectId: selectedProjectForBills._id
+        })).unwrap();
+        // Refresh the bills lists
+        dispatch(fetchUnconnectedBills());
+        dispatch(fetchProjectBills(selectedProjectForBills._id));
+      } catch (error) {
+        console.error('Failed to connect bill:', error);
+      }
+    }
+  };
+
+  const handleDisconnectBill = async (billId) => {
+    try {
+      await dispatch(disconnectBillFromProject(billId)).unwrap();
+      // Refresh the bills lists
+      dispatch(fetchUnconnectedBills());
+      dispatch(fetchProjectBills(selectedProjectForBills._id));
+    } catch (error) {
+      console.error('Failed to disconnect bill:', error);
+    }
+  };
 
   const handleBudgetEdit = (project) => {
     setEditingBudget(project._id);
@@ -185,41 +263,60 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject 
               <h3 className="text-lg font-semibold text-[#7F5539]">{project.name}</h3>
               <p className="text-sm text-gray-600">{project.description}</p>
               
-              {editingBudget === project._id ? (
-                <div className="mt-2 flex items-center space-x-2">
-                  <input
-                    type="number"
-                    value={budgetValue}
-                    onChange={(e) => setBudgetValue(e.target.value)}
-                    className="px-2 py-1 border rounded-md text-sm w-32"
-                    placeholder="Enter budget"
-                  />
-                  <button
-                    onClick={() => handleBudgetSave(project._id)}
-                    className="px-2 py-1 bg-green-500 text-white rounded-md text-sm"
+              {/* Add Status Dropdown */}
+              <div className="mt-2 flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">Status:</span>
+                  <select
+                    value={project.status}
+                    onChange={(e) => handleStatusChange(project._id, e.target.value)}
+                    className="px-2 py-1 text-sm border rounded-md bg-white text-[#7F5539] cursor-pointer"
                   >
-                    Save
-                  </button>
-                  <button
-                    onClick={handleBudgetCancel}
-                    className="px-2 py-1 bg-gray-500 text-white rounded-md text-sm"
-                  >
-                    Cancel
-                  </button>
+                    {Object.entries(statusOptions).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              ) : (
-                <div className="mt-2 flex items-center space-x-2">
-                  <span className="text-sm text-gray-600">
-                    Budget: ${project.budget.toLocaleString()}
-                  </span>
-                  <button
-                    onClick={() => handleBudgetEdit(project)}
-                    className="text-sm text-[#B08968] hover:text-[#7F5539]"
-                  >
-                    Edit
-                  </button>
-                </div>
-              )}
+
+                {/* Budget Display/Edit */}
+                {editingBudget === project._id ? (
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="number"
+                      value={budgetValue}
+                      onChange={(e) => setBudgetValue(e.target.value)}
+                      className="px-2 py-1 border rounded-md text-sm w-32"
+                      placeholder="Enter budget"
+                    />
+                    <button
+                      onClick={() => handleBudgetSave(project._id)}
+                      className="px-2 py-1 bg-green-500 text-white rounded-md text-sm"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={handleBudgetCancel}
+                      className="px-2 py-1 bg-gray-500 text-white rounded-md text-sm"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600">
+                      Budget: ${project.budget.toLocaleString()}
+                    </span>
+                    <button
+                      onClick={() => handleBudgetEdit(project)}
+                      className="text-sm text-[#B08968] hover:text-[#7F5539]"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
             
             <div className="flex items-center space-x-2">
@@ -239,10 +336,118 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject 
               >
                 <Trash2 size={20} />
               </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => handleShowBills(project)}
+                className="p-2 text-[#B08968] hover:text-[#7F5539]"
+              >
+                Connect Bills
+              </motion.button>
             </div>
           </div>
         </motion.div>
       ))}
+
+      {/* Bills Modal */}
+      {showBillModal && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+        >
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4">
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6"
+              >
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-xl font-semibold text-[#7F5539]">
+                    Manage Bills for {selectedProjectForBills?.name}
+                  </h3>
+                  <button
+                    onClick={() => setShowBillModal(false)}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+
+                {error && (
+                  <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">
+                    {error}
+                  </div>
+                )}
+
+                {isLoadingBills ? (
+                  <div className="flex justify-center items-center py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#7F5539]"></div>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Project Bills */}
+                    <div>
+                      <h4 className="font-medium mb-3">Connected Bills ({projectBills.length})</h4>
+                      <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                        {projectBills.length > 0 ? (
+                          projectBills.map(bill => (
+                            <div key={bill._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                              <div>
+                                <p className="font-medium">{bill.billNumber}</p>
+                                <p className="text-sm text-gray-500">
+                                  {new Date(bill.date).toLocaleDateString()} - {bill.clientName}
+                                </p>
+                              </div>
+                              <button
+                                onClick={() => handleDisconnectBill(bill._id)}
+                                className="text-red-500 hover:text-red-700"
+                              >
+                                Disconnect
+                              </button>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-gray-500 text-center py-3">No connected bills</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Unconnected Bills */}
+                    <div>
+                      <h4 className="font-medium mb-3">Available Bills ({unconnectedBills.length})</h4>
+                      <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                        {unconnectedBills.length > 0 ? (
+                          unconnectedBills.map(bill => (
+                            <div key={bill._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                              <div>
+                                <p className="font-medium">{bill.billNumber}</p>
+                                <p className="text-sm text-gray-500">
+                                  {new Date(bill.date).toLocaleDateString()} - {bill.clientName}
+                                </p>
+                              </div>
+                              <button
+                                onClick={() => handleConnectBill(bill._id)}
+                                className="text-[#B08968] hover:text-[#7F5539]"
+                              >
+                                Connect
+                              </button>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-gray-500 text-center py-3">No available bills to connect</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            </div>
+          </div>
+        </motion.div>
+      )}
     </motion.div>
   );
 });
@@ -834,6 +1039,7 @@ const Dashboard = () => {
   const [notificationType, setNotificationType] = useState("");
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
   const [newProjectBudget, setNewProjectBudget] = useState("");
+  const [currentStatus, setCurrentStatus] = useState('inProgress');
 
   // Hooks
   const navigate = useNavigate();
@@ -902,6 +1108,13 @@ const Dashboard = () => {
     console.log('Monthly Expenses updated:', monthlyExpenses);
     console.log('Income vs Expense updated:', incomeVsExpense);
   }, [monthlyExpenses, incomeVsExpense]);
+
+  // Add this effect to fetch projects by status
+  useEffect(() => {
+    if (userId) {
+      dispatch(fetchProjectsByStatus(currentStatus));
+    }
+  }, [dispatch, userId, currentStatus]);
 
   // Callbacks
   const showToast = useCallback((message, type) => {
@@ -1042,12 +1255,28 @@ const Dashboard = () => {
           </section>
 
           <section className="bg-white/80 rounded-xl p-4 mb-6">
-            <h2 className="text-lg font-semibold text-[#7F5539] mb-4">Your Projects</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold text-[#7F5539]">Your Projects</h2>
+              <button
+                onClick={() => setIsEntryModalOpen(true)}
+                className="text-sm px-4 py-2 bg-[#B08968] text-white rounded-lg flex items-center gap-2"
+              >
+                <Plus size={16} />
+                Add Entry
+              </button>
+            </div>
+
+            <ProjectStatusTabs
+              currentStatus={currentStatus}
+              onStatusChange={setCurrentStatus}
+            />
+
             <ProjectList
-              projects={projects}
+              projects={projects.filter(project => project.status === currentStatus)}
               onDelete={handleDeleteProject}
               onSelect={handleSelectProject}
               selectedProject={selectedProject}
+              showToast={showToast}
             />
           </section>
 
