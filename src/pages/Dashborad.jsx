@@ -162,7 +162,7 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject,
 
   const statusOptions = {
     inProgress: 'In Progress',
-    progress: 'Under Review',
+    progress: 'Progress',
     finished: 'Completed'
   };
 
@@ -258,13 +258,13 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject,
               : "bg-white"
           }`}
         >
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-[#7F5539]">{project.name}</h3>
               <p className="text-sm text-gray-600">{project.description}</p>
               
-              {/* Add Status Dropdown */}
-              <div className="mt-2 flex items-center gap-4">
+              {/* Status and Budget Section */}
+              <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-gray-600">Status:</span>
                   <select
@@ -280,9 +280,9 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject,
                   </select>
                 </div>
 
-                {/* Budget Display/Edit */}
+                {/* Budget Section */}
                 {editingBudget === project._id ? (
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center gap-2">
                     <input
                       type="number"
                       value={budgetValue}
@@ -304,7 +304,7 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject,
                     </button>
                   </div>
                 ) : (
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-600">
                       Budget: ${project.budget.toLocaleString()}
                     </span>
@@ -319,7 +319,8 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject,
               </div>
             </div>
             
-            <div className="flex items-center space-x-2">
+            {/* Action Buttons */}
+            <div className="flex flex-wrap gap-2 mt-2 sm:mt-0 sm:flex-nowrap items-center justify-end">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -340,7 +341,7 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject,
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => handleShowBills(project)}
-                className="p-2 text-[#B08968] hover:text-[#7F5539]"
+                className="px-3 py-2 text-sm bg-[#B08968] text-white rounded-md whitespace-nowrap"
               >
                 Connect Bills
               </motion.button>
