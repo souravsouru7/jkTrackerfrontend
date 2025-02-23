@@ -764,7 +764,7 @@ const Charts = React.memo(({ monthlyExpenses, incomeVsExpense, categoryAnalysis,
           variants={itemVariants}
           className="bg-white rounded-lg shadow-lg p-3"
         >
-          <h3 className="text-base font-semibold text-[#7F5539] mb-2">Income vs Expense</h3>
+          <h3 className="text-base font-semibold text-[#7F5539] mb-2">Expenses vs Total Received</h3>
           <div className="h-[200px]">
             {!hasIncomeExpenseData ? (
               <div className="h-full flex items-center justify-center text-gray-500">
@@ -774,7 +774,10 @@ const Charts = React.memo(({ monthlyExpenses, incomeVsExpense, categoryAnalysis,
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={incomeVsExpense}
+                    data={incomeVsExpense.map(item => ({
+                      ...item,
+                      name: item.name === 'Income' ? 'Total Received' : item.name
+                    }))}
                     dataKey="value"
                     nameKey="name"
                     cx="50%"
@@ -903,7 +906,7 @@ const Charts = React.memo(({ monthlyExpenses, incomeVsExpense, categoryAnalysis,
           variants={itemVariants}
           className="bg-white rounded-lg p-6 shadow-sm h-[400px]"
         >
-          <h3 className="text-lg font-semibold text-[#7F5539] mb-4">Income vs Expense</h3>
+          <h3 className="text-lg font-semibold text-[#7F5539] mb-4">Expenses vs Total Received</h3>
           {!hasIncomeExpenseData ? (
             <div className="h-full flex items-center justify-center text-gray-500">
               No income/expense data available
@@ -912,7 +915,10 @@ const Charts = React.memo(({ monthlyExpenses, incomeVsExpense, categoryAnalysis,
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={incomeVsExpense}
+                  data={incomeVsExpense.map(item => ({
+                    ...item,
+                    name: item.name === 'Income' ? 'Total Received' : item.name
+                  }))}
                   dataKey="value"
                   nameKey="name"
                   cx="50%"
