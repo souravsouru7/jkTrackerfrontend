@@ -397,14 +397,16 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject,
                           projectBills.map(bill => (
                             <div key={bill._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                               <div>
-                                <p className="font-medium">{bill.billNumber}</p>
-                                <p className="text-sm text-gray-500">
-                                  {new Date(bill.date).toLocaleDateString()} - {bill.clientName}
-                                </p>
+                                <p className="font-medium text-[#7F5539]">{bill.clientName}</p>
+                                <div className="flex gap-2 text-sm text-gray-500">
+                                  <span>{new Date(bill.date).toLocaleDateString()}</span>
+                                  <span>•</span>
+                                  <span>Bill #{bill.billNumber}</span>
+                                </div>
                               </div>
                               <button
                                 onClick={() => handleDisconnectBill(bill._id)}
-                                className="text-red-500 hover:text-red-700"
+                                className="text-red-500 hover:text-red-700 px-3 py-1 rounded-md hover:bg-red-50"
                               >
                                 Disconnect
                               </button>
@@ -424,14 +426,16 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject,
                           unconnectedBills.map(bill => (
                             <div key={bill._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                               <div>
-                                <p className="font-medium">{bill.billNumber}</p>
-                                <p className="text-sm text-gray-500">
-                                  {new Date(bill.date).toLocaleDateString()} - {bill.clientName}
-                                </p>
+                                <p className="font-medium text-[#7F5539]">{bill.clientName}</p>
+                                <div className="flex gap-2 text-sm text-gray-500">
+                                  <span>{new Date(bill.date).toLocaleDateString()}</span>
+                                  <span>•</span>
+                                  <span>Bill #{bill.billNumber}</span>
+                                </div>
                               </div>
                               <button
                                 onClick={() => handleConnectBill(bill._id)}
-                                className="text-[#B08968] hover:text-[#7F5539]"
+                                className="text-[#B08968] hover:text-[#7F5539] px-3 py-1 rounded-md hover:bg-[#B08968]/10"
                               >
                                 Connect
                               </button>
