@@ -1,10 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
+// Update status labels to exactly match backend values
 const statusLabels = {
-  inProgress: 'In Progress',
-  progress: 'Under Review',
-  finished: 'Completed'
+  'Under Disscussion': 'Under Discussion',
+  'In Progress': 'In Progress',
+  'Completed': 'Completed'
 };
 
 const ProjectStatusTabs = ({ currentStatus, onStatusChange }) => {

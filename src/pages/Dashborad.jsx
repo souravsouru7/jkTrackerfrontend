@@ -151,7 +151,13 @@ const MobileMenu = React.memo(({ isOpen, setIsOpen, navigate, dispatch }) => {
   );
 });
 
-const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject, showToast }) => {
+const STATUS_OPTIONS = [
+  { value: 'Under Disscussion', label: 'Under Discussion' },
+  { value: 'In Progress', label: 'In Progress' },
+  { value: 'Completed', label: 'Completed' }
+];
+
+const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject, showToast, userId }) => {
   const dispatch = useDispatch();
   const [editingBudget, setEditingBudget] = useState(null);
   const [budgetValue, setBudgetValue] = useState("");
@@ -159,12 +165,6 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject,
   const [selectedProjectForBills, setSelectedProjectForBills] = useState(null);
   const [isLoadingBills, setIsLoadingBills] = useState(false);
   const [error, setError] = useState(null);
-
-  const statusOptions = {
-    inProgress: 'In Progress',
-    progress: 'Progress',
-    finished: 'Completed'
-  };
 
   const handleStatusChange = async (projectId, newStatus) => {
     try {
@@ -205,11 +205,18 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject,
           billId,
           projectId: selectedProjectForBills._id
         })).unwrap();
-        // Refresh the bills lists
+        
+        // Refresh bills lists
         dispatch(fetchUnconnectedBills());
         dispatch(fetchProjectBills(selectedProjectForBills._id));
+        
+        // Pass userId properly here
+        dispatch(fetchProjects(userId));
+        
+        showToast("Bill connected successfully", "success");
       } catch (error) {
         console.error('Failed to connect bill:', error);
+        showToast("Failed to connect bill", "error");
       }
     }
   };
@@ -217,11 +224,18 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject,
   const handleDisconnectBill = async (billId) => {
     try {
       await dispatch(disconnectBillFromProject(billId)).unwrap();
-      // Refresh the bills lists
+      
+      // Refresh bills lists
       dispatch(fetchUnconnectedBills());
       dispatch(fetchProjectBills(selectedProjectForBills._id));
+      
+      // Pass userId properly here
+      dispatch(fetchProjects(userId));
+      
+      showToast("Bill disconnected successfully", "success");
     } catch (error) {
       console.error('Failed to disconnect bill:', error);
+      showToast("Failed to disconnect bill", "error");
     }
   };
 
@@ -272,9 +286,9 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject,
                     onChange={(e) => handleStatusChange(project._id, e.target.value)}
                     className="px-2 py-1 text-sm border rounded-md bg-white text-[#7F5539] cursor-pointer"
                   >
-                    {Object.entries(statusOptions).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
+                    {STATUS_OPTIONS.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
                       </option>
                     ))}
                   </select>
@@ -306,7 +320,7 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject,
                 ) : (
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-600">
-                      Budget: ${project.budget.toLocaleString()}
+                      Budget: ₹{project.budget.toLocaleString()}
                     </span>
                     <button
                       onClick={() => handleBudgetEdit(project)}
@@ -397,11 +411,24 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject,
                           projectBills.map(bill => (
                             <div key={bill._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                               <div>
-                                <p className="font-medium text-[#7F5539]">{bill.clientName}</p>
+                                <div className="flex items-center gap-2">
+                                  <p className="font-medium text-[#7F5539]">{bill.clientName}</p>
+                                  <span className={`px-2 py-0.5 text-xs rounded-full ${
+                                    bill.documentType === 'Estimate' 
+                                      ? 'bg-blue-100 text-blue-700'
+                                      : bill.documentType === 'Quotation'
+                                      ? 'bg-purple-100 text-purple-700'
+                                      : 'bg-green-100 text-green-700'
+                                  }`}>
+                                    {bill.documentType}
+                                  </span>
+                                </div>
                                 <div className="flex gap-2 text-sm text-gray-500">
                                   <span>{new Date(bill.date).toLocaleDateString()}</span>
                                   <span>•</span>
                                   <span>Bill #{bill.billNumber}</span>
+                                  <span>•</span>
+                                  <span>₹{bill.finalAmount.toLocaleString('en-IN')}</span>
                                 </div>
                               </div>
                               <button
@@ -426,11 +453,24 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject,
                           unconnectedBills.map(bill => (
                             <div key={bill._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                               <div>
-                                <p className="font-medium text-[#7F5539]">{bill.clientName}</p>
+                                <div className="flex items-center gap-2">
+                                  <p className="font-medium text-[#7F5539]">{bill.clientName}</p>
+                                  <span className={`px-2 py-0.5 text-xs rounded-full ${
+                                    bill.documentType === 'Estimate' 
+                                      ? 'bg-blue-100 text-blue-700'
+                                      : bill.documentType === 'Quotation'
+                                      ? 'bg-purple-100 text-purple-700'
+                                      : 'bg-green-100 text-green-700'
+                                  }`}>
+                                    {bill.documentType}
+                                  </span>
+                                </div>
                                 <div className="flex gap-2 text-sm text-gray-500">
                                   <span>{new Date(bill.date).toLocaleDateString()}</span>
                                   <span>•</span>
                                   <span>Bill #{bill.billNumber}</span>
+                                  <span>•</span>
+                                  <span>₹{bill.finalAmount.toLocaleString('en-IN')}</span>
                                 </div>
                               </div>
                               <button
@@ -1040,6 +1080,12 @@ const Toast = React.memo(({ message, type }) => (
   </motion.div>
 ));
 
+const PROJECT_STATUSES = {
+  UNDER_DISCUSSION: 'Under Disscussion',
+  IN_PROGRESS: 'In Progress',
+  COMPLETED: 'Completed'
+};
+
 const Dashboard = () => {
   // State
   const [isOpen, setIsOpen] = useState(false);
@@ -1050,7 +1096,7 @@ const Dashboard = () => {
   const [notificationType, setNotificationType] = useState("");
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
   const [newProjectBudget, setNewProjectBudget] = useState("");
-  const [currentStatus, setCurrentStatus] = useState('inProgress');
+  const [currentStatus, setCurrentStatus] = useState(PROJECT_STATUSES.UNDER_DISCUSSION);
 
   // Hooks
   const navigate = useNavigate();
@@ -1170,8 +1216,7 @@ const Dashboard = () => {
         dispatch(selectProject(null));
         localStorage.removeItem('selectedProject');
       }
-      
-      // Refresh projects list
+
       dispatch(fetchProjects(userId));
       
       showToast("Project deleted successfully", "success");
@@ -1288,6 +1333,7 @@ const Dashboard = () => {
               onSelect={handleSelectProject}
               selectedProject={selectedProject}
               showToast={showToast}
+              userId={userId}
             />
           </section>
 

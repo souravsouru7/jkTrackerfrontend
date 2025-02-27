@@ -4,41 +4,29 @@ import { motion } from 'framer-motion';
 import { ChevronRight, Trash2 } from 'lucide-react';
 import { updateProjectStatus } from '../store/slice/projectSlice';
 
-const statusOptions = [
-  { value: 'inProgress', label: 'Not Started', color: '#FCD34D' },
-  { value: 'progress', label: 'In Progress', color: '#60A5FA' },
-  { value: 'finished', label: 'Completed', color: '#34D399' }
+const STATUS_OPTIONS = [
+  { value: 'Under Disscussion', label: 'Under Discussion' },
+  { value: 'In Progress', label: 'In Progress' },
+  { value: 'Completed', label: 'Completed' }
 ];
 
 const ProjectList = ({ projects, onDelete, onSelect, selectedProject }) => {
   const dispatch = useDispatch();
-  const [statusFilter, setStatusFilter] = useState('all');
-
+  
   const handleStatusChange = async (projectId, newStatus) => {
     try {
+      console.log('Updating status to:', newStatus); // Debug log
       await dispatch(updateProjectStatus({ projectId, status: newStatus })).unwrap();
     } catch (error) {
       console.error('Failed to update status:', error);
     }
   };
 
-  const filteredProjects = statusFilter === 'all' 
-    ? projects 
-    : projects.filter(project => project.status === statusFilter);
-
   return (
     <div className="space-y-4">
-      {/* Status Filter */}
+      {/* Status Filter - simplified without "All" option */}
       <div className="flex flex-wrap gap-2 mb-4">
-        <button
-          onClick={() => setStatusFilter('all')}
-          className={`px-3 py-1 rounded-lg ${
-            statusFilter === 'all' ? 'bg-[#B08968] text-white' : 'bg-gray-100'
-          }`}
-        >
-          All
-        </button>
-        {statusOptions.map(option => (
+        {STATUS_OPTIONS.map(option => (
           <button
             key={option.value}
             onClick={() => setStatusFilter(option.value)}
@@ -52,7 +40,7 @@ const ProjectList = ({ projects, onDelete, onSelect, selectedProject }) => {
       </div>
 
       {/* Projects List */}
-      {filteredProjects.map((project) => (
+      {projects.map((project) => (
         <motion.div
           key={project._id}
           layout
@@ -74,12 +62,9 @@ const ProjectList = ({ projects, onDelete, onSelect, selectedProject }) => {
                   <select
                     value={project.status}
                     onChange={(e) => handleStatusChange(project._id, e.target.value)}
-                    className="px-2 py-1 text-sm border rounded-lg bg-white"
-                    style={{
-                      color: statusOptions.find(opt => opt.value === project.status)?.color
-                    }}
+                    className="px-2 py-1 text-sm border rounded-lg bg-white text-[#7F5539]"
                   >
-                    {statusOptions.map(option => (
+                    {STATUS_OPTIONS.map(option => (
                       <option key={option.value} value={option.value}>
                         {option.label}
                       </option>
