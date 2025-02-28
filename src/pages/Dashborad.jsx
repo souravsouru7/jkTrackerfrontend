@@ -207,11 +207,11 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject,
         })).unwrap();
         
         // Refresh bills lists
-        dispatch(fetchUnconnectedBills());
-        dispatch(fetchProjectBills(selectedProjectForBills._id));
-        
-        // Pass userId properly here
-        dispatch(fetchProjects(userId));
+        await Promise.all([
+          dispatch(fetchUnconnectedBills()),
+          dispatch(fetchProjectBills(selectedProjectForBills._id)),
+          dispatch(fetchProjects(userId))
+        ]);
         
         showToast("Bill connected successfully", "success");
       } catch (error) {
@@ -226,11 +226,11 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject,
       await dispatch(disconnectBillFromProject(billId)).unwrap();
       
       // Refresh bills lists
-      dispatch(fetchUnconnectedBills());
-      dispatch(fetchProjectBills(selectedProjectForBills._id));
-      
-      // Pass userId properly here
-      dispatch(fetchProjects(userId));
+      await Promise.all([
+        dispatch(fetchUnconnectedBills()),
+        dispatch(fetchProjectBills(selectedProjectForBills._id)),
+        dispatch(fetchProjects(userId))
+      ]);
       
       showToast("Bill disconnected successfully", "success");
     } catch (error) {
@@ -260,109 +260,120 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject,
     setBudgetValue("");
   };
 
+  // Add a safe number formatter function
+  const formatNumber = (value) => {
+    const num = Number(value);
+    return isNaN(num) ? '0' : num.toLocaleString('en-IN');
+  };
+
   return (
     <motion.div variants={containerVariants} className="space-y-4">
-      {projects.map((project) => (
-        <motion.div
-          key={project._id}
-          variants={itemVariants}
-          className={`p-4 rounded-lg shadow-md ${
-            selectedProject?._id === project._id
-              ? "bg-[#B08968]/20 border-2 border-[#B08968]"
-              : "bg-white"
-          }`}
-        >
-          <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-[#7F5539]">{project.name}</h3>
-              <p className="text-sm text-gray-600">{project.description}</p>
-              
-              {/* Status and Budget Section */}
-              <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">Status:</span>
-                  <select
-                    value={project.status}
-                    onChange={(e) => handleStatusChange(project._id, e.target.value)}
-                    className="px-2 py-1 text-sm border rounded-md bg-white text-[#7F5539] cursor-pointer"
-                  >
-                    {STATUS_OPTIONS.map(option => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+      {(projects || []).map((project) => {
+        // Ensure budget has a default value
+        const budget = Number(project.budget) || 0;
+        
+        return (
+          <motion.div
+            key={project._id}
+            variants={itemVariants}
+            className={`p-4 rounded-lg shadow-md ${
+              selectedProject?._id === project._id
+                ? "bg-[#B08968]/20 border-2 border-[#B08968]"
+                : "bg-white"
+            }`}
+          >
+            <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-[#7F5539]">{project.name || 'Untitled Project'}</h3>
+                <p className="text-sm text-gray-600">{project.description || 'No description'}</p>
+                
+                {/* Status and Budget Section */}
+                <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600">Status:</span>
+                    <select
+                      value={project.status || 'Under Disscussion'}
+                      onChange={(e) => handleStatusChange(project._id, e.target.value)}
+                      className="px-2 py-1 text-sm border rounded-md bg-white text-[#7F5539] cursor-pointer"
+                    >
+                      {STATUS_OPTIONS.map(option => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                {/* Budget Section */}
-                {editingBudget === project._id ? (
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      value={budgetValue}
-                      onChange={(e) => setBudgetValue(e.target.value)}
-                      className="px-2 py-1 border rounded-md text-sm w-32"
-                      placeholder="Enter budget"
-                    />
-                    <button
-                      onClick={() => handleBudgetSave(project._id)}
-                      className="px-2 py-1 bg-green-500 text-white rounded-md text-sm"
-                    >
-                      Save
-                    </button>
-                    <button
-                      onClick={handleBudgetCancel}
-                      className="px-2 py-1 bg-gray-500 text-white rounded-md text-sm"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">
-                      Budget: ₹{project.budget.toLocaleString()}
-                    </span>
-                    <button
-                      onClick={() => handleBudgetEdit(project)}
-                      className="text-sm text-[#B08968] hover:text-[#7F5539]"
-                    >
-                      Edit
-                    </button>
-                  </div>
-                )}
+                  {/* Budget Section */}
+                  {editingBudget === project._id ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        value={budgetValue}
+                        onChange={(e) => setBudgetValue(e.target.value)}
+                        className="px-2 py-1 border rounded-md text-sm w-32"
+                        placeholder="Enter budget"
+                      />
+                      <button
+                        onClick={() => handleBudgetSave(project._id)}
+                        className="px-2 py-1 bg-green-500 text-white rounded-md text-sm"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={handleBudgetCancel}
+                        className="px-2 py-1 bg-gray-500 text-white rounded-md text-sm"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600">
+                        Budget: ₹{budget.toLocaleString()}
+                      </span>
+                      <button
+                        onClick={() => handleBudgetEdit(project)}
+                        className="text-sm text-[#B08968] hover:text-[#7F5539]"
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="flex flex-wrap gap-2 mt-2 sm:mt-0 sm:flex-nowrap items-center justify-end">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => onSelect(project)}
+                  className="p-2 text-[#B08968] hover:text-[#7F5539]"
+                >
+                  <ChevronRight size={20} />
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => onDelete(project._id)}
+                  className="p-2 text-red-500 hover:text-red-700"
+                >
+                  <Trash2 size={20} />
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => handleShowBills(project)}
+                  className="px-3 py-2 text-sm bg-[#B08968] text-white rounded-md whitespace-nowrap"
+                >
+                  Connect Bills
+                </motion.button>
               </div>
             </div>
-            
-            {/* Action Buttons */}
-            <div className="flex flex-wrap gap-2 mt-2 sm:mt-0 sm:flex-nowrap items-center justify-end">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => onSelect(project)}
-                className="p-2 text-[#B08968] hover:text-[#7F5539]"
-              >
-                <ChevronRight size={20} />
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => onDelete(project._id)}
-                className="p-2 text-red-500 hover:text-red-700"
-              >
-                <Trash2 size={20} />
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => handleShowBills(project)}
-                className="px-3 py-2 text-sm bg-[#B08968] text-white rounded-md whitespace-nowrap"
-              >
-                Connect Bills
-              </motion.button>
-            </div>
-          </div>
-        </motion.div>
-      ))}
+          </motion.div>
+        );
+      })}
 
       {/* Bills Modal */}
       {showBillModal && (
@@ -405,14 +416,14 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject,
                   <div className="space-y-6">
                     {/* Project Bills */}
                     <div>
-                      <h4 className="font-medium mb-3">Connected Bills ({projectBills.length})</h4>
+                      <h4 className="font-medium mb-3">Connected Bills ({projectBills?.length || 0})</h4>
                       <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                        {projectBills.length > 0 ? (
+                        {projectBills?.length > 0 ? (
                           projectBills.map(bill => (
                             <div key={bill._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                               <div>
                                 <div className="flex items-center gap-2">
-                                  <p className="font-medium text-[#7F5539]">{bill.clientName}</p>
+                                  <p className="font-medium text-[#7F5539]">{bill.clientName || 'No Client Name'}</p>
                                   <span className={`px-2 py-0.5 text-xs rounded-full ${
                                     bill.documentType === 'Estimate' 
                                       ? 'bg-blue-100 text-blue-700'
@@ -420,15 +431,15 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject,
                                       ? 'bg-purple-100 text-purple-700'
                                       : 'bg-green-100 text-green-700'
                                   }`}>
-                                    {bill.documentType}
+                                    {bill.documentType || 'Invoice'}
                                   </span>
                                 </div>
                                 <div className="flex gap-2 text-sm text-gray-500">
-                                  <span>{new Date(bill.date).toLocaleDateString()}</span>
+                                  <span>{bill.date ? new Date(bill.date).toLocaleDateString() : 'No date'}</span>
                                   <span>•</span>
-                                  <span>Bill #{bill.billNumber}</span>
+                                  <span>Bill #{bill.billNumber || 'N/A'}</span>
                                   <span>•</span>
-                                  <span>₹{bill.finalAmount.toLocaleString('en-IN')}</span>
+                                  <span>₹{formatNumber(bill.finalAmount)}</span>
                                 </div>
                               </div>
                               <button
@@ -447,14 +458,14 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject,
 
                     {/* Unconnected Bills */}
                     <div>
-                      <h4 className="font-medium mb-3">Available Bills ({unconnectedBills.length})</h4>
+                      <h4 className="font-medium mb-3">Available Bills ({unconnectedBills?.length || 0})</h4>
                       <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                        {unconnectedBills.length > 0 ? (
+                        {unconnectedBills?.length > 0 ? (
                           unconnectedBills.map(bill => (
                             <div key={bill._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                               <div>
                                 <div className="flex items-center gap-2">
-                                  <p className="font-medium text-[#7F5539]">{bill.clientName}</p>
+                                  <p className="font-medium text-[#7F5539]">{bill.clientName || 'No Client Name'}</p>
                                   <span className={`px-2 py-0.5 text-xs rounded-full ${
                                     bill.documentType === 'Estimate' 
                                       ? 'bg-blue-100 text-blue-700'
@@ -462,15 +473,15 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject,
                                       ? 'bg-purple-100 text-purple-700'
                                       : 'bg-green-100 text-green-700'
                                   }`}>
-                                    {bill.documentType}
+                                    {bill.documentType || 'Invoice'}
                                   </span>
                                 </div>
                                 <div className="flex gap-2 text-sm text-gray-500">
-                                  <span>{new Date(bill.date).toLocaleDateString()}</span>
+                                  <span>{bill.date ? new Date(bill.date).toLocaleDateString() : 'No date'}</span>
                                   <span>•</span>
-                                  <span>Bill #{bill.billNumber}</span>
+                                  <span>Bill #{bill.billNumber || 'N/A'}</span>
                                   <span>•</span>
-                                  <span>₹{bill.finalAmount.toLocaleString('en-IN')}</span>
+                                  <span>₹{formatNumber(bill.finalAmount)}</span>
                                 </div>
                               </div>
                               <button
@@ -594,10 +605,8 @@ const FinancialSummary = React.memo(({ summary, selectedProject }) => {
     return entries?.filter(entry => entry.type.toLowerCase() === 'expense') || [];
   }, [entries]);
 
-  console.log('Expense Entries:', expenseEntries); // Debug log
-
   return (
-    <>
+    <div>
       {/* Mobile View */}
       <div className="block sm:hidden p-4 space-y-6">
         {cards.map((card, index) => (
@@ -732,7 +741,7 @@ const FinancialSummary = React.memo(({ summary, selectedProject }) => {
           </>
         )}
       </AnimatePresence>
-    </>
+    </div>
   );
 });
 
