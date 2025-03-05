@@ -37,6 +37,8 @@ import {
   disconnectBillFromProject
 } from '../store/slice/interiorBillingSlice';
 import ProjectStatusTabs from '../components/ProjectStatusTabs';
+import { fetchSharedExpenses } from '../store/slice/sharedExpenseSlice';
+import SharedExpenseModal from '../components/SharedExpenseModal';
 
 const EntryForm = lazy(() => import("../components/addentry/EntryForm"));
 
@@ -266,6 +268,17 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject,
     return isNaN(num) ? '0' : num.toLocaleString('en-IN');
   };
 
+  const handleProjectSelect = (project) => {
+    onSelect(project);
+    // Add small delay to ensure the DOM has updated
+    setTimeout(() => {
+      const element = document.getElementById('financial-summary');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
+  };
+
   return (
     <motion.div variants={containerVariants} className="space-y-4">
       {(projects || []).map((project) => {
@@ -348,7 +361,7 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject,
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => onSelect(project)}
+                  onClick={() => handleProjectSelect(project)}
                   className="p-2 text-[#B08968] hover:text-[#7F5539]"
                 >
                   <ChevronRight size={20} />
@@ -784,29 +797,50 @@ const Charts = React.memo(({ monthlyExpenses, incomeVsExpense, categoryAnalysis,
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthlyExpenses}>
-                  <CartesianGrid strokeDasharray="3 3" />
+                <AreaChart data={monthlyExpenses}>
+                  <defs>
+                    <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#B08968" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#B08968" stopOpacity={0.1}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis 
                     dataKey="month" 
                     fontSize={10}
                     tick={{ fill: '#7F5539' }}
+                    axisLine={{ stroke: '#E6CCB2' }}
                   />
                   <YAxis 
                     fontSize={10}
                     tickFormatter={formatCurrency}
                     tick={{ fill: '#7F5539' }}
+                    axisLine={{ stroke: '#E6CCB2' }}
                   />
-                  <Tooltip 
+                  <Tooltip
                     formatter={(value) => [formatCurrency(value), "Amount"]}
                     contentStyle={{
-                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.95)',
                       border: 'none',
                       borderRadius: '8px',
                       boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
                     }}
                   />
-                  <Bar dataKey="amount" name="Expenses" fill="#B08968" />
-                </BarChart>
+                  <Area 
+                    type="monotone" 
+                    dataKey="amount" 
+                    stroke="#B08968" 
+                    fill="url(#expenseGradient)"
+                    strokeWidth={2}
+                    name="Expenses"
+                    activeDot={{ 
+                      r: 6, 
+                      stroke: '#B08968',
+                      strokeWidth: 2,
+                      fill: '#fff'
+                    }}
+                  />
+                </AreaChart>
               </ResponsiveContainer>
             )}
           </div>
@@ -934,22 +968,50 @@ const Charts = React.memo(({ monthlyExpenses, incomeVsExpense, categoryAnalysis,
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthlyExpenses}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" fontSize={12} />
-                <YAxis fontSize={12} tickFormatter={formatCurrency} />
-                <Tooltip 
+              <AreaChart data={monthlyExpenses}>
+                <defs>
+                  <linearGradient id="expenseGradientDesktop" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#B08968" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#B08968" stopOpacity={0.1}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis 
+                  dataKey="month" 
+                  fontSize={12}
+                  tick={{ fill: '#7F5539' }}
+                  axisLine={{ stroke: '#E6CCB2' }}
+                />
+                <YAxis 
+                  fontSize={12}
+                  tickFormatter={formatCurrency}
+                  tick={{ fill: '#7F5539' }}
+                  axisLine={{ stroke: '#E6CCB2' }}
+                />
+                <Tooltip
                   formatter={(value) => [formatCurrency(value), "Amount"]}
                   contentStyle={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
                     border: 'none',
                     borderRadius: '8px',
                     boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
                   }}
                 />
-                <Legend />
-                <Bar dataKey="amount" name="Expenses" fill="#B08968" />
-              </BarChart>
+                <Area 
+                  type="monotone" 
+                  dataKey="amount" 
+                  stroke="#B08968" 
+                  fill="url(#expenseGradientDesktop)"
+                  strokeWidth={2}
+                  name="Expenses"
+                  activeDot={{ 
+                    r: 8, 
+                    stroke: '#B08968',
+                    strokeWidth: 2,
+                    fill: '#fff'
+                  }}
+                />
+              </AreaChart>
             </ResponsiveContainer>
           )}
         </motion.div>
@@ -1106,6 +1168,9 @@ const Dashboard = () => {
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
   const [newProjectBudget, setNewProjectBudget] = useState("");
   const [currentStatus, setCurrentStatus] = useState(PROJECT_STATUSES.UNDER_DISCUSSION);
+  const [showEntryOptions, setShowEntryOptions] = useState(false);
+  const [isSharedExpenseModalOpen, setIsSharedExpenseModalOpen] = useState(false);
+
 
   // Hooks
   const navigate = useNavigate();
@@ -1181,6 +1246,12 @@ const Dashboard = () => {
       dispatch(fetchProjectsByStatus(currentStatus));
     }
   }, [dispatch, userId, currentStatus]);
+
+  useEffect(() => {
+    if (userId) {
+      dispatch(fetchSharedExpenses(userId));
+    }
+  }, [dispatch, userId]);
 
   // Callbacks
   const showToast = useCallback((message, type) => {
@@ -1260,6 +1331,8 @@ const Dashboard = () => {
     setIsEntryModalOpen(false);
     refreshData();
   }, [refreshData]);
+
+
 
   return (
     <div className="min-h-screen bg-[#FDF8F3]">
@@ -1348,22 +1421,84 @@ const Dashboard = () => {
 
           {selectedProject && (
             <>
-              <FinancialSummary summary={balanceSummary} selectedProject={selectedProject} />
-              <Charts
-                monthlyExpenses={monthlyExpenses}
-                incomeVsExpense={incomeVsExpense}
-                categoryAnalysis={categoryAnalysis}
-                colorPalette={colorPalette}
-              />
+              <div id="financial-summary">
+                <FinancialSummary summary={balanceSummary} selectedProject={selectedProject} />
+                <Charts
+                  monthlyExpenses={monthlyExpenses}
+                  incomeVsExpense={incomeVsExpense}
+                  categoryAnalysis={categoryAnalysis}
+                  colorPalette={colorPalette}
+                />
+              </div>
             </>
           )}
 
-          <button
-            onClick={() => setIsEntryModalOpen(true)}
-            className="fixed bottom-6 right-6 w-14 h-14 bg-[#B08968] text-white rounded-full shadow-xl flex items-center justify-center"
-          >
-            <Plus size={24} />
-          </button>
+          <>
+            {/* Entry Options Modal */}
+            <AnimatePresence>
+              {showEntryOptions && (
+                <>
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 bg-black/50 z-40"
+                    onClick={() => setShowEntryOptions(false)}
+                  />
+                  <motion.div
+                    initial={{ opacity: 0, y: 100 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 100 }}
+                    className="fixed bottom-40 right-6 z-50 bg-white rounded-lg shadow-xl overflow-hidden"
+                  >
+                    <button
+                      onClick={() => {
+                        setIsEntryModalOpen(true);
+                        setShowEntryOptions(false);
+                      }}
+                      className="w-full px-6 py-3 text-left text-sm hover:bg-[#F5EBE0] flex items-center gap-2 text-[#7F5539]"
+                    >
+                      <Plus size={16} />
+                      Add Entry
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsSharedExpenseModalOpen(true);
+                        setShowEntryOptions(false);
+                      }}
+                      className="w-full px-6 py-3 text-left text-sm hover:bg-[#F5EBE0] flex items-center gap-2 text-[#7F5539]"
+                    >
+                      <Plus size={16} />
+                      Add Shared Expense
+                    </button>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+
+            {/* Floating Action Button */}
+            <button
+              onClick={() => setShowEntryOptions(true)}
+              className="fixed bottom-24 right-6 w-14 h-14 bg-[#B08968] text-white rounded-full shadow-xl flex items-center justify-center md:hidden z-30"
+            >
+              <Plus size={24} />
+            </button>
+
+            {/* Desktop Add Entry Button */}
+            <button
+              onClick={() => setIsEntryModalOpen(true)}
+              className="fixed bottom-6 right-6 w-14 h-14 bg-[#B08968] text-white rounded-full shadow-xl hidden md:flex items-center justify-center"
+            >
+              <Plus size={24} />
+            </button>
+
+            {/* Add SharedExpenseModal component */}
+            <SharedExpenseModal
+              isOpen={isSharedExpenseModalOpen}
+              onClose={() => setIsSharedExpenseModalOpen(false)}
+              userId={userId}
+            />
+          </>
 
           <AnimatePresence>
             {showNotification && (

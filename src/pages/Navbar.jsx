@@ -2,9 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logout } from "../store/slice/authSlice";
-import { LogOut, FileText, Calculator, PlusCircle, Menu, X, LayoutDashboard, MoreHorizontal, Plus, Receipt } from 'lucide-react';
+import { LogOut, FileText, Calculator, PlusCircle, LayoutDashboard, MoreHorizontal, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import JKLogo from '../components/common/JKLogo';
+import SharedExpenseModal from '../components/SharedExpenseModal';
 import './Navbar.css';
 
 const Navbar = () => {
@@ -19,6 +20,7 @@ const Navbar = () => {
   const [projectName, setProjectName] = useState('');
   const [description, setDescription] = useState('');
   const [budget, setBudget] = useState('');
+  const [isSharedExpenseModalOpen, setIsSharedExpenseModalOpen] = useState(false);
   const dropdownRef = useRef(null);
   const createDropdownRef = useRef(null);
   const modalRef = useRef(null);
@@ -343,6 +345,13 @@ const Navbar = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Add SharedExpenseModal component */}
+      <SharedExpenseModal
+        isOpen={isSharedExpenseModalOpen}
+        onClose={() => setIsSharedExpenseModalOpen(false)}
+        userId={JSON.parse(localStorage.getItem('user'))?._id}
+      />
     </>
   );
 };
