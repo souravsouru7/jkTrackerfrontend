@@ -17,14 +17,25 @@ const CreateBill = () => {
   // Get document type from location state or default to 'Invoice'
   const [documentType, setDocumentType] = useState(location.state?.documentType || 'Invoice');
 
-  const [predefinedDescriptions] = useState([
-    'Providing and fixing 18mm HDHMR & Hafele hardware with required Adhesive\'s and selected laminates',
-    'Providing and fixing 18mm HDHMR & Hafele Hardware with required Adhesive\'s and Selected Acrylic laminates',
-    'Providing and fixing of Havels wires with required electrical items includes \nLights (Philips, Crompton, Wipro)\nSwitch board (GM, Gold medal)',
-    'Providing and installing 2 coats of Royal Asian Paints with selected colours',
-    'Providing and fixing of selected wall cladding with Ganesh',
-    'Providing and fixing with Natural stone (limestone) wall cladding and unit box'
-  ]);
+  const [materials] = useState(['HDHMR', 'MDF', 'Particle Board', 'P/MWood']);
+  const [thicknesses] = useState(['6mm', '8mm', '12mm', '18mm', '25mm']);
+  const [hardwareBrands] = useState(['Godrej', 'Ebco', 'Hafele', 'Hettich']);
+
+  const generateDescription = (material, thickness, brand) => {
+    return `Providing and fixing ${thickness} ${material} & ${brand} Hardware with required Adhesive's and Selected Acrylic laminates`;
+  };
+
+  const [predefinedDescriptions] = useState(() => {
+    const descriptions = [];
+    materials.forEach(material => {
+      thicknesses.forEach(thickness => {
+        hardwareBrands.forEach(brand => {
+          descriptions.push(generateDescription(material, thickness, brand));
+        });
+      });
+    });
+    return descriptions;
+  });
 
   const [formData, setFormData] = useState({
     billNumber: '',
@@ -37,7 +48,7 @@ const CreateBill = () => {
     clientAddress: '',
     items: [{
       particular: '',
-      description: 'Providing and fixing of Table with 12mm plywood with necessary laminate and hardware',
+      description: generateDescription('HDHMR', '18mm', 'Hafele'),
       unit: 'Sft',
       width: 0,
       height: 0,
@@ -305,7 +316,7 @@ const CreateBill = () => {
                       ...formData,
                       items: [...formData.items, {
                         particular: '',
-                        description: 'Providing and fixing of Table with 12mm plywood with necessary laminate and hardware',
+                        description: generateDescription('HDHMR', '18mm', 'Hafele'),
                         unit: 'Sft',
                         width: 0,
                         height: 0,
@@ -350,23 +361,55 @@ const CreateBill = () => {
                             </td>
                             <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
                               <div className="space-y-2">
-                                <select
-                                  className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
-                                  value={item.description}
-                                  onChange={(e) => handleItemChange(index, 'description', e.target.value)}
-                                >
-                                  <option value="">Select or type a description</option>
-                                  {predefinedDescriptions.map((desc, i) => (
-                                    <option key={i} value={desc}>{desc}</option>
-                                  ))}
-                                </select>
-                                {item.description === "" && (
-                                  <textarea
-                                    className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300 min-h-[60px]"
-                                    placeholder="Or type a custom description"
-                                    onChange={(e) => handleItemChange(index, 'description', e.target.value)}
-                                  />
-                                )}
+                                <div className="grid grid-cols-3 gap-2">
+                                  <select
+                                    className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                    value={item.description.match(/(?<=fixing\s)\d+mm\s/)?.[0]?.trim() || '18mm'}
+                                    onChange={(e) => {
+                                      const thickness = e.target.value;
+                                      const material = item.description.match(/(?<=mm\s)(.*?)(?=\s&)/)?.[0] || 'HDHMR';
+                                      const brand = item.description.match(/(?<=&\s)(.*?)(?=\sHardware)/)?.[0] || 'Hafele';
+                                      handleItemChange(index, 'description', generateDescription(material, thickness, brand));
+                                    }}
+                                  >
+                                    {thicknesses.map(t => (
+                                      <option key={t} value={t}>{t}</option>
+                                    ))}
+                                  </select>
+
+                                  <select
+                                    className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                    value={item.description.match(/(?<=mm\s)(.*?)(?=\s&)/)?.[0] || 'HDHMR'}
+                                    onChange={(e) => {
+                                      const material = e.target.value;
+                                      const thickness = item.description.match(/(?<=fixing\s)\d+mm\s/)?.[0]?.trim() || '18mm';
+                                      const brand = item.description.match(/(?<=&\s)(.*?)(?=\sHardware)/)?.[0] || 'Hafele';
+                                      handleItemChange(index, 'description', generateDescription(material, thickness, brand));
+                                    }}
+                                  >
+                                    {materials.map(m => (
+                                      <option key={m} value={m}>{m}</option>
+                                    ))}
+                                  </select>
+
+                                  <select
+                                    className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                    value={item.description.match(/(?<=&\s)(.*?)(?=\sHardware)/)?.[0] || 'Hafele'}
+                                    onChange={(e) => {
+                                      const brand = e.target.value;
+                                      const thickness = item.description.match(/(?<=fixing\s)\d+mm\s/)?.[0]?.trim() || '18mm';
+                                      const material = item.description.match(/(?<=mm\s)(.*?)(?=\s&)/)?.[0] || 'HDHMR';
+                                      handleItemChange(index, 'description', generateDescription(material, thickness, brand));
+                                    }}
+                                  >
+                                    {hardwareBrands.map(b => (
+                                      <option key={b} value={b}>{b}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div className="text-sm text-[#7F5539] mt-1">
+                                  {item.description}
+                                </div>
                               </div>
                             </td>
                             <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
