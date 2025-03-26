@@ -26,7 +26,7 @@ const CreateBill = () => {
   };
 
   const [predefinedDescriptions] = useState(() => {
-    const descriptions = [];
+    const descriptions = ['Custom'];  // Add 'Custom' as first option
     materials.forEach(material => {
       thicknesses.forEach(thickness => {
         hardwareBrands.forEach(brand => {
@@ -361,55 +361,80 @@ const CreateBill = () => {
                             </td>
                             <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
                               <div className="space-y-2">
-                                <div className="grid grid-cols-3 gap-2">
-                                  <select
-                                    className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
-                                    value={item.description.match(/(?<=fixing\s)\d+mm\s/)?.[0]?.trim() || '18mm'}
-                                    onChange={(e) => {
-                                      const thickness = e.target.value;
-                                      const material = item.description.match(/(?<=mm\s)(.*?)(?=\s&)/)?.[0] || 'HDHMR';
-                                      const brand = item.description.match(/(?<=&\s)(.*?)(?=\sHardware)/)?.[0] || 'Hafele';
-                                      handleItemChange(index, 'description', generateDescription(material, thickness, brand));
-                                    }}
-                                  >
-                                    {thicknesses.map(t => (
-                                      <option key={t} value={t}>{t}</option>
-                                    ))}
-                                  </select>
+                                <select
+                                  className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                  value={predefinedDescriptions.includes(item.description) ? item.description : 'Custom'}
+                                  onChange={(e) => {
+                                    if (e.target.value === 'Custom') {
+                                      handleItemChange(index, 'description', '');
+                                    } else {
+                                      handleItemChange(index, 'description', e.target.value);
+                                    }
+                                  }}
+                                >
+                                  {predefinedDescriptions.map(desc => (
+                                    <option key={desc} value={desc}>{desc === 'Custom' ? 'Custom Description' : desc}</option>
+                                  ))}
+                                </select>
 
-                                  <select
+                                {(!predefinedDescriptions.includes(item.description) || item.description === '') && (
+                                  <textarea
                                     className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
-                                    value={item.description.match(/(?<=mm\s)(.*?)(?=\s&)/)?.[0] || 'HDHMR'}
-                                    onChange={(e) => {
-                                      const material = e.target.value;
-                                      const thickness = item.description.match(/(?<=fixing\s)\d+mm\s/)?.[0]?.trim() || '18mm';
-                                      const brand = item.description.match(/(?<=&\s)(.*?)(?=\sHardware)/)?.[0] || 'Hafele';
-                                      handleItemChange(index, 'description', generateDescription(material, thickness, brand));
-                                    }}
-                                  >
-                                    {materials.map(m => (
-                                      <option key={m} value={m}>{m}</option>
-                                    ))}
-                                  </select>
+                                    value={item.description}
+                                    onChange={(e) => handleItemChange(index, 'description', e.target.value)}
+                                    placeholder="Enter custom description..."
+                                    rows="3"
+                                  />
+                                )}
 
-                                  <select
-                                    className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
-                                    value={item.description.match(/(?<=&\s)(.*?)(?=\sHardware)/)?.[0] || 'Hafele'}
-                                    onChange={(e) => {
-                                      const brand = e.target.value;
-                                      const thickness = item.description.match(/(?<=fixing\s)\d+mm\s/)?.[0]?.trim() || '18mm';
-                                      const material = item.description.match(/(?<=mm\s)(.*?)(?=\s&)/)?.[0] || 'HDHMR';
-                                      handleItemChange(index, 'description', generateDescription(material, thickness, brand));
-                                    }}
-                                  >
-                                    {hardwareBrands.map(b => (
-                                      <option key={b} value={b}>{b}</option>
-                                    ))}
-                                  </select>
-                                </div>
-                                <div className="text-sm text-[#7F5539] mt-1">
-                                  {item.description}
-                                </div>
+                                {predefinedDescriptions.includes(item.description) && item.description !== 'Custom' && (
+                                  <div className="grid grid-cols-3 gap-2">
+                                    <select
+                                      className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                      value={item.description.match(/(?<=fixing\s)\d+mm\s/)?.[0]?.trim() || '18mm'}
+                                      onChange={(e) => {
+                                        const thickness = e.target.value;
+                                        const material = item.description.match(/(?<=mm\s)(.*?)(?=\s&)/)?.[0] || 'HDHMR';
+                                        const brand = item.description.match(/(?<=&\s)(.*?)(?=\sHardware)/)?.[0] || 'Hafele';
+                                        handleItemChange(index, 'description', generateDescription(material, thickness, brand));
+                                      }}
+                                    >
+                                      {thicknesses.map(t => (
+                                        <option key={t} value={t}>{t}</option>
+                                      ))}
+                                    </select>
+
+                                    <select
+                                      className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                      value={item.description.match(/(?<=mm\s)(.*?)(?=\s&)/)?.[0] || 'HDHMR'}
+                                      onChange={(e) => {
+                                        const material = e.target.value;
+                                        const thickness = item.description.match(/(?<=fixing\s)\d+mm\s/)?.[0]?.trim() || '18mm';
+                                        const brand = item.description.match(/(?<=&\s)(.*?)(?=\sHardware)/)?.[0] || 'Hafele';
+                                        handleItemChange(index, 'description', generateDescription(material, thickness, brand));
+                                      }}
+                                    >
+                                      {materials.map(m => (
+                                        <option key={m} value={m}>{m}</option>
+                                      ))}
+                                    </select>
+
+                                    <select
+                                      className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                      value={item.description.match(/(?<=&\s)(.*?)(?=\sHardware)/)?.[0] || 'Hafele'}
+                                      onChange={(e) => {
+                                        const brand = e.target.value;
+                                        const thickness = item.description.match(/(?<=fixing\s)\d+mm\s/)?.[0]?.trim() || '18mm';
+                                        const material = item.description.match(/(?<=mm\s)(.*?)(?=\s&)/)?.[0] || 'HDHMR';
+                                        handleItemChange(index, 'description', generateDescription(material, thickness, brand));
+                                      }}
+                                    >
+                                      {hardwareBrands.map(b => (
+                                        <option key={b} value={b}>{b}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                )}
                               </div>
                             </td>
                             <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
