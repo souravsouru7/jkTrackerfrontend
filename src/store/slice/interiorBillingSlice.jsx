@@ -106,6 +106,7 @@ export const createBill = createAsyncThunk(
       const billDataWithType = {
         ...billData,
         documentType: billData.documentType || 'Invoice',
+        date: new Date(billData.billDate).toISOString(), // Convert billDate to ISO string
         // Add discount amount calculation
         discount: billData.discountType === 'percentage' 
           ? (billData.discountValue * billData.grandTotal) / 100 
@@ -139,6 +140,7 @@ export const updateBill = createAsyncThunk(
         ...billData,
         clientName: billData.clientName,
         documentType: billData.documentType || 'Invoice',
+        date: new Date(billData.billDate).toISOString(), // Convert billDate to ISO string
         // Add discount amount calculation
         discount: billData.discountType === 'percentage' 
           ? (billData.discountValue * billData.grandTotal) / 100 

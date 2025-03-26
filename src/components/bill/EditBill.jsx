@@ -97,9 +97,15 @@ const EditBill = () => {
 
       setDiscountType(discountType);
       setDiscountValue(discountValue);
+      
+      // Format the date properly
+      const billDate = currentBill.date 
+        ? new Date(currentBill.date).toISOString().split('T')[0]
+        : new Date().toISOString().split('T')[0];
+
       setFormData({
         ...currentBill,
-        billDate: new Date(currentBill.date).toISOString().split('T')[0],
+        billDate: billDate,
         discountType,
         discountValue
       });
