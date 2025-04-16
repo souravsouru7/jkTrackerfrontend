@@ -203,7 +203,7 @@ const ExpenseTracker = () => {
                 <div className="bg-white rounded-xl p-4 shadow-sm">
                   {activeFilters.type === 'All' ? (
                     // Show both income and expense when no type filter
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
                       <div className="text-center">
                         <p className="text-xs text-[#9C6644] mb-1">Total Income</p>
                         <p className="text-sm md:text-base font-semibold text-green-600">
@@ -217,6 +217,17 @@ const ExpenseTracker = () => {
                         <p className="text-xs text-[#9C6644] mb-1">Total Expense</p>
                         <p className="text-sm md:text-base font-semibold text-red-600">
                           ₹{filteredTotals.expense.toLocaleString('en-IN', {
+                            maximumFractionDigits: 2,
+                            minimumFractionDigits: 2
+                          })}
+                        </p>
+                      </div>
+                      <div className="text-center border-l border-[#B08968]/10">
+                        <p className="text-xs text-[#9C6644] mb-1">Cash in Hand</p>
+                        <p className={`text-sm md:text-base font-semibold ${
+                          (filteredTotals.income - filteredTotals.expense) >= 0 ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          ₹{(filteredTotals.income - filteredTotals.expense).toLocaleString('en-IN', {
                             maximumFractionDigits: 2,
                             minimumFractionDigits: 2
                           })}
