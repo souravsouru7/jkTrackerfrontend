@@ -17,9 +17,9 @@ const CreateBill = () => {
   // Get document type from location state or default to 'Invoice'
   const [documentType, setDocumentType] = useState(location.state?.documentType || 'Invoice');
 
-  const [materials] = useState(['HDHMR', 'MDF', 'Particle Board', 'P/MWood']);
-  const [thicknesses] = useState(['6mm', '8mm', '12mm', '18mm', '25mm']);
-  const [hardwareBrands] = useState(['Godrej', 'Ebco', 'Hafele', 'Hettich']);
+  const [materials] = useState(['HDHMR', 'MDF', 'Particle Board', 'P/MWood',"MS","SS"]);
+  const [thicknesses] = useState(['1mm','2mm','3mm','4mm','5mm','6mm',"7mm",'8mm',"9mm","10mm",'12mm',"16mm",'18mm', '25mm']);
+  const [hardwareBrands] = useState(['Godrej', 'Ebco', 'Hafele', 'Hettich',"appolo"]);
 
   const generateDescription = (material, thickness, brand) => {
     return `Providing and fixing ${thickness} ${material} & ${brand} Hardware with required Adhesive's and Selected Acrylic laminates`;

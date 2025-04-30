@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { addEntry, updateEntry } from "../../store/slice/entrySlice";
 import { fetchProjects } from "../../store/slice/projectSlice";
+import { fetchCustomCategories, addCustomCategory } from "../../store/slice/categorySlice";
 import { Plus, Mic, MicOff, AlertCircle, X, FileText } from "lucide-react";
 
 // Entry Form Component
@@ -12,6 +13,7 @@ const EntryForm = ({ entry, onClose }) => {
     (state) => state.projects.selectedProject
   );
   const projects = useSelector((state) => state.projects.projects);
+  const customCategories = useSelector((state) => state.categories.customCategories);
 
   // Form State
   const [formData, setFormData] = useState(
@@ -61,6 +63,14 @@ const EntryForm = ({ entry, onClose }) => {
     Income: ["Advance", "Payment", "Token", "Other"],
   };
 
+  // Fetch custom categories on component mount
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (user?._id || user?.id) {
+      dispatch(fetchCustomCategories(user._id || user.id));
+    }
+  }, [dispatch]);
+
   // Reset category and custom category when type changes
   useEffect(() => {
     setFormData((prev) => ({
@@ -91,11 +101,19 @@ const EntryForm = ({ entry, onClose }) => {
 
   // Handle custom category change
   const handleCustomCategoryChange = (e) => {
+    const value = e.target.value;
     setFormData((prev) => ({
       ...prev,
-      customCategory: e.target.value,
+      customCategory: value,
       category: "Other",
     }));
+  };
+
+  // Get all categories including custom ones
+  const getAllCategories = (type) => {
+    const defaultCategories = categoryOptions[type];
+    const userCategories = customCategories[type] || [];
+    return [...new Set([...defaultCategories, ...userCategories])];
   };
 
   // Initialize speech recognition and fetch projects
@@ -215,44 +233,46 @@ const EntryForm = ({ entry, onClose }) => {
     }
 
     try {
-      const userStr = localStorage.getItem("user");
-      const user = JSON.parse(userStr);
-      const userId = user?._id || user?.id;
-
-      if (!userId) {
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (!user?._id && !user?.id) {
         setError("User ID not found. Please login again.");
         return;
       }
 
-      if (!formData.projectId) {
-        setError("Please select a project first");
-        return;
+      // If there's a custom category, save it first
+      if (formData.customCategory) {
+        await dispatch(addCustomCategory({
+          userId: user._id || user.id,
+          type: formData.type,
+          category: formData.customCategory
+        })).unwrap();
+        
+        // Refresh custom categories after adding a new one
+        await dispatch(fetchCustomCategories(user._id || user.id));
       }
 
+      // Now save the entry with all required fields
       const entryData = {
-        type: formData.type,
-        category: formData.category === "Other" ? formData.customCategory : formData.category,
-        description: formData.description,
+        userId: user._id || user.id,
         projectId: selectedProject._id,
-        userId: userId,
+        type: formData.type,
         amount: parseFloat(formData.amount),
+        category: formData.category === "Other" ? formData.customCategory : formData.category,
+        description: formData.description || "",
         date: new Date().toISOString(),
         // Only include generateBill if type is Income and checkbox is checked
         ...(formData.type === 'Income' && { generateBill })
       };
 
       if (entry) {
-        await dispatch(updateEntry({ id: entry._id, updates: entryData})).unwrap();
+        await dispatch(updateEntry({ id: entry._id, data: entryData })).unwrap();
       } else {
         await dispatch(addEntry(entryData)).unwrap();
       }
 
-      if (onClose) {
-        onClose();
-      }
-    } catch (err) {
-      setError(err.message || "Failed to save entry");
-      console.error("Error saving entry:", err);
+      onClose();
+    } catch (error) {
+      setError(error.message || "Failed to save entry. Please try again.");
     }
   };
 
@@ -401,7 +421,7 @@ const EntryForm = ({ entry, onClose }) => {
                     className={selectClasses}
                   >
                     <option value="">Select a category</option>
-                    {categoryOptions[formData.type].map((category) => (
+                    {getAllCategories(formData.type).map((category) => (
                       <option key={category} value={category}>
                         {category}
                       </option>

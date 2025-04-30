@@ -8,6 +8,7 @@ import projectReducer from './slice/projectSlice';
 import interiorBillingSlice from "./slice/interiorBillingSlice"
 import summaryReducer from './slice/fincialSlice';
 import chatReducer from './slice/chatSlice';
+import categoryReducer from './slice/categorySlice';
 
 const store = configureStore({
     reducer: {
@@ -18,7 +19,8 @@ const store = configureStore({
         projects: projectReducer,
         interiorBilling: interiorBillingSlice,
         summary: summaryReducer,
-        chat: chatReducer
+        chat: chatReducer,
+        categories: categoryReducer
     },
 });
 
