@@ -64,36 +64,34 @@ export const fetchBillById = createAsyncThunk(
 
 export const generatePDF = createAsyncThunk(
   'interiorBilling/generatePDF',
-  async (id, { rejectWithValue }) => {
+  async (billId, { rejectWithValue }) => {
     try {
-      const response = await API.get(`/api/interior/bills/${id}/pdf`, {
+      const response = await API.get(`/api/interior/bills/${billId}/pdf`, {
         headers: getAuthHeader(),
         responseType: 'blob'
       });
-
-      // Create a blob from the PDF stream
-      const blob = new Blob([response.data], { type: 'application/pdf' });
       
-      // Create a URL for the blob
+      // Create a blob URL for the PDF
+      const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       
-      // Create a temporary link element
+      // Create a temporary link and trigger download
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `bill-${id}.pdf`);
-      
-      // Append to body, click, and cleanup
+      link.download = `interior-bill-${billId}.pdf`;
       document.body.appendChild(link);
       link.click();
+      
+      // Cleanup
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
       
-      return id;
+      return { success: true };
     } catch (error) {
       if (error.response?.status === 401) {
         throw new Error('Unauthorized access');
       }
-      return rejectWithValue(error.response?.data || 'Failed to generate PDF');
+      return rejectWithValue(error.response?.data || error.message);
     }
   }
 );
@@ -102,20 +100,42 @@ export const createBill = createAsyncThunk(
   'interiorBilling/createBill',
   async (billData, { rejectWithValue }) => {
     try {
-      // Ensure documentType is set, default to 'Invoice' if not provided
+      // Calculate totals with quantity
+      const calculatedItems = billData.items.map(item => {
+        const processedItem = { ...item };
+        if (item.unit === 'Sft') {
+          processedItem.squareFeet = item.width * item.height;
+          processedItem.total = processedItem.squareFeet * item.pricePerUnit * (item.quantity || 1);
+        } else {
+          processedItem.total = item.pricePerUnit * (item.quantity || 1);
+        }
+        // Ensure quantity is explicitly set
+        processedItem.quantity = item.quantity || 1;
+        return processedItem;
+      });
+
+      const grandTotal = calculatedItems.reduce((sum, item) => sum + item.total, 0);
+      const discountAmount = billData.discountType === 'percentage' 
+        ? (billData.discountValue * grandTotal) / 100 
+        : billData.discountValue || 0;
+      const finalAmount = grandTotal - discountAmount;
+
       const billDataWithType = {
         ...billData,
+        items: calculatedItems,
+        grandTotal,
+        discount: discountAmount,
+        finalAmount,
         documentType: billData.documentType || 'Invoice',
-        date: new Date(billData.billDate).toISOString(), // Convert billDate to ISO string
-        // Add discount amount calculation
-        discount: billData.discountType === 'percentage' 
-          ? (billData.discountValue * billData.grandTotal) / 100 
-          : billData.discountValue || 0
+        date: new Date(billData.billDate).toISOString()
       };
+      
+      console.log('Sending bill data to backend:', billDataWithType);
       
       const response = await API.post('/api/interior/bills', billDataWithType, {
         headers: getAuthHeader()
       });
+      
       if (!response.data || !response.data._id) {
         throw new Error('Invalid response from server');
       }
@@ -135,18 +155,37 @@ export const updateBill = createAsyncThunk(
   'interiorBilling/updateBill',
   async ({ id, billData }, { rejectWithValue }) => {
     try {
-      // Transform customerName to clientName for backend compatibility
+      // Calculate totals with quantity
+      const calculatedItems = billData.items.map(item => {
+        const processedItem = { ...item };
+        if (item.unit === 'Sft') {
+          processedItem.squareFeet = item.width * item.height;
+          processedItem.total = processedItem.squareFeet * item.pricePerUnit * (item.quantity || 1);
+        } else {
+          processedItem.total = item.pricePerUnit * (item.quantity || 1);
+        }
+        // Ensure quantity is explicitly set
+        processedItem.quantity = item.quantity || 1;
+        return processedItem;
+      });
+
+      const grandTotal = calculatedItems.reduce((sum, item) => sum + item.total, 0);
+      const discountAmount = billData.discountType === 'percentage' 
+        ? (billData.discountValue * grandTotal) / 100 
+        : billData.discountValue || 0;
+      const finalAmount = grandTotal - discountAmount;
+
       const transformedData = {
         ...billData,
-        clientName: billData.clientName,
+        items: calculatedItems,
+        grandTotal,
+        discount: discountAmount,
+        finalAmount,
         documentType: billData.documentType || 'Invoice',
-        date: new Date(billData.billDate).toISOString(), // Convert billDate to ISO string
-        // Add discount amount calculation
-        discount: billData.discountType === 'percentage' 
-          ? (billData.discountValue * billData.grandTotal) / 100 
-          : billData.discountValue || 0
+        date: new Date(billData.billDate).toISOString()
       };
-      delete transformedData.customerName; // Remove the old field
+      
+      console.log('Sending updated bill data to backend:', transformedData);
       
       const response = await API.put(`/api/interior/bills/${id}`, transformedData, {
         headers: getAuthHeader()

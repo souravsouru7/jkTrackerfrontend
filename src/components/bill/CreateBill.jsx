@@ -50,6 +50,7 @@ const CreateBill = () => {
       particular: '',
       description: generateDescription('HDHMR', '18mm', 'Hafele'),
       unit: 'Sft',
+      quantity: 1,
       width: 0,
       height: 0,
       sft: 0,
@@ -88,9 +89,9 @@ const CreateBill = () => {
   const calculateItemTotal = useCallback((item) => {
     if (item.unit === 'Sft') {
       const sft = item.width * item.height;
-      return sft * item.pricePerUnit;
+      return sft * item.pricePerUnit * (item.quantity || 1);
     }
-    return item.pricePerUnit;
+    return item.pricePerUnit * (item.quantity || 1);
   }, []);
 
   const handleItemChange = useCallback((index, field, value) => {
@@ -98,7 +99,7 @@ const CreateBill = () => {
       const newItems = [...prevData.items];
       const updatedItem = { ...newItems[index], [field]: value };
       
-      if (field === 'width' || field === 'height' || field === 'pricePerUnit') {
+      if (field === 'width' || field === 'height' || field === 'pricePerUnit' || field === 'quantity') {
         updatedItem.sft = updatedItem.width * updatedItem.height;
         updatedItem.total = calculateItemTotal(updatedItem);
       }
@@ -108,7 +109,12 @@ const CreateBill = () => {
     });
   }, [calculateItemTotal]);
 
-  const grandTotal = formData.items.reduce((sum, item) => sum + item.total, 0);
+  const grandTotal = useMemo(() => {
+    return formData.items.reduce((sum, item) => {
+      const itemTotal = calculateItemTotal(item);
+      return sum + itemTotal;
+    }, 0);
+  }, [formData.items, calculateItemTotal]);
 
   // Calculate final amount after discount
   const finalAmount = useMemo(() => {
@@ -122,6 +128,14 @@ const CreateBill = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
+      // Calculate final totals for all items
+      const calculatedItems = formData.items.map(item => ({
+        ...item,
+        total: calculateItemTotal(item),
+        squareFeet: item.unit === 'Sft' ? item.width * item.height : undefined,
+        quantity: item.quantity || 1
+      }));
+
       const updatedPaymentTerms = formData.paymentTerms.map(term => ({
         ...term,
         amount: term.note === 'Token' ? term.amount : (grandTotal * term.percentage) / 100
@@ -129,8 +143,13 @@ const CreateBill = () => {
 
       const billData = {
         ...formData,
+        items: calculatedItems,
         paymentTerms: updatedPaymentTerms,
-        grandTotal
+        grandTotal,
+        discount: discountType === 'percentage' 
+          ? (grandTotal * discountValue) / 100 
+          : discountValue || 0,
+        finalAmount: finalAmount
       };
 
       console.log('Submitting bill data:', billData);
@@ -318,6 +337,7 @@ const CreateBill = () => {
                         particular: '',
                         description: generateDescription('HDHMR', '18mm', 'Hafele'),
                         unit: 'Sft',
+                        quantity: 1,
                         width: 0,
                         height: 0,
                         sft: 0,
@@ -339,6 +359,7 @@ const CreateBill = () => {
                           <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Particular</th>
                           <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Description</th>
                           <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Unit</th>
+                          <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Qty</th>
                           <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Width</th>
                           <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Height</th>
                           <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Sft</th>
@@ -446,6 +467,16 @@ const CreateBill = () => {
                                 <option value="Sft">Sft</option>
                                 <option value="Lump">Lump</option>
                               </select>
+                            </td>
+                            <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
+                              <input
+                                type="number"
+                                min="1"
+                                className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                value={item.quantity || 1}
+                                onChange={(e) => handleItemChange(index, 'quantity', parseInt(e.target.value) || 1)}
+                                required
+                              />
                             </td>
                             <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
                               {item.unit === 'Sft' ? (
