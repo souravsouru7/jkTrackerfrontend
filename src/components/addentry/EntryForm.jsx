@@ -37,6 +37,9 @@ const EntryForm = ({ entry, onClose }) => {
   // Add state for payment bill
   const [generateBill, setGenerateBill] = useState(false);
 
+  // Add state for showing project selection
+  const [showProjectSelection, setShowProjectSelection] = useState(false);
+
   // Category Options
   const categoryOptions = {
     Expense: [
@@ -91,12 +94,32 @@ const EntryForm = ({ entry, onClose }) => {
   // Handle category change
   const handleCategoryChange = (e) => {
     const value = e.target.value;
-    setFormData((prev) => ({
-      ...prev,
-      category: value,
-      customCategory: value === "Other" ? prev.customCategory : "",
-    }));
-    setShowCustomCategory(value === "Other");
+    
+    if (value === "Add Project") {
+      setShowProjectSelection(true);
+      return;
+    }
+    
+    // Check if the selected category is a project name
+    const selectedProject = projects.find(project => project.name === value);
+    
+    if (selectedProject) {
+      // If a project is selected, only update the category
+      setFormData(prev => ({
+        ...prev,
+        category: value,
+        customCategory: "",
+      }));
+      setShowCustomCategory(false);
+    } else {
+      // Handle regular category selection
+      setFormData(prev => ({
+        ...prev,
+        category: value,
+        customCategory: value === "Other" ? prev.customCategory : "",
+      }));
+      setShowCustomCategory(value === "Other");
+    }
   };
 
   // Handle custom category change
@@ -109,10 +132,32 @@ const EntryForm = ({ entry, onClose }) => {
     }));
   };
 
-  // Get all categories including custom ones
+  // Handle project selection from modal
+  const handleProjectSelect = (project) => {
+    setFormData(prev => ({
+      ...prev,
+      category: project.name,
+      customCategory: "",
+    }));
+    setShowProjectSelection(false);
+    setShowCustomCategory(false);
+  };
+
+  // Get all categories including custom ones and projects
   const getAllCategories = (type) => {
     const defaultCategories = categoryOptions[type];
     const userCategories = customCategories[type] || [];
+    const availableProjects = projects
+      .filter(project => project._id !== selectedProject?._id)
+      .map(project => project.name);
+
+    if (type === 'Income') {
+      return [
+        ...defaultCategories.slice(0, -1), // All except "Other"
+        { group: "Projects", items: availableProjects },
+        "Other"
+      ];
+    }
     return [...new Set([...defaultCategories, ...userCategories])];
   };
 
@@ -251,23 +296,56 @@ const EntryForm = ({ entry, onClose }) => {
         await dispatch(fetchCustomCategories(user._id || user.id));
       }
 
-      // Now save the entry with all required fields
-      const entryData = {
-        userId: user._id || user.id,
-        projectId: selectedProject._id,
-        type: formData.type,
-        amount: parseFloat(formData.amount),
-        category: formData.category === "Other" ? formData.customCategory : formData.category,
-        description: formData.description || "",
-        date: new Date().toISOString(),
-        // Only include generateBill if type is Income and checkbox is checked
-        ...(formData.type === 'Income' && { generateBill })
-      };
+      // Check if the selected category is a project name
+      const selectedProjectFromCategory = projects.find(project => project.name === formData.category);
+      
+      if (selectedProjectFromCategory && formData.type === 'Income') {
+        // Create income entry for current project
+        const incomeEntryData = {
+          userId: user._id || user.id,
+          projectId: selectedProject._id,
+          type: "Income",
+          amount: parseFloat(formData.amount),
+          category: formData.category,
+          description: formData.description || "",
+          date: new Date().toISOString(),
+          ...(formData.type === 'Income' && { generateBill })
+        };
 
-      if (entry) {
-        await dispatch(updateEntry({ id: entry._id, data: entryData })).unwrap();
+        // Create expense entry for the selected project
+        const expenseEntryData = {
+          userId: user._id || user.id,
+          projectId: selectedProjectFromCategory._id,
+          type: "Expense",
+          amount: parseFloat(formData.amount),
+          category: "Project Payment",
+          description: `Payment to ${selectedProject.name}`,
+          date: new Date().toISOString()
+        };
+
+        // Create both entries
+        await Promise.all([
+          dispatch(addEntry(incomeEntryData)).unwrap(),
+          dispatch(addEntry(expenseEntryData)).unwrap()
+        ]);
       } else {
-        await dispatch(addEntry(entryData)).unwrap();
+        // Regular entry creation
+        const entryData = {
+          userId: user._id || user.id,
+          projectId: selectedProject._id,
+          type: formData.type,
+          amount: parseFloat(formData.amount),
+          category: formData.category === "Other" ? formData.customCategory : formData.category,
+          description: formData.description || "",
+          date: new Date().toISOString(),
+          ...(formData.type === 'Income' && { generateBill })
+        };
+
+        if (entry) {
+          await dispatch(updateEntry({ id: entry._id, data: entryData })).unwrap();
+        } else {
+          await dispatch(addEntry(entryData)).unwrap();
+        }
       }
 
       onClose();
@@ -421,11 +499,24 @@ const EntryForm = ({ entry, onClose }) => {
                     className={selectClasses}
                   >
                     <option value="">Select a category</option>
-                    {getAllCategories(formData.type).map((category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ))}
+                    {getAllCategories(formData.type).map((category) => {
+                      if (typeof category === 'object' && category.group === 'Projects') {
+                        return (
+                          <optgroup key="projects" label="Projects">
+                            {category.items.map((project) => (
+                              <option key={project} value={project}>
+                                {project}
+                              </option>
+                            ))}
+                          </optgroup>
+                        );
+                      }
+                      return (
+                        <option key={category} value={category}>
+                          {category}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
 
@@ -483,6 +574,37 @@ const EntryForm = ({ entry, onClose }) => {
             </div>
           </form>
         </div>
+
+        {/* Project Selection Modal */}
+        {showProjectSelection && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-[#7F5539]">Select Project</h3>
+                <button
+                  onClick={() => setShowProjectSelection(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+              <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                {projects
+                  .filter(project => project._id !== selectedProject?._id)
+                  .map(project => (
+                    <button
+                      key={project._id}
+                      onClick={() => handleProjectSelect(project)}
+                      className="w-full p-3 text-left hover:bg-[#B08968]/10 rounded-lg transition-colors"
+                    >
+                      <div className="font-medium text-[#7F5539]">{project.name}</div>
+                      <div className="text-sm text-gray-500">{project.description || 'No description'}</div>
+                    </button>
+                  ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Footer */}
         <div className="sticky bottom-0 bg-white/95 px-6 py-4 border-t border-[#B08968]/10">

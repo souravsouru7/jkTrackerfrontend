@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { updateBill, fetchBillById, clearCurrentBill } from '../../store/slice/interiorBillingSlice';
+import { updateBill, fetchBillById, clearCurrentBill, generatePDF } from '../../store/slice/interiorBillingSlice';
 import { Plus, Trash2, FileText, List } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Navbar from '../../pages/Navbar';
@@ -12,6 +12,7 @@ const EditBill = () => {
   const { id } = useParams();
   const { currentBill, loading } = useSelector((state) => state.interiorBilling);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     billNumber: '',
     documentType: 'Invoice',
@@ -25,6 +26,7 @@ const EditBill = () => {
       particular: '',
       description: 'Providing and fixing of Table with 12mm plywood with necessary laminate and hardware',
       unit: 'Sft',
+      quantity: 1,
       width: 0,
       height: 0,
       sft: 0,
@@ -112,13 +114,12 @@ const EditBill = () => {
     }
   }, [currentBill, predefinedTerms]);
 
-  // Existing calculation functions
   const calculateItemTotal = useCallback((item) => {
     if (item.unit === 'Sft') {
       const sft = item.width * item.height;
-      return sft * item.pricePerUnit;
+      return sft * item.pricePerUnit * (item.quantity || 1);
     }
-    return item.pricePerUnit;
+    return item.pricePerUnit * (item.quantity || 1);
   }, []);
 
   const handleItemChange = useCallback((index, field, value) => {
@@ -126,7 +127,7 @@ const EditBill = () => {
       const newItems = [...prevData.items];
       const updatedItem = { ...newItems[index], [field]: value };
       
-      if (field === 'width' || field === 'height' || field === 'pricePerUnit') {
+      if (field === 'width' || field === 'height' || field === 'pricePerUnit' || field === 'quantity') {
         updatedItem.sft = updatedItem.width * updatedItem.height;
         updatedItem.total = calculateItemTotal(updatedItem);
       }
@@ -136,8 +137,14 @@ const EditBill = () => {
     });
   }, [calculateItemTotal]);
 
-  const grandTotal = formData.items.reduce((sum, item) => sum + item.total, 0);
+  const grandTotal = useMemo(() => {
+    return formData.items.reduce((sum, item) => {
+      const itemTotal = calculateItemTotal(item);
+      return sum + itemTotal;
+    }, 0);
+  }, [formData.items, calculateItemTotal]);
 
+  // Calculate final amount after discount
   const finalAmount = useMemo(() => {
     const discount = discountType === 'percentage'
       ? (grandTotal * discountValue) / 100
@@ -147,38 +154,52 @@ const EditBill = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Add loading state
-    setMessage({ type: 'loading', text: 'Updating bill...' });
-    
-    const updatedPaymentTerms = formData.paymentTerms.map(term => ({
-      ...term,
-      amount: term.note === 'Token' ? term.amount : (grandTotal * term.percentage) / 100
-    }));
-
-    const billData = {
-      ...formData,
-      paymentTerms: updatedPaymentTerms,
-      grandTotal
-    };
-
+    setIsSubmitting(true);
     try {
-      await dispatch(updateBill({ id, billData })).unwrap();
-      setMessage({ type: 'success', text: 'Bill updated successfully!' });
-      
-      // Add fade-out animation before navigation
-      const form = document.querySelector('form');
-      form.classList.add('animate-fadeOut');
-      
-      setTimeout(() => {
-        navigate('/bills');
-      }, 800); // Increased timeout to allow animation to complete
+      // Calculate final totals for all items
+      const calculatedItems = formData.items.map(item => ({
+        ...item,
+        total: calculateItemTotal(item),
+        squareFeet: item.unit === 'Sft' ? item.width * item.height : undefined,
+        quantity: item.quantity || 1
+      }));
+
+      const updatedPaymentTerms = formData.paymentTerms.map(term => ({
+        ...term,
+        amount: term.note === 'Token' ? term.amount : (grandTotal * term.percentage) / 100
+      }));
+
+      const billData = {
+        ...formData,
+        items: calculatedItems,
+        paymentTerms: updatedPaymentTerms,
+        grandTotal,
+        discount: discountType === 'percentage' 
+          ? (grandTotal * discountValue) / 100 
+          : discountValue || 0,
+        finalAmount: finalAmount
+      };
+
+      console.log('Submitting bill data:', billData);
+
+      const response = await dispatch(updateBill({ id, billData })).unwrap();
+      console.log('Bill update response:', response);
+
+      if (!response || !response._id) {
+        throw new Error('Failed to update bill: Invalid response from server');
+      }
+
+      console.log('Generating PDF for bill ID:', response._id);
+      await dispatch(generatePDF(response._id)).unwrap();
+      console.log('PDF generated successfully');
+
+      alert('Bill updated and PDF generated successfully!');
+      navigate('/bills');
     } catch (error) {
-      setMessage({ type: 'error', text: error.message || 'Failed to update bill' });
-      // Shake animation on error
-      const form = document.querySelector('form');
-      form.classList.add('animate-shake');
-      setTimeout(() => form.classList.remove('animate-shake'), 500);
+      console.error('Error in bill update/PDF generation:', error);
+      alert(error.message || 'Failed to update bill or generate PDF. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -359,6 +380,7 @@ const EditBill = () => {
                         particular: '',
                         description: '',
                         unit: 'Sft',
+                        quantity: 1,
                         width: 0,
                         height: 0,
                         sft: 0,
@@ -428,6 +450,17 @@ const EditBill = () => {
                                         type="text"
                                         value={item.particular}
                                         onChange={(e) => handleItemChange(index, 'particular', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-[#B08968] shadow-sm focus:border-[#7F5539] focus:ring focus:ring-[#7F5539] focus:ring-opacity-50"
+                                      />
+                                    </label>
+
+                                    <label className="block">
+                                      <span className="text-[#7F5539]">Quantity</span>
+                                      <input
+                                        type="number"
+                                        min="1"
+                                        value={item.quantity || 1}
+                                        onChange={(e) => handleItemChange(index, 'quantity', parseInt(e.target.value) || 1)}
                                         className="mt-1 block w-full rounded-md border-[#B08968] shadow-sm focus:border-[#7F5539] focus:ring focus:ring-[#7F5539] focus:ring-opacity-50"
                                       />
                                     </label>
@@ -518,6 +551,7 @@ const EditBill = () => {
                                           particular: '',
                                           description: '',
                                           unit: 'Sft',
+                                          quantity: 1,
                                           width: 0,
                                           height: 0,
                                           sft: 0,

@@ -21,16 +21,111 @@ const CreateBill = () => {
   const [thicknesses] = useState(['1mm','2mm','3mm','4mm','5mm','6mm',"7mm",'8mm',"9mm","10mm",'12mm',"16mm",'18mm', '25mm']);
   const [hardwareBrands] = useState(['Godrej', 'Ebco', 'Hafele', 'Hettich',"appolo"]);
 
-  const generateDescription = (material, thickness, brand) => {
-    return `Providing and fixing ${thickness} ${material} & ${brand} Hardware with required Adhesive's and Selected Acrylic laminates`;
+  // Add new state for work type and corresponding options
+  const [workType, setWorkType] = useState('all');
+  
+  const workTypeOptions = {
+    all: {
+      materials: [
+        // Carpenter materials
+        'HDHMR', 'MDF', 'Particle Board', 'P/MWood', "MS", "SS",
+        // Glass materials
+        'Clear Glass', 'Frosted Glass', 'Tinted Glass', 'Mirror', 'Tempered Glass', 'Laminated Glass',
+        // Painter materials
+        'Emulsion', 'Enamel', 'Textured', 'Metallic', 'Wood Finish', 'Wall Putty'
+      ],
+      thicknesses: [
+        // Carpenter thicknesses
+        '1mm','2mm','3mm','4mm','5mm','6mm',"7mm",'8mm',"9mm","10mm",'12mm',"16mm",'18mm', '25mm',
+        // Glass thicknesses
+        '4mm', '6mm', '8mm', '10mm', '12mm',
+        // Painter thicknesses
+        '1 Coat', '2 Coats', '3 Coats'
+      ],
+      brands: [
+        // Carpenter brands
+        'Godrej', 'Ebco', 'Hafele', 'Hettich', "appolo",
+        // Glass brands
+        'Saint Gobain', 'Asahi', 'Guardian', 'HNG', 'Gold Plus',
+        // Painter brands
+        'Asian Paints', 'Berger', 'Dulux', 'Nerolac', 'Indigo'
+      ]
+    }
+  };
+
+  const getCategoryOptions = (category) => {
+    switch(category) {
+      case 'carpenter':
+        return {
+          materials: ['None', 'HDHMR', 'MDF', 'Particle Board', 'P/MWood', "MS", "SS"],
+          thicknesses: ['None', '1mm','2mm','3mm','4mm','5mm','6mm',"7mm",'8mm',"9mm","10mm",'12mm',"16mm",'18mm', '25mm'],
+          brands: ['None', 'Godrej', 'Ebco', 'Hafele', 'Hettich', "appolo"]
+        };
+      case 'glasses':
+        return {
+          materials: ['None', 'Clear Glass', 'Frosted Glass', 'Tinted Glass', 'Mirror', 'Tempered Glass', 'Laminated Glass'],
+          thicknesses: ['None', '4mm', '6mm', '8mm', '10mm', '12mm'],
+          brands: ['None', 'Saint Gobain', 'Asahi', 'Guardian', 'HNG', 'Gold Plus']
+        };
+      case 'painter':
+        return {
+          materials: ['None', 'Emulsion', 'Enamel', 'Textured', 'Metallic', 'Wood Finish', 'Wall Putty'],
+          thicknesses: ['None', '1 Coat', '2 Coats', '3 Coats'],
+          brands: ['None', 'Asian Paints', 'Berger', 'Dulux', 'Nerolac', 'Indigo']
+        };
+      default:
+        return {
+          materials: ['None'],
+          thicknesses: ['None'],
+          brands: ['None']
+        };
+    }
+  };
+
+  const generateDescription = (material, thickness, brand, category) => {
+    if (category === 'none') {
+      return '';
+    }
+    
+    const materialText = material === 'None' ? '' : `${material} `;
+    const brandText = brand === 'None' ? '' : `& ${brand} Hardware`;
+    const thicknessText = thickness === 'None' ? '' : thickness;
+    
+    switch(category) {
+      case 'carpenter':
+        if (brand === 'None') {
+          return `Providing and fixing ${thicknessText} ${materialText}with required Adhesive's and Selected Acrylic laminates`;
+        }
+        return `Providing and fixing ${thicknessText} ${materialText}${brandText} with required Adhesive's and Selected Acrylic laminates`;
+      
+      case 'glasses':
+        if (brand === 'None') {
+          return `Supply and installation of ${thicknessText} ${materialText}glass with fittings and accessories`;
+        }
+        return `Supply and installation of ${thicknessText} ${materialText}glass with ${brand} fittings and accessories`;
+      
+      case 'painter':
+        if (brand === 'None') {
+          return `Supply and application of ${materialText}paint in ${thicknessText}`;
+        }
+        return `Supply and application of ${materialText}paint in ${thicknessText} with ${brand} brand`;
+      
+      default:
+        return `Custom: ${materialText}${thicknessText} - ${brand}`;
+    }
+  };
+
+  const extractValueFromDescription = (description, pattern) => {
+    const match = description.match(pattern);
+    return match ? match[1] : 'None';
   };
 
   const [predefinedDescriptions] = useState(() => {
-    const descriptions = ['Custom'];  // Add 'Custom' as first option
-    materials.forEach(material => {
-      thicknesses.forEach(thickness => {
-        hardwareBrands.forEach(brand => {
-          descriptions.push(generateDescription(material, thickness, brand));
+    const descriptions = ['Custom'];
+    workTypeOptions[workType].materials.forEach(material => {
+      workTypeOptions[workType].thicknesses.forEach(thickness => {
+        workTypeOptions[workType].brands.forEach(brand => {
+          descriptions.push(generateDescription(material, thickness, brand, workType));
         });
       });
     });
@@ -48,8 +143,9 @@ const CreateBill = () => {
     clientAddress: '',
     items: [{
       particular: '',
-      description: generateDescription('HDHMR', '18mm', 'Hafele'),
+      description: generateDescription('HDHMR', '18mm', 'Hafele', 'carpenter'),
       unit: 'Sft',
+      quantity: 1,
       width: 0,
       height: 0,
       sft: 0,
@@ -88,9 +184,9 @@ const CreateBill = () => {
   const calculateItemTotal = useCallback((item) => {
     if (item.unit === 'Sft') {
       const sft = item.width * item.height;
-      return sft * item.pricePerUnit;
+      return sft * item.pricePerUnit * (item.quantity || 1);
     }
-    return item.pricePerUnit;
+    return item.pricePerUnit * (item.quantity || 1);
   }, []);
 
   const handleItemChange = useCallback((index, field, value) => {
@@ -98,7 +194,7 @@ const CreateBill = () => {
       const newItems = [...prevData.items];
       const updatedItem = { ...newItems[index], [field]: value };
       
-      if (field === 'width' || field === 'height' || field === 'pricePerUnit') {
+      if (field === 'width' || field === 'height' || field === 'pricePerUnit' || field === 'quantity') {
         updatedItem.sft = updatedItem.width * updatedItem.height;
         updatedItem.total = calculateItemTotal(updatedItem);
       }
@@ -108,7 +204,12 @@ const CreateBill = () => {
     });
   }, [calculateItemTotal]);
 
-  const grandTotal = formData.items.reduce((sum, item) => sum + item.total, 0);
+  const grandTotal = useMemo(() => {
+    return formData.items.reduce((sum, item) => {
+      const itemTotal = calculateItemTotal(item);
+      return sum + itemTotal;
+    }, 0);
+  }, [formData.items, calculateItemTotal]);
 
   // Calculate final amount after discount
   const finalAmount = useMemo(() => {
@@ -122,6 +223,14 @@ const CreateBill = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
+      // Calculate final totals for all items
+      const calculatedItems = formData.items.map(item => ({
+        ...item,
+        total: calculateItemTotal(item),
+        squareFeet: item.unit === 'Sft' ? item.width * item.height : undefined,
+        quantity: item.quantity || 1
+      }));
+
       const updatedPaymentTerms = formData.paymentTerms.map(term => ({
         ...term,
         amount: term.note === 'Token' ? term.amount : (grandTotal * term.percentage) / 100
@@ -129,8 +238,13 @@ const CreateBill = () => {
 
       const billData = {
         ...formData,
+        items: calculatedItems,
         paymentTerms: updatedPaymentTerms,
-        grandTotal
+        grandTotal,
+        discount: discountType === 'percentage' 
+          ? (grandTotal * discountValue) / 100 
+          : discountValue || 0,
+        finalAmount: finalAmount
       };
 
       console.log('Submitting bill data:', billData);
@@ -316,8 +430,9 @@ const CreateBill = () => {
                       ...formData,
                       items: [...formData.items, {
                         particular: '',
-                        description: generateDescription('HDHMR', '18mm', 'Hafele'),
+                        description: generateDescription('HDHMR', '18mm', 'Hafele', 'carpenter'),
                         unit: 'Sft',
+                        quantity: 1,
                         width: 0,
                         height: 0,
                         sft: 0,
@@ -339,6 +454,7 @@ const CreateBill = () => {
                           <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Particular</th>
                           <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Description</th>
                           <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Unit</th>
+                          <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Qty</th>
                           <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Width</th>
                           <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Height</th>
                           <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Sft</th>
@@ -361,22 +477,71 @@ const CreateBill = () => {
                             </td>
                             <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
                               <div className="space-y-2">
-                                <select
-                                  className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
-                                  value={predefinedDescriptions.includes(item.description) ? item.description : 'Custom'}
-                                  onChange={(e) => {
-                                    if (e.target.value === 'Custom') {
-                                      handleItemChange(index, 'description', '');
-                                    } else {
-                                      handleItemChange(index, 'description', e.target.value);
-                                    }
-                                  }}
-                                >
-                                  {predefinedDescriptions.map(desc => (
-                                    <option key={desc} value={desc}>{desc === 'Custom' ? 'Custom Description' : desc}</option>
-                                  ))}
-                                </select>
-
+                                <div className="grid grid-cols-4 gap-2">
+                                  <select
+                                    className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                    value={item.category || 'carpenter'}
+                                    onChange={(e) => {
+                                      const newCategory = e.target.value;
+                                      const categoryOptions = getCategoryOptions(newCategory);
+                                      handleItemChange(index, 'category', newCategory);
+                                      // Reset material, thickness, and brand to first options of new category
+                                      handleItemChange(index, 'description', generateDescription(
+                                        categoryOptions.materials[0],
+                                        categoryOptions.thicknesses[0],
+                                        categoryOptions.brands[0],
+                                        newCategory
+                                      ));
+                                    }}
+                                  >
+                                    <option value="none">None</option>
+                                    <option value="carpenter">Carpenter</option>
+                                    <option value="glasses">Glass</option>
+                                    <option value="painter">Painter</option>
+                                  </select>
+                                  <select
+                                    className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                    value={extractValueFromDescription(item.description, /fixing\s(\d+mm)/) || getCategoryOptions(item.category || 'carpenter').thicknesses[0]}
+                                    onChange={(e) => {
+                                      const thickness = e.target.value;
+                                      const material = extractValueFromDescription(item.description, /mm\s([^&\s]+)/) || getCategoryOptions(item.category || 'carpenter').materials[0];
+                                      const brand = extractValueFromDescription(item.description, /&\s([^H]+)/) || getCategoryOptions(item.category || 'carpenter').brands[0];
+                                      handleItemChange(index, 'description', generateDescription(material, thickness, brand, item.category || 'carpenter'));
+                                    }}
+                                  >
+                                    {getCategoryOptions(item.category || 'carpenter').thicknesses.map(t => (
+                                      <option key={t} value={t}>{t}</option>
+                                    ))}
+                                  </select>
+                                  <select
+                                    className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                    value={extractValueFromDescription(item.description, /mm\s([^&\s]+)/) || getCategoryOptions(item.category || 'carpenter').materials[0]}
+                                    onChange={(e) => {
+                                      const material = e.target.value;
+                                      const thickness = extractValueFromDescription(item.description, /fixing\s(\d+mm)/) || getCategoryOptions(item.category || 'carpenter').thicknesses[0];
+                                      const brand = extractValueFromDescription(item.description, /&\s([^H]+)/) || getCategoryOptions(item.category || 'carpenter').brands[0];
+                                      handleItemChange(index, 'description', generateDescription(material, thickness, brand, item.category || 'carpenter'));
+                                    }}
+                                  >
+                                    {getCategoryOptions(item.category || 'carpenter').materials.map(m => (
+                                      <option key={m} value={m}>{m}</option>
+                                    ))}
+                                  </select>
+                                  <select
+                                    className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                    value={extractValueFromDescription(item.description, /&\s([^H]+)/) || getCategoryOptions(item.category || 'carpenter').brands[0]}
+                                    onChange={(e) => {
+                                      const brand = e.target.value;
+                                      const thickness = extractValueFromDescription(item.description, /fixing\s(\d+mm)/) || getCategoryOptions(item.category || 'carpenter').thicknesses[0];
+                                      const material = extractValueFromDescription(item.description, /mm\s([^&\s]+)/) || getCategoryOptions(item.category || 'carpenter').materials[0];
+                                      handleItemChange(index, 'description', generateDescription(material, thickness, brand, item.category || 'carpenter'));
+                                    }}
+                                  >
+                                    {getCategoryOptions(item.category || 'carpenter').brands.map(b => (
+                                      <option key={b} value={b}>{b}</option>
+                                    ))}
+                                  </select>
+                                </div>
                                 {(!predefinedDescriptions.includes(item.description) || item.description === '') && (
                                   <textarea
                                     className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
@@ -385,55 +550,6 @@ const CreateBill = () => {
                                     placeholder="Enter custom description..."
                                     rows="3"
                                   />
-                                )}
-
-                                {predefinedDescriptions.includes(item.description) && item.description !== 'Custom' && (
-                                  <div className="grid grid-cols-3 gap-2">
-                                    <select
-                                      className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
-                                      value={item.description.match(/(?<=fixing\s)\d+mm\s/)?.[0]?.trim() || '18mm'}
-                                      onChange={(e) => {
-                                        const thickness = e.target.value;
-                                        const material = item.description.match(/(?<=mm\s)(.*?)(?=\s&)/)?.[0] || 'HDHMR';
-                                        const brand = item.description.match(/(?<=&\s)(.*?)(?=\sHardware)/)?.[0] || 'Hafele';
-                                        handleItemChange(index, 'description', generateDescription(material, thickness, brand));
-                                      }}
-                                    >
-                                      {thicknesses.map(t => (
-                                        <option key={t} value={t}>{t}</option>
-                                      ))}
-                                    </select>
-
-                                    <select
-                                      className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
-                                      value={item.description.match(/(?<=mm\s)(.*?)(?=\s&)/)?.[0] || 'HDHMR'}
-                                      onChange={(e) => {
-                                        const material = e.target.value;
-                                        const thickness = item.description.match(/(?<=fixing\s)\d+mm\s/)?.[0]?.trim() || '18mm';
-                                        const brand = item.description.match(/(?<=&\s)(.*?)(?=\sHardware)/)?.[0] || 'Hafele';
-                                        handleItemChange(index, 'description', generateDescription(material, thickness, brand));
-                                      }}
-                                    >
-                                      {materials.map(m => (
-                                        <option key={m} value={m}>{m}</option>
-                                      ))}
-                                    </select>
-
-                                    <select
-                                      className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
-                                      value={item.description.match(/(?<=&\s)(.*?)(?=\sHardware)/)?.[0] || 'Hafele'}
-                                      onChange={(e) => {
-                                        const brand = e.target.value;
-                                        const thickness = item.description.match(/(?<=fixing\s)\d+mm\s/)?.[0]?.trim() || '18mm';
-                                        const material = item.description.match(/(?<=mm\s)(.*?)(?=\s&)/)?.[0] || 'HDHMR';
-                                        handleItemChange(index, 'description', generateDescription(material, thickness, brand));
-                                      }}
-                                    >
-                                      {hardwareBrands.map(b => (
-                                        <option key={b} value={b}>{b}</option>
-                                      ))}
-                                    </select>
-                                  </div>
                                 )}
                               </div>
                             </td>
@@ -446,6 +562,16 @@ const CreateBill = () => {
                                 <option value="Sft">Sft</option>
                                 <option value="Lump">Lump</option>
                               </select>
+                            </td>
+                            <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
+                              <input
+                                type="number"
+                                min="1"
+                                className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                value={item.quantity || 1}
+                                onChange={(e) => handleItemChange(index, 'quantity', parseInt(e.target.value) || 1)}
+                                required
+                              />
                             </td>
                             <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
                               {item.unit === 'Sft' ? (
