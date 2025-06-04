@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { Helmet } from 'react-helmet';
 import PageWrapper from './loading/PageWrapper';
 import Login from './components/Login';
 import Signup from './components/Signup';
@@ -36,6 +37,16 @@ const PublicRoute = ({ element }) => {
 function App() {
     return (
         <>
+            <Helmet>
+                <title>JK Tracker - Interior Project Management</title>
+                <meta name="description" content="JK Tracker - Professional interior project management and expense tracking solution" />
+                <meta name="keywords" content="interior design, project management, expense tracking, interior billing" />
+                <meta property="og:title" content="JK Tracker - Interior Project Management" />
+                <meta property="og:description" content="Professional interior project management and expense tracking solution" />
+                <meta property="og:type" content="website" />
+                <meta property="og:url" content="https://www.jktracker.site" />
+                <link rel="canonical" href="https://www.jktracker.site" />
+            </Helmet>
             <Toaster
                 position="top-center"
                 toastOptions={{

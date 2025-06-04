@@ -13,8 +13,10 @@ const CreateBill = () => {
   const location = useLocation();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+
+
   
-  // Get document type from location state or default to 'Invoice'
   const [documentType, setDocumentType] = useState(location.state?.documentType || 'Invoice');
 
   const [materials] = useState(['HDHMR', 'MDF', 'Particle Board', 'P/MWood',"MS","SS"]);
@@ -148,6 +150,7 @@ const CreateBill = () => {
       quantity: 1,
       width: 0,
       height: 0,
+      depth: 0,
       sft: 0,
       pricePerUnit: 1250,
       total: 0
@@ -183,7 +186,16 @@ const CreateBill = () => {
   // Existing calculation functions
   const calculateItemTotal = useCallback((item) => {
     if (item.unit === 'Sft') {
-      const sft = item.width * item.height;
+      let sft;
+      const material = extractValueFromDescription(item.description, /mm\s([^&\s]+)/) || '';
+      
+      if (material === 'MS' || material === 'SS') {
+        // For MS and SS, calculate using depth
+        sft = (item.width * item.height * item.depth) / 1000; // Convert to cubic feet
+      } else {
+        // For other materials, use regular area calculation
+        sft = item.width * item.height;
+      }
       return sft * item.pricePerUnit * (item.quantity || 1);
     }
     return item.pricePerUnit * (item.quantity || 1);
@@ -195,7 +207,7 @@ const CreateBill = () => {
       const updatedItem = { ...newItems[index], [field]: value };
       
       if (field === 'width' || field === 'height' || field === 'pricePerUnit' || field === 'quantity') {
-        updatedItem.sft = updatedItem.width * updatedItem.height;
+        updatedItem.sft = calculateItemTotal(updatedItem);
         updatedItem.total = calculateItemTotal(updatedItem);
       }
       
@@ -435,6 +447,7 @@ const CreateBill = () => {
                         quantity: 1,
                         width: 0,
                         height: 0,
+                        depth: 0,
                         sft: 0,
                         pricePerUnit: 1250,
                         total: 0
@@ -457,6 +470,12 @@ const CreateBill = () => {
                           <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Qty</th>
                           <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Width</th>
                           <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Height</th>
+                          {formData.items.some(item => {
+                            const material = extractValueFromDescription(item.description, /mm\s([^&\s]+)/) || '';
+                            return material === 'MS' || material === 'SS';
+                          }) && (
+                            <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Depth</th>
+                          )}
                           <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Sft</th>
                           <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Price</th>
                           <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Total</th>
@@ -595,8 +614,30 @@ const CreateBill = () => {
                                 />
                               ) : '-'}
                             </td>
+                            {(() => {
+                              const material = extractValueFromDescription(item.description, /mm\s([^&\s]+)/) || '';
+                              return material === 'MS' || material === 'SS' ? (
+                                <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
+                                  <input
+                                    type="number"
+                                    className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                    value={item.depth || ''}
+                                    onChange={(e) => handleItemChange(index, 'depth', parseFloat(e.target.value))}
+                                    required
+                                  />
+                                </td>
+                              ) : null;
+                            })()}
                             <td className="border border-[#B08968]/20 p-1.5 sm:p-2 text-center text-[#7F5539] text-sm sm:text-base">
-                              {item.unit === 'Sft' ? (item.width * item.height).toFixed(2) : '-'}
+                              {item.unit === 'Sft' ? (
+                                (() => {
+                                  const material = extractValueFromDescription(item.description, /mm\s([^&\s]+)/) || '';
+                                  if (material === 'MS' || material === 'SS') {
+                                    return ((item.width * item.height * item.depth) / 1000).toFixed(2);
+                                  }
+                                  return (item.width * item.height).toFixed(2);
+                                })()
+                              ) : '-'}
                             </td>
                             <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
                               <input
