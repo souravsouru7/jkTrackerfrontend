@@ -329,7 +329,7 @@ const EntryForm = ({ entry, onClose }) => {
           dispatch(addEntry(expenseEntryData)).unwrap()
         ]);
       } else {
-        // Regular entry creation
+        // Regular entry creation/update
         const entryData = {
           userId: user._id || user.id,
           projectId: selectedProject._id,
@@ -341,8 +341,16 @@ const EntryForm = ({ entry, onClose }) => {
           ...(formData.type === 'Income' && { generateBill })
         };
 
-        if (entry) {
-          await dispatch(updateEntry({ id: entry._id, data: entryData })).unwrap();
+        if (entry?._id) {
+          // For updates, send only the changed fields
+          const updates = {
+            type: entryData.type,
+            amount: entryData.amount,
+            category: entryData.category,
+            description: entryData.description,
+            date: entryData.date
+          };
+          await dispatch(updateEntry({ id: entry._id, updates })).unwrap();
         } else {
           await dispatch(addEntry(entryData)).unwrap();
         }

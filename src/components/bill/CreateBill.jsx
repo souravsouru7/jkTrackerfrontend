@@ -21,7 +21,6 @@ const CreateBill = () => {
   const [thicknesses] = useState(['1mm','2mm','3mm','4mm','5mm','6mm',"7mm",'8mm',"9mm","10mm",'12mm',"16mm",'18mm', '25mm']);
   const [hardwareBrands] = useState(['Godrej', 'Ebco', 'Hafele', 'Hettich',"appolo"]);
 
-  // Add new state for work type and corresponding options
   const [workType, setWorkType] = useState('all');
   
   const workTypeOptions = {
@@ -183,7 +182,9 @@ const CreateBill = () => {
   // Existing calculation functions
   const calculateItemTotal = useCallback((item) => {
     if (item.unit === 'Sft') {
-      const sft = item.width * item.height;
+      const sft = (item.description?.toLowerCase().includes('ms') || item.description?.toLowerCase().includes('ss'))
+        ? item.width * item.height * (item.depth || 1)
+        : item.width * item.height;
       return sft * item.pricePerUnit * (item.quantity || 1);
     }
     return item.pricePerUnit * (item.quantity || 1);
@@ -194,8 +195,10 @@ const CreateBill = () => {
       const newItems = [...prevData.items];
       const updatedItem = { ...newItems[index], [field]: value };
       
-      if (field === 'width' || field === 'height' || field === 'pricePerUnit' || field === 'quantity') {
-        updatedItem.sft = updatedItem.width * updatedItem.height;
+      if (field === 'width' || field === 'height' || field === 'depth' || field === 'pricePerUnit' || field === 'quantity') {
+        updatedItem.sft = (updatedItem.description?.toLowerCase().includes('ms') || updatedItem.description?.toLowerCase().includes('ss'))
+          ? updatedItem.width * updatedItem.height * (updatedItem.depth || 1)
+          : updatedItem.width * updatedItem.height;
         updatedItem.total = calculateItemTotal(updatedItem);
       }
       
@@ -244,7 +247,8 @@ const CreateBill = () => {
         discount: discountType === 'percentage' 
           ? (grandTotal * discountValue) / 100 
           : discountValue || 0,
-        finalAmount: finalAmount
+        finalAmount: finalAmount,
+        date: new Date(formData.billDate).toISOString()
       };
 
       console.log('Submitting bill data:', billData);
@@ -256,12 +260,19 @@ const CreateBill = () => {
         throw new Error('Failed to create bill: Invalid response from server');
       }
 
-      console.log('Generating PDF for bill ID:', response._id);
-      await dispatch(generatePDF(response._id)).unwrap();
-      console.log('PDF generated successfully');
+      // Wait a moment before generating PDF to ensure bill is saved
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      alert('Bill created and PDF generated successfully!');
-      navigate('/bills');
+      console.log('Generating PDF for bill ID:', response._id);
+      const pdfResult = await dispatch(generatePDF(response._id)).unwrap();
+      console.log('PDF generation result:', pdfResult);
+
+      if (pdfResult.success) {
+        alert('Bill created and PDF generated successfully!');
+        navigate('/bills');
+      } else {
+        throw new Error('Failed to generate PDF');
+      }
     } catch (error) {
       console.error('Error in bill creation/PDF generation:', error);
       alert(error.message || 'Failed to create bill or generate PDF. Please try again.');
@@ -457,6 +468,7 @@ const CreateBill = () => {
                           <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Qty</th>
                           <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Width</th>
                           <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Height</th>
+                          <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Depth</th>
                           <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Sft</th>
                           <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Price</th>
                           <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Total</th>
@@ -595,8 +607,23 @@ const CreateBill = () => {
                                 />
                               ) : '-'}
                             </td>
+                            <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
+                              {item.unit === 'Sft' && (item.description?.toLowerCase().includes('ms') || item.description?.toLowerCase().includes('ss')) ? (
+                                <input
+                                  type="number"
+                                  className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                  value={item.depth || ''}
+                                  onChange={(e) => handleItemChange(index, 'depth', parseFloat(e.target.value))}
+                                  required
+                                />
+                              ) : '-'}
+                            </td>
                             <td className="border border-[#B08968]/20 p-1.5 sm:p-2 text-center text-[#7F5539] text-sm sm:text-base">
-                              {item.unit === 'Sft' ? (item.width * item.height).toFixed(2) : '-'}
+                              {item.unit === 'Sft' ? (
+                                (item.description?.toLowerCase().includes('ms') || item.description?.toLowerCase().includes('ss')) 
+                                  ? (item.width * item.height * (item.depth || 1)).toFixed(2)
+                                  : (item.width * item.height).toFixed(2)
+                              ) : '-'}
                             </td>
                             <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
                               <input

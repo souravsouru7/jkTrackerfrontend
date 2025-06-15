@@ -116,7 +116,9 @@ const EditBill = () => {
 
   const calculateItemTotal = useCallback((item) => {
     if (item.unit === 'Sft') {
-      const sft = item.width * item.height;
+      const sft = (item.description?.toLowerCase().includes('ms') || item.description?.toLowerCase().includes('ss'))
+        ? item.width * item.height * (item.depth || 1)
+        : item.width * item.height;
       return sft * item.pricePerUnit * (item.quantity || 1);
     }
     return item.pricePerUnit * (item.quantity || 1);
@@ -127,8 +129,10 @@ const EditBill = () => {
       const newItems = [...prevData.items];
       const updatedItem = { ...newItems[index], [field]: value };
       
-      if (field === 'width' || field === 'height' || field === 'pricePerUnit' || field === 'quantity') {
-        updatedItem.sft = updatedItem.width * updatedItem.height;
+      if (field === 'width' || field === 'height' || field === 'depth' || field === 'pricePerUnit' || field === 'quantity') {
+        updatedItem.sft = (updatedItem.description?.toLowerCase().includes('ms') || updatedItem.description?.toLowerCase().includes('ss'))
+          ? updatedItem.width * updatedItem.height * (updatedItem.depth || 1)
+          : updatedItem.width * updatedItem.height;
         updatedItem.total = calculateItemTotal(updatedItem);
       }
       
@@ -520,6 +524,18 @@ const EditBill = () => {
                                             className="mt-1 block w-full rounded-md border-[#B08968] shadow-sm focus:border-[#7F5539] focus:ring focus:ring-[#7F5539] focus:ring-opacity-50"
                                           />
                                         </label>
+
+                                        {(item.description?.toLowerCase().includes('ms') || item.description?.toLowerCase().includes('ss')) && (
+                                          <label className="block">
+                                            <span className="text-[#7F5539]">Depth</span>
+                                            <input
+                                              type="number"
+                                              value={item.depth || ''}
+                                              onChange={(e) => handleItemChange(index, 'depth', parseFloat(e.target.value) || 0)}
+                                              className="mt-1 block w-full rounded-md border-[#B08968] shadow-sm focus:border-[#7F5539] focus:ring focus:ring-[#7F5539] focus:ring-opacity-50"
+                                            />
+                                          </label>
+                                        )}
                                       </>
                                     )}
 

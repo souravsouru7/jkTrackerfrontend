@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import API from '../../services/api';
+import axios from 'axios';
 
 const initialState = {
   bills: [],
@@ -64,89 +65,43 @@ export const fetchBillById = createAsyncThunk(
 
 export const generatePDF = createAsyncThunk(
   'interiorBilling/generatePDF',
-  async (billId, { rejectWithValue }) => {
+  async (billId) => {
     try {
       const response = await API.get(`/api/interior/bills/${billId}/pdf`, {
         headers: getAuthHeader(),
         responseType: 'blob'
       });
       
-      // Create a blob URL for the PDF
+      // Create a blob URL and trigger download
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
-      
-      // Create a temporary link and trigger download
       const link = document.createElement('a');
       link.href = url;
-      link.download = `interior-bill-${billId}.pdf`;
+      link.setAttribute('download', `interior-bill-${billId}.pdf`);
       document.body.appendChild(link);
       link.click();
-      
-      // Cleanup
-      document.body.removeChild(link);
+      link.remove();
       window.URL.revokeObjectURL(url);
-      
+
       return { success: true };
     } catch (error) {
-      if (error.response?.status === 401) {
-        throw new Error('Unauthorized access');
-      }
-      return rejectWithValue(error.response?.data || error.message);
+      console.error('PDF Generation Error:', error);
+      throw error.response?.data?.message || 'Failed to generate PDF';
     }
   }
 );
 
 export const createBill = createAsyncThunk(
   'interiorBilling/createBill',
-  async (billData, { rejectWithValue }) => {
+  async (billData) => {
     try {
-      // Calculate totals with quantity
-      const calculatedItems = billData.items.map(item => {
-        const processedItem = { ...item };
-        if (item.unit === 'Sft') {
-          processedItem.squareFeet = item.width * item.height;
-          processedItem.total = processedItem.squareFeet * item.pricePerUnit * (item.quantity || 1);
-        } else {
-          processedItem.total = item.pricePerUnit * (item.quantity || 1);
-        }
-        // Ensure quantity is explicitly set
-        processedItem.quantity = item.quantity || 1;
-        return processedItem;
-      });
-
-      const grandTotal = calculatedItems.reduce((sum, item) => sum + item.total, 0);
-      const discountAmount = billData.discountType === 'percentage' 
-        ? (billData.discountValue * grandTotal) / 100 
-        : billData.discountValue || 0;
-      const finalAmount = grandTotal - discountAmount;
-
-      const billDataWithType = {
-        ...billData,
-        items: calculatedItems,
-        grandTotal,
-        discount: discountAmount,
-        finalAmount,
-        documentType: billData.documentType || 'Invoice',
-        date: new Date(billData.billDate).toISOString()
-      };
-      
-      console.log('Sending bill data to backend:', billDataWithType);
-      
-      const response = await API.post('/api/interior/bills', billDataWithType, {
+      const response = await API.post('/api/interior/bills', billData, {
         headers: getAuthHeader()
       });
-      
-      if (!response.data || !response.data._id) {
-        throw new Error('Invalid response from server');
-      }
-
       return response.data;
     } catch (error) {
-      if (error.response?.status === 401) {
-        throw new Error('Unauthorized access');
-      }
-      console.error('Create bill error:', error);
-      return rejectWithValue(error.response?.data?.message || error.message || 'Failed to create bill');
+      console.error('Bill Creation Error:', error);
+      throw error.response?.data?.message || 'Failed to create bill';
     }
   }
 );
@@ -342,17 +297,15 @@ const interiorBillingSlice = createSlice({
       })
       // Create bill
       .addCase(createBill.pending, (state) => {
-        state.loadingStates.createBill = true;
         state.loading = true;
         state.error = null;
       })
       .addCase(createBill.fulfilled, (state, action) => {
-        state.loadingStates.createBill = false;
         state.loading = false;
-        state.bills.unshift(action.payload);
+        state.bills = [action.payload, ...state.bills];
+        state.error = null;
       })
       .addCase(createBill.rejected, (state, action) => {
-        state.loadingStates.createBill = false;
         state.loading = false;
         state.error = action.payload?.message || 'Failed to create bill';
       })
@@ -377,17 +330,14 @@ const interiorBillingSlice = createSlice({
       })
       // Generate PDF
       .addCase(generatePDF.pending, (state) => {
-        state.loadingStates.generatePDF = true;
         state.loading = true;
         state.error = null;
       })
       .addCase(generatePDF.fulfilled, (state) => {
-        state.loadingStates.generatePDF = false;
         state.loading = false;
         state.error = null;
       })
       .addCase(generatePDF.rejected, (state, action) => {
-        state.loadingStates.generatePDF = false;
         state.loading = false;
         state.error = action.payload || 'Failed to generate PDF';
       })

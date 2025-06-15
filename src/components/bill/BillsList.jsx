@@ -117,104 +117,106 @@ const BillsList = () => {
                 <Loader />
               </div>
             ) : (
-              <div className="overflow-x-auto -mx-3 sm:mx-0">
-                <div className="min-w-[800px] p-3 sm:p-0">
-                  <table className="w-full table-auto">
-                    <thead>
-                      <tr className="bg-[#B08968]/10">
-                        <th className="px-4 py-2 text-left text-[#7F5539]">Bill Number</th>
-                        <th className="px-4 py-2 text-left text-[#7F5539]">Type</th>
-                        <th className="px-4 py-2 text-left text-[#7F5539]">Date</th>
-                        <th className="px-4 py-2 text-left text-[#7F5539]">Customer Name</th>
-                        <th className="px-4 py-2 text-left text-[#7F5539]">Grand Total</th>
-                        <th className="px-4 py-2 text-left text-[#7F5539]">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody ref={ref}>
-                      {bills.length === 0 ? (
-                        <motion.tr
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ duration: 0.5 }}
-                        >
-                          <td colSpan={6} className="px-4 py-2 text-center">
-                            No bills found
-                          </td>
-                        </motion.tr>
-                      ) : (
-                        bills.map((bill, index) => (
+              <div className="overflow-x-auto rounded-lg">
+                <div className="inline-block min-w-full align-middle">
+                  <div className="overflow-hidden">
+                    <table className="min-w-full divide-y divide-[#B08968]/10">
+                      <thead className="bg-[#B08968]/10">
+                        <tr>
+                          <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-[#7F5539]">Bill Number</th>
+                          <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-[#7F5539]">Type</th>
+                          <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-[#7F5539]">Date</th>
+                          <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-[#7F5539]">Customer Name</th>
+                          <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-[#7F5539]">Grand Total</th>
+                          <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-[#7F5539]">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody ref={ref} className="divide-y divide-[#B08968]/10 bg-white/50">
+                        {bills.length === 0 ? (
                           <motion.tr
-                            key={bill._id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={inView ? { opacity: 1, y: 0 } : {}}
-                            transition={{ duration: 0.3, delay: index * 0.1 }}
-                            className={`border-b border-[#B08968]/10 hover:bg-[#B08968]/5 transition-colors duration-300 ${
-                              bill.billType === 'DUPLICATE' ? 'bg-[#7F5539]/5' : ''
-                            }`}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.5 }}
                           >
-                            <td className="px-4 py-2">
-                              <div className="flex items-center gap-2">
-                                {bill.billNumber}
-                                {bill.billType === 'DUPLICATE' ? (
-                                  <span className="px-2 py-1 text-xs bg-[#7F5539] text-white rounded-full">
-                                    COPY
-                                  </span>
-                                ) : (
-                                  <span className="px-2 py-1 text-xs bg-green-600 text-white rounded-full">
-                                    ORIGINAL
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-4 py-2">
-                              {bill.documentType}
-                              {bill.originalBillId && (
-                                <span className="ml-2 text-xs text-[#7F5539]">
-                                  (Copy of {bill.originalBillId.billNumber})
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-4 py-2">{new Date(bill.date).toLocaleDateString()}</td>
-                            <td className="px-4 py-2">{bill.clientName}</td>
-                            <td className="px-4 py-2">₹{bill.grandTotal ? bill.grandTotal.toFixed(2) : '0.00'}</td>
-                            <td className="px-4 py-2">
-                              <div className="flex flex-wrap gap-2 justify-start items-center">
-                                <motion.button
-                                  whileHover={{ scale: 1.1 }}
-                                  whileTap={{ scale: 0.95 }}
-                                  onClick={() => handleEditBill(bill._id)}
-                                  className="p-2 text-[#7F5539] hover:text-[#9C6644] transition-colors duration-300 rounded-full hover:bg-[#B08968]/10"
-                                  title="Edit Bill"
-                                >
-                                  <Edit size={18} />
-                                </motion.button>
-                                <motion.button
-                                  whileHover={{ scale: 1.1 }}
-                                  whileTap={{ scale: 0.95 }}
-                                  onClick={() => handleDownloadPDF(bill._id)}
-                                  disabled={loadingStates.generatePDF}
-                                  className={`p-2 text-[#7F5539] hover:text-[#9C6644] transition-colors duration-300 rounded-full hover:bg-[#B08968]/10 
-                                    ${loadingStates.generatePDF ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                  title="Download PDF"
-                                >
-                                  <FileText size={18} />
-                                </motion.button>
-                                <motion.button
-                                  whileHover={{ scale: 1.1 }}
-                                  whileTap={{ scale: 0.95 }}
-                                  onClick={() => handleDuplicateBill(bill._id)}
-                                  className="p-2 text-[#7F5539] hover:text-[#9C6644] transition-colors duration-300 rounded-full hover:bg-[#B08968]/10"
-                                  title="Duplicate Bill"
-                                >
-                                  <Copy size={18} />
-                                </motion.button>
-                              </div>
+                            <td colSpan={6} className="px-3 py-4 text-center text-sm text-gray-500">
+                              No bills found
                             </td>
                           </motion.tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
+                        ) : (
+                          bills.map((bill, index) => (
+                            <motion.tr
+                              key={bill._id}
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={inView ? { opacity: 1, y: 0 } : {}}
+                              transition={{ duration: 0.3, delay: index * 0.1 }}
+                              className={`hover:bg-[#B08968]/5 transition-colors duration-300 ${
+                                bill.billType === 'DUPLICATE' ? 'bg-[#7F5539]/5' : ''
+                              }`}
+                            >
+                              <td className="whitespace-nowrap px-3 py-4 text-sm">
+                                <div className="flex items-center gap-2">
+                                  {bill.billNumber}
+                                  {bill.billType === 'DUPLICATE' ? (
+                                    <span className="px-2 py-1 text-xs bg-[#7F5539] text-white rounded-full">
+                                      COPY
+                                    </span>
+                                  ) : (
+                                    <span className="px-2 py-1 text-xs bg-green-600 text-white rounded-full">
+                                      ORIGINAL
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="whitespace-nowrap px-3 py-4 text-sm">
+                                {bill.documentType}
+                                {bill.originalBillId && (
+                                  <span className="ml-2 text-xs text-[#7F5539]">
+                                    (Copy of {bill.originalBillId.billNumber})
+                                  </span>
+                                )}
+                              </td>
+                              <td className="whitespace-nowrap px-3 py-4 text-sm">{new Date(bill.date).toLocaleDateString()}</td>
+                              <td className="whitespace-nowrap px-3 py-4 text-sm">{bill.clientName}</td>
+                              <td className="whitespace-nowrap px-3 py-4 text-sm">₹{bill.grandTotal ? bill.grandTotal.toFixed(2) : '0.00'}</td>
+                              <td className="whitespace-nowrap px-3 py-4 text-sm">
+                                <div className="flex flex-wrap gap-2 justify-start items-center">
+                                  <motion.button
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => handleEditBill(bill._id)}
+                                    className="p-2 text-[#7F5539] hover:text-[#9C6644] transition-colors duration-300 rounded-full hover:bg-[#B08968]/10"
+                                    title="Edit Bill"
+                                  >
+                                    <Edit size={18} />
+                                  </motion.button>
+                                  <motion.button
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => handleDownloadPDF(bill._id)}
+                                    disabled={loadingStates.generatePDF}
+                                    className={`p-2 text-[#7F5539] hover:text-[#9C6644] transition-colors duration-300 rounded-full hover:bg-[#B08968]/10 
+                                      ${loadingStates.generatePDF ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    title="Download PDF"
+                                  >
+                                    <FileText size={18} />
+                                  </motion.button>
+                                  <motion.button
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => handleDuplicateBill(bill._id)}
+                                    className="p-2 text-[#7F5539] hover:text-[#9C6644] transition-colors duration-300 rounded-full hover:bg-[#B08968]/10"
+                                    title="Duplicate Bill"
+                                  >
+                                    <Copy size={18} />
+                                  </motion.button>
+                                </div>
+                              </td>
+                            </motion.tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             )}
@@ -224,16 +226,34 @@ const BillsList = () => {
       <style jsx>{`
         @media (max-width: 640px) {
           .table-container {
-            margin: 0 -1rem;
+            margin: 0;
+            width: 100%;
+          }
+          
+          table {
+            width: 100%;
+            display: block;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
           }
           
           td, th {
-            white-space: nowrap;
+            min-width: 120px;
+            padding: 0.75rem 0.5rem;
+          }
+          
+          td:first-child, th:first-child {
+            min-width: 150px;
+          }
+          
+          td:last-child, th:last-child {
+            min-width: 140px;
           }
           
           .action-buttons {
             display: flex;
             gap: 0.5rem;
+            flex-wrap: nowrap;
           }
         }
       `}</style>
