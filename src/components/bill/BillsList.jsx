@@ -15,6 +15,9 @@ const BillsList = () => {
   const { token } = useSelector((state) => state.auth);
   const [pdfError, setPdfError] = useState(null);
 
+  // Debug log for bills
+  console.log('Bills in state:', bills);
+
   useEffect(() => {
     // Only fetch bills if we have a token
     if (token) {
@@ -123,37 +126,36 @@ const BillsList = () => {
                   {bills.length === 0 ? (
                     <div className="text-center py-8 text-[#7F5539]">No bills found</div>
                   ) : (
-                    <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-4 pb-24">
                       {bills.map((bill, index) => (
-                        <motion.div
+                        <div
                           key={bill._id}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={inView ? { opacity: 1, y: 0 } : {}}
-                          transition={{ duration: 0.3, delay: index * 0.1 }}
-                          className={`rounded-xl shadow-md bg-white/70 border border-[#B08968]/20 p-4 flex flex-col gap-2 ${bill.billType === 'DUPLICATE' ? 'bg-[#7F5539]/5' : ''}`}
+                          className={`rounded-2xl shadow-lg bg-white border border-[#B08968]/20 p-5 mb-2 flex flex-col gap-3 ${bill.billType === 'DUPLICATE' ? 'bg-[#7F5539]/10' : ''}`}
                         >
-                          <div className="flex items-center justify-between">
-                            <div className="font-bold text-lg text-[#7F5539] flex items-center gap-2">
-                              {bill.billNumber}
-                              {bill.billType === 'DUPLICATE' ? (
-                                <span className="px-2 py-1 text-xs bg-[#7F5539] text-white rounded-full">COPY</span>
-                              ) : (
-                                <span className="px-2 py-1 text-xs bg-green-600 text-white rounded-full">ORIGINAL</span>
-                              )}
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center justify-between flex-wrap">
+                              <div className="font-bold text-[1.15rem] text-[#3E2723] flex items-center gap-2 break-all">
+                                {bill.billNumber}
+                                {bill.billType === 'DUPLICATE' ? (
+                                  <span className="px-2 py-1 text-xs bg-[#7F5539] text-white rounded-full">COPY</span>
+                                ) : (
+                                  <span className="px-2 py-1 text-xs bg-green-600 text-white rounded-full">ORIGINAL</span>
+                                )}
+                              </div>
+                              <div className="flex gap-3 mt-2 sm:mt-0">
+                                <button onClick={() => handleEditBill(bill._id)} className="p-3 text-[#7F5539] hover:text-[#9C6644] rounded-full hover:bg-[#B08968]/10 text-base" title="Edit Bill"><Edit size={22} /></button>
+                                <button onClick={() => handleDownloadPDF(bill._id)} disabled={loadingStates.generatePDF} className={`p-3 text-[#7F5539] hover:text-[#9C6644] rounded-full hover:bg-[#B08968]/10 text-base ${loadingStates.generatePDF ? 'opacity-50 cursor-not-allowed' : ''}`} title="Download PDF"><FileText size={22} /></button>
+                                <button onClick={() => handleDuplicateBill(bill._id)} className="p-3 text-[#7F5539] hover:text-[#9C6644] rounded-full hover:bg-[#B08968]/10 text-base" title="Duplicate Bill"><Copy size={22} /></button>
+                              </div>
                             </div>
-                            <div className="flex gap-2">
-                              <button onClick={() => handleEditBill(bill._id)} className="p-2 text-[#7F5539] hover:text-[#9C6644] rounded-full hover:bg-[#B08968]/10" title="Edit Bill"><Edit size={18} /></button>
-                              <button onClick={() => handleDownloadPDF(bill._id)} disabled={loadingStates.generatePDF} className={`p-2 text-[#7F5539] hover:text-[#9C6644] rounded-full hover:bg-[#B08968]/10 ${loadingStates.generatePDF ? 'opacity-50 cursor-not-allowed' : ''}`} title="Download PDF"><FileText size={18} /></button>
-                              <button onClick={() => handleDuplicateBill(bill._id)} className="p-2 text-[#7F5539] hover:text-[#9C6644] rounded-full hover:bg-[#B08968]/10" title="Duplicate Bill"><Copy size={18} /></button>
+                            <div className="flex flex-col gap-1 mt-2 text-[#3E2723] text-[1rem]">
+                              <div className="break-words"><span className="font-semibold">Type:</span> {bill.documentType} {bill.originalBillId && (<span className="ml-2 text-xs">(Copy of {bill.originalBillId.billNumber})</span>)}</div>
+                              <div><span className="font-semibold">Date:</span> {new Date(bill.date).toLocaleDateString()}</div>
+                              <div className="break-words"><span className="font-semibold">Customer:</span> {bill.clientName}</div>
+                              <div><span className="font-semibold">Grand Total:</span> ₹{bill.grandTotal ? bill.grandTotal.toFixed(2) : '0.00'}</div>
                             </div>
                           </div>
-                          <div className="flex flex-col gap-1 mt-2 text-[#7F5539]">
-                            <div><span className="font-semibold">Type:</span> {bill.documentType} {bill.originalBillId && (<span className="ml-2 text-xs">(Copy of {bill.originalBillId.billNumber})</span>)}</div>
-                            <div><span className="font-semibold">Date:</span> {new Date(bill.date).toLocaleDateString()}</div>
-                            <div><span className="font-semibold">Customer:</span> {bill.clientName}</div>
-                            <div><span className="font-semibold">Grand Total:</span> ₹{bill.grandTotal ? bill.grandTotal.toFixed(2) : '0.00'}</div>
-                          </div>
-                        </motion.div>
+                        </div>
                       ))}
                     </div>
                   )}
@@ -256,22 +258,6 @@ const BillsList = () => {
           </motion.div>
         </div>
       </motion.div>
-      <style jsx>{`
-        @media (max-width: 640px) {
-          .table-container {
-            margin: 0 -1rem;
-          }
-          
-          td, th {
-            white-space: nowrap;
-          }
-          
-          .action-buttons {
-            display: flex;
-            gap: 0.5rem;
-          }
-        }
-      `}</style>
     </>
   );
 };
