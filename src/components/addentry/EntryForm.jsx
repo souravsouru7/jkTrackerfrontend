@@ -91,6 +91,17 @@ const EntryForm = ({ entry, onClose }) => {
     }
   }, [formData.type]);
 
+  // Add this effect to sync formData with entry prop
+  useEffect(() => {
+    if (entry) {
+      setFormData({
+        ...entry,
+        customCategory: "",
+      });
+      setShowCustomCategory(entry.category === "Other");
+    }
+  }, [entry]);
+
   // Handle category change
   const handleCategoryChange = (e) => {
     const value = e.target.value;
