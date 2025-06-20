@@ -5,8 +5,6 @@ import { useNavigate } from 'react-router-dom';
 import { FileText, Eye, Plus, Edit, Copy } from 'lucide-react';
 import Navbar from '../../pages/Navbar';
 import Loader from '../Loader';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useInView } from 'react-intersection-observer';
 
 const BillsList = () => {
   const dispatch = useDispatch();
@@ -16,32 +14,23 @@ const BillsList = () => {
   const [pdfError, setPdfError] = useState(null);
 
   useEffect(() => {
-    // Only fetch bills if we have a token
     if (token) {
       dispatch(fetchAllBills());
     }
   }, [dispatch, token]);
 
-  // Redirect to login if no token is present
   useEffect(() => {
     if (!token) {
       navigate('/login');
     }
   }, [token, navigate]);
 
-  // Add smooth scroll behavior
   useEffect(() => {
     document.documentElement.style.scrollBehavior = 'smooth';
     return () => {
       document.documentElement.style.scrollBehavior = 'auto';
     };
   }, []);
-
-  // Add intersection observer for table rows
-  const [ref, inView] = useInView({
-    triggerOnce: true,
-    threshold: 0.1,
-  });
 
   const handleViewBill = (id) => {
     navigate(`/bills/${id}`);
@@ -62,7 +51,6 @@ const BillsList = () => {
   const handleDuplicateBill = async (id) => {
     try {
       await dispatch(duplicateBill(id)).unwrap();
-      // Optionally refresh the bills list
       dispatch(fetchAllBills());
     } catch (error) {
       setPdfError(error.message || 'Failed to duplicate bill');
@@ -72,31 +60,14 @@ const BillsList = () => {
   return (
     <>
       <Navbar />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="min-h-screen bg-gradient-to-br from-[#F5EBE0] via-[#E6CCB2] to-[#DDB892] pt-14 md:pt-6"
-      >
+      <div className="min-h-screen bg-gradient-to-br from-[#F5EBE0] via-[#E6CCB2] to-[#DDB892] pt-14 md:pt-6">
         <div className="max-w-7xl mx-auto px-3 sm:px-6">
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.6 }}
-            className="bg-white/30 backdrop-blur-md rounded-2xl shadow-xl border border-[#B08968]/20 p-4 sm:p-6"
-          >
-            <AnimatePresence>
-              {error && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded"
-                >
-                  {error}
-                </motion.div>
-              )}
-            </AnimatePresence>
+          <div className="bg-white/30 backdrop-blur-md rounded-2xl shadow-xl border border-[#B08968]/20 p-4 sm:p-6">
+            {error && (
+              <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+                {error}
+              </div>
+            )}
             {pdfError && (
               <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
                 {pdfError}
@@ -111,7 +82,6 @@ const BillsList = () => {
                 <Plus size={16} /> Create New Bill
               </button>
             </div>
-            
             {loadingStates.fetchBills ? (
               <div className="flex justify-center items-center min-h-[200px]">
                 <Loader />
@@ -131,24 +101,17 @@ const BillsList = () => {
                           <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-[#7F5539]">Actions</th>
                         </tr>
                       </thead>
-                      <tbody ref={ref} className="divide-y divide-[#B08968]/10 bg-white/50">
+                      <tbody className="divide-y divide-[#B08968]/10 bg-white/50">
                         {bills.length === 0 ? (
-                          <motion.tr
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 0.5 }}
-                          >
+                          <tr>
                             <td colSpan={6} className="px-3 py-4 text-center text-sm text-gray-500">
                               No bills found
                             </td>
-                          </motion.tr>
+                          </tr>
                         ) : (
-                          bills.map((bill, index) => (
-                            <motion.tr
+                          bills.map((bill) => (
+                            <tr
                               key={bill._id}
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={inView ? { opacity: 1, y: 0 } : {}}
-                              transition={{ duration: 0.3, delay: index * 0.1 }}
                               className={`hover:bg-[#B08968]/5 transition-colors duration-300 ${
                                 bill.billType === 'DUPLICATE' ? 'bg-[#7F5539]/5' : ''
                               }`}
@@ -180,18 +143,14 @@ const BillsList = () => {
                               <td className="whitespace-nowrap px-3 py-4 text-sm">₹{bill.grandTotal ? bill.grandTotal.toFixed(2) : '0.00'}</td>
                               <td className="whitespace-nowrap px-3 py-4 text-sm">
                                 <div className="flex flex-wrap gap-2 justify-start items-center">
-                                  <motion.button
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.95 }}
+                                  <button
                                     onClick={() => handleEditBill(bill._id)}
                                     className="p-2 text-[#7F5539] hover:text-[#9C6644] transition-colors duration-300 rounded-full hover:bg-[#B08968]/10"
                                     title="Edit Bill"
                                   >
                                     <Edit size={18} />
-                                  </motion.button>
-                                  <motion.button
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.95 }}
+                                  </button>
+                                  <button
                                     onClick={() => handleDownloadPDF(bill._id)}
                                     disabled={loadingStates.generatePDF}
                                     className={`p-2 text-[#7F5539] hover:text-[#9C6644] transition-colors duration-300 rounded-full hover:bg-[#B08968]/10 
@@ -199,19 +158,17 @@ const BillsList = () => {
                                     title="Download PDF"
                                   >
                                     <FileText size={18} />
-                                  </motion.button>
-                                  <motion.button
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.95 }}
+                                  </button>
+                                  <button
                                     onClick={() => handleDuplicateBill(bill._id)}
                                     className="p-2 text-[#7F5539] hover:text-[#9C6644] transition-colors duration-300 rounded-full hover:bg-[#B08968]/10"
                                     title="Duplicate Bill"
                                   >
                                     <Copy size={18} />
-                                  </motion.button>
+                                  </button>
                                 </div>
                               </td>
-                            </motion.tr>
+                            </tr>
                           ))
                         )}
                       </tbody>
@@ -220,36 +177,31 @@ const BillsList = () => {
                 </div>
               </div>
             )}
-          </motion.div>
+          </div>
         </div>
-      </motion.div>
+      </div>
       <style jsx>{`
         @media (max-width: 640px) {
-          .table-container {
+          .overflow-x-auto {
             margin: 0;
             width: 100%;
           }
-          
           table {
             width: 100%;
             display: block;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
           }
-          
           td, th {
             min-width: 120px;
             padding: 0.75rem 0.5rem;
           }
-          
           td:first-child, th:first-child {
             min-width: 150px;
           }
-          
           td:last-child, th:last-child {
             min-width: 140px;
           }
-          
           .action-buttons {
             display: flex;
             gap: 0.5rem;
