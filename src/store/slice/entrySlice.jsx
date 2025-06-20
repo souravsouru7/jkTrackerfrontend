@@ -113,7 +113,12 @@ export const updateEntry = createAsyncThunk(
   async ({ id, updates }, { rejectWithValue }) => {
     try {
       const validatedUpdates = validateEntry(updates);
-      const { data } = await API.put(`/entries/${id}`, validatedUpdates);
+      const token = localStorage.getItem('token');
+      const { data } = await API.put(
+        `/entries/${id}`,
+        validatedUpdates,
+        { headers: { 'x-auth-token': token } }
+      );
       
       // Handle PDF download if it's an income entry AND generateBill is true
       if (data.paymentBill && validatedUpdates.type === 'Income' && validatedUpdates.generateBill === true) {
