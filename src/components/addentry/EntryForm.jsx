@@ -1,7 +1,7 @@
 // EntryForm.jsx
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { addEntry, updateEntry } from "../../store/slice/entrySlice";
+import { addEntry, updateEntry, fetchEntries } from "../../store/slice/entrySlice";
 import { fetchProjects } from "../../store/slice/projectSlice";
 import { fetchCustomCategories, addCustomCategory } from "../../store/slice/categorySlice";
 import { Plus, Mic, MicOff, AlertCircle, X, FileText } from "lucide-react";
@@ -311,34 +311,54 @@ const EntryForm = ({ entry, onClose }) => {
       const selectedProjectFromCategory = projects.find(project => project.name === formData.category);
       
       if (selectedProjectFromCategory && formData.type === 'Income') {
-        // Create income entry for current project
-        const incomeEntryData = {
-          userId: user._id || user.id,
-          projectId: selectedProject._id,
-          type: "Income",
-          amount: parseFloat(formData.amount),
-          category: formData.category,
-          description: formData.description || "",
-          date: new Date().toISOString(),
-          ...(formData.type === 'Income' && { generateBill })
-        };
+        // Use the new API endpoint for income from other projects
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/entries/income-from-project`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: user._id || user.id,
+            currentProjectId: selectedProject._id,
+            sourceProjectName: formData.category,
+            amount: parseFloat(formData.amount),
+            description: formData.description || "",
+            date: new Date().toISOString(),
+            generateBill
+          })
+        });
 
-        // Create expense entry for the selected project
-        const expenseEntryData = {
-          userId: user._id || user.id,
-          projectId: selectedProjectFromCategory._id,
-          type: "Expense",
-          amount: parseFloat(formData.amount),
-          category: "Project Payment",
-          description: `Payment to ${selectedProject.name}`,
-          date: new Date().toISOString()
-        };
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to create income from project');
+        }
 
-        // Create both entries
-        await Promise.all([
-          dispatch(addEntry(incomeEntryData)).unwrap(),
-          dispatch(addEntry(expenseEntryData)).unwrap()
-        ]);
+        const data = await response.json();
+        
+        // Handle PDF download if requested
+        if (data.paymentBill && generateBill) {
+          const byteCharacters = atob(data.paymentBill.data);
+          const byteNumbers = new Array(byteCharacters.length);
+          
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          
+          const byteArray = new Uint8Array(byteNumbers);
+          const pdfBlob = new Blob([byteArray], { type: 'application/pdf' });
+          
+          const url = window.URL.createObjectURL(pdfBlob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.setAttribute('download', `payment-bill-${data.incomeEntry._id}.pdf`);
+          document.body.appendChild(link);
+          link.click();
+          link.parentNode.removeChild(link);
+          window.URL.revokeObjectURL(url);
+        }
+
+        // Refresh entries after creating both entries
+        await dispatch(fetchEntries());
       } else {
         // Regular entry creation/update
         const entryData = {

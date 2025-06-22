@@ -180,6 +180,43 @@ export const exportEntries = createAsyncThunk(
   }
 );
 
+export const createIncomeFromProject = createAsyncThunk(
+  'entries/createIncomeFromProject',
+  async (entryData, { rejectWithValue }) => {
+    try {
+      const { data } = await API.post('/entries/income-from-project', entryData);
+      
+      // Handle PDF download if it's an income entry AND generateBill is true
+      if (data.paymentBill && entryData.generateBill === true) {
+        // Convert base64 to Blob directly without using Buffer
+        const byteCharacters = atob(data.paymentBill.data);
+        const byteNumbers = new Array(byteCharacters.length);
+        
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        
+        const byteArray = new Uint8Array(byteNumbers);
+        const pdfBlob = new Blob([byteArray], { type: 'application/pdf' });
+        
+        // Create download link
+        const url = window.URL.createObjectURL(pdfBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `payment-bill-${data.incomeEntry._id}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }
+
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
 const entriesSlice = createSlice({
   name: 'entries',
   initialState: {
@@ -228,6 +265,13 @@ const entriesSlice = createSlice({
       .addCase(exportEntries.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.payload || 'Failed to export entries';
+      })
+      .addCase(createIncomeFromProject.fulfilled, (state, action) => {
+        state.entries.unshift(action.payload.incomeEntry);
+      })
+      .addCase(createIncomeFromProject.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload || 'Failed to create income from project';
       });
   },
 });

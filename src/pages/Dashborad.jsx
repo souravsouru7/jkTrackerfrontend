@@ -555,7 +555,14 @@ const FinancialSummary = React.memo(({ summary, selectedProject }) => {
 
   const totalIncome = useMemo(() => {
     return entries
-      ?.filter(entry => entry.type.toLowerCase() === 'income')
+      ?.filter(entry => entry.type.toLowerCase() === 'income' && !entry.isIncomeFromOtherProject)
+      .reduce((sum, entry) => sum + Number(entry.amount || 0), 0) || 0;
+  }, [entries]);
+
+  // Calculate income from other projects separately
+  const totalIncomeFromOtherProjects = useMemo(() => {
+    return entries
+      ?.filter(entry => entry.type.toLowerCase() === 'income' && entry.isIncomeFromOtherProject)
       .reduce((sum, entry) => sum + Number(entry.amount || 0), 0) || 0;
   }, [entries]);
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addEntry, updateEntry, fetchEntries, deleteEntry } from '../../store/slice/entrySlice';
-import { Plus, Search, Filter, X, Edit2, Trash2, Download, ChevronDown } from 'lucide-react';
+import { Plus, Search, Filter, X, Edit2, Trash2, Download, ChevronDown, ArrowRight } from 'lucide-react';
 import EntryForm from './EntryForm';
 import Navbar from '../../pages/Navbar';
 import ExportButton from './ExportButton';
@@ -50,9 +50,16 @@ const ExpenseTracker = () => {
     }
   }, [dispatch, selectedProject?._id]);
 
-  // Calculate totals for all entries
+  // Separate regular entries from income from other projects
+  const { regularEntries, incomeFromOtherProjects } = useMemo(() => {
+    const regular = entries.filter(entry => !entry.isIncomeFromOtherProject);
+    const fromOtherProjects = entries.filter(entry => entry.isIncomeFromOtherProject);
+    return { regularEntries: regular, incomeFromOtherProjects: fromOtherProjects };
+  }, [entries]);
+
+  // Calculate totals for regular entries only
   const allTotals = useMemo(() => {
-    return entries.reduce((acc, entry) => {
+    return regularEntries.reduce((acc, entry) => {
       if (entry.type === 'Income') {
         acc.income += entry.amount;
       } else {
@@ -61,7 +68,12 @@ const ExpenseTracker = () => {
       acc.balance = acc.income - acc.expense;
       return acc;
     }, { income: 0, expense: 0, balance: 0 });
-  }, [entries]);
+  }, [regularEntries]);
+
+  // Calculate total income from other projects
+  const totalIncomeFromOtherProjects = useMemo(() => {
+    return incomeFromOtherProjects.reduce((total, entry) => total + entry.amount, 0);
+  }, [incomeFromOtherProjects]);
 
   const filterEntry = (entry) => {
     const matchesSearch = 
@@ -96,6 +108,36 @@ const ExpenseTracker = () => {
     return matchesSearch && matchesType && matchesCategory && matchesDate;
   };
 
+  const filterIncomeFromOtherProjects = (entry) => {
+    const matchesSearch = 
+      entry.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      entry.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      entry.amount.toString().includes(searchTerm);
+    
+    let matchesDate = true;
+    const entryDate = new Date(entry.date);
+    const today = new Date();
+    
+    switch (activeFilters.dateRange) {
+      case 'Today':
+        matchesDate = entryDate.toDateString() === today.toDateString();
+        break;
+      case 'This Week':
+        const weekAgo = new Date(today.setDate(today.getDate() - 7));
+        matchesDate = entryDate >= weekAgo;
+        break;
+      case 'This Month':
+        matchesDate = 
+          entryDate.getMonth() === today.getMonth() &&
+          entryDate.getFullYear() === today.getFullYear();
+        break;
+      default:
+        matchesDate = true;
+    }
+
+    return matchesSearch && matchesDate;
+  };
+
   const sortEntries = (entries) => {
     switch (activeFilters.sortBy) {
       case 'date':
@@ -111,9 +153,14 @@ const ExpenseTracker = () => {
 
   // Get filtered and sorted entries
   const filteredEntries = useMemo(() => {
-    const filtered = entries.filter(filterEntry);
+    const filtered = regularEntries.filter(filterEntry);
     return sortEntries(filtered);
-  }, [entries, searchTerm, activeFilters]);
+  }, [regularEntries, searchTerm, activeFilters]);
+
+  const filteredIncomeFromOtherProjects = useMemo(() => {
+    const filtered = incomeFromOtherProjects.filter(filterIncomeFromOtherProjects);
+    return sortEntries(filtered);
+  }, [incomeFromOtherProjects, searchTerm, activeFilters]);
 
   // Calculate totals for filtered entries
   const filteredTotals = useMemo(() => {
@@ -128,6 +175,11 @@ const ExpenseTracker = () => {
     }, { income: 0, expense: 0 });
   }, [filteredEntries]);
 
+  // Calculate totals for filtered income from other projects
+  const filteredIncomeFromOtherProjectsTotal = useMemo(() => {
+    return filteredIncomeFromOtherProjects.reduce((total, entry) => total + (entry.amount || 0), 0);
+  }, [filteredIncomeFromOtherProjects]);
+
   // Get the total label based on filters
   const getTotalLabel = () => {
     if (activeFilters.type !== 'All') {
@@ -139,7 +191,7 @@ const ExpenseTracker = () => {
     return 'Total Amount';
   };
 
-  const categories = ['All', ...new Set(entries.map(entry => entry.category))];
+  const categories = ['All', ...new Set(regularEntries.map(entry => entry.category))];
 
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this entry?')) {
@@ -203,36 +255,51 @@ const ExpenseTracker = () => {
                 <div className="bg-white rounded-xl p-4 shadow-sm">
                   {activeFilters.type === 'All' ? (
                     // Show both income and expense when no type filter
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="text-center">
-                        <p className="text-xs text-[#9C6644] mb-1">Total Income</p>
-                        <p className="text-sm md:text-base font-semibold text-green-600">
-                          ₹{filteredTotals.income.toLocaleString('en-IN', {
-                            maximumFractionDigits: 2,
-                            minimumFractionDigits: 2
-                          })}
-                        </p>
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="text-center">
+                          <p className="text-xs text-[#9C6644] mb-1">Total Income</p>
+                          <p className="text-sm md:text-base font-semibold text-green-600">
+                            ₹{filteredTotals.income.toLocaleString('en-IN', {
+                              maximumFractionDigits: 2,
+                              minimumFractionDigits: 2
+                            })}
+                          </p>
+                        </div>
+                        <div className="text-center border-l border-[#B08968]/10">
+                          <p className="text-xs text-[#9C6644] mb-1">Total Expense</p>
+                          <p className="text-sm md:text-base font-semibold text-red-600">
+                            ₹{filteredTotals.expense.toLocaleString('en-IN', {
+                              maximumFractionDigits: 2,
+                              minimumFractionDigits: 2
+                            })}
+                          </p>
+                        </div>
+                        <div className="text-center border-l border-[#B08968]/10">
+                          <p className="text-xs text-[#9C6644] mb-1">Cash in Hand</p>
+                          <p className={`text-sm md:text-base font-semibold ${
+                            (filteredTotals.income - filteredTotals.expense) >= 0 ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            ₹{(filteredTotals.income - filteredTotals.expense).toLocaleString('en-IN', {
+                              maximumFractionDigits: 2,
+                              minimumFractionDigits: 2
+                            })}
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-center border-l border-[#B08968]/10">
-                        <p className="text-xs text-[#9C6644] mb-1">Total Expense</p>
-                        <p className="text-sm md:text-base font-semibold text-red-600">
-                          ₹{filteredTotals.expense.toLocaleString('en-IN', {
-                            maximumFractionDigits: 2,
-                            minimumFractionDigits: 2
-                          })}
-                        </p>
-                      </div>
-                      <div className="text-center border-l border-[#B08968]/10">
-                        <p className="text-xs text-[#9C6644] mb-1">Cash in Hand</p>
-                        <p className={`text-sm md:text-base font-semibold ${
-                          (filteredTotals.income - filteredTotals.expense) >= 0 ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          ₹{(filteredTotals.income - filteredTotals.expense).toLocaleString('en-IN', {
-                            maximumFractionDigits: 2,
-                            minimumFractionDigits: 2
-                          })}
-                        </p>
-                      </div>
+                      {filteredIncomeFromOtherProjectsTotal > 0 && (
+                        <div className="border-t border-[#B08968]/10 pt-3">
+                          <div className="text-center">
+                            <p className="text-xs text-[#9C6644] mb-1">Income from Other Projects</p>
+                            <p className="text-sm md:text-base font-semibold text-blue-600">
+                              ₹{filteredIncomeFromOtherProjectsTotal.toLocaleString('en-IN', {
+                                maximumFractionDigits: 2,
+                                minimumFractionDigits: 2
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     // Show single total when type filter is applied
@@ -353,60 +420,145 @@ const ExpenseTracker = () => {
                   </div>
                 </motion.div>
               ))
-            ) : filteredEntries.map((entry) => (
-              <motion.div
-                key={entry._id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                layout
-                transition={{ 
-                  duration: 0.2,
-                  layout: { duration: 0.2 }
-                }}
-                className={`bg-white rounded-lg shadow-md overflow-hidden ${
-                  isEntryLoading ? 'opacity-50' : ''
-                }`}
-              >
-                <div className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-medium text-[#7F5539] line-clamp-1">{entry.description}</h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-sm text-[#9C6644]">{entry.category}</span>
-                        <span className="text-xs text-[#B08968]">
-                          {new Date(entry.date).toLocaleDateString()}
-                        </span>
+            ) : (
+              <>
+                {/* Regular Entries */}
+                {filteredEntries.length > 0 && (
+                  <div className="space-y-3">
+                    {filteredEntries.map((entry) => (
+                      <motion.div
+                        key={entry._id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        layout
+                        transition={{ 
+                          duration: 0.2,
+                          layout: { duration: 0.2 }
+                        }}
+                        className={`bg-white rounded-lg shadow-md overflow-hidden ${
+                          isEntryLoading ? 'opacity-50' : ''
+                        }`}
+                      >
+                        <div className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h3 className="font-medium text-[#7F5539] line-clamp-1">{entry.description}</h3>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-sm text-[#9C6644]">{entry.category}</span>
+                                <span className="text-xs text-[#B08968]">
+                                  {new Date(entry.date).toLocaleDateString()}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex flex-col items-end">
+                              <span className={`font-semibold ${
+                                entry.type === 'Income' ? 'text-green-600' : 'text-red-600'
+                              }`}>
+                                {entry.type === 'Income' ? '+' : '-'}₹{entry.amount}
+                              </span>
+                              <div className="flex items-center gap-2 mt-2">
+                                <button
+                                  onClick={() => {
+                                    setSelectedEntry(entry);
+                                    setShowForm(true);
+                                  }}
+                                  className="p-1.5 text-[#7F5539] hover:bg-[#7F5539]/10 rounded-full transition-colors"
+                                >
+                                  <Edit2 size={16} />
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(entry._id)}
+                                  className="p-1.5 text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Income from Other Projects Section */}
+                {filteredIncomeFromOtherProjects.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <ArrowRight className="h-5 w-5 text-blue-600" />
+                        <h3 className="font-semibold text-blue-800">Income from Other Projects</h3>
                       </div>
-                    </div>
-                    <div className="flex flex-col items-end">
-                      <span className={`font-semibold ${
-                        entry.type === 'Income' ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {entry.type === 'Income' ? '+' : '-'}₹{entry.amount}
-                      </span>
-                      <div className="flex items-center gap-2 mt-2">
-                        <button
-                          onClick={() => {
-                            setSelectedEntry(entry);
-                            setShowForm(true);
-                          }}
-                          className="p-1.5 text-[#7F5539] hover:bg-[#7F5539]/10 rounded-full transition-colors"
-                        >
-                          <Edit2 size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(entry._id)}
-                          className="p-1.5 text-red-600 hover:bg-red-50 rounded-full transition-colors"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                      <p className="text-sm text-blue-700 mb-3">
+                        These are payments received from other projects and are not included in the main income calculations.
+                      </p>
+                      <div className="space-y-2">
+                        {filteredIncomeFromOtherProjects.map((entry) => (
+                          <motion.div
+                            key={entry._id}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 20 }}
+                            layout
+                            transition={{ 
+                              duration: 0.2,
+                              layout: { duration: 0.2 }
+                            }}
+                            className={`bg-white rounded-lg shadow-sm overflow-hidden border border-blue-100 ${
+                              isEntryLoading ? 'opacity-50' : ''
+                            }`}
+                          >
+                            <div className="p-3">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <h4 className="font-medium text-blue-800 line-clamp-1">{entry.description}</h4>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-sm text-blue-600">From: {entry.category}</span>
+                                    <span className="text-xs text-blue-500">
+                                      {new Date(entry.date).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex flex-col items-end">
+                                  <span className="font-semibold text-blue-600">
+                                    +₹{entry.amount}
+                                  </span>
+                                  <div className="flex items-center gap-2 mt-2">
+                                    <button
+                                      onClick={() => {
+                                        setSelectedEntry(entry);
+                                        setShowForm(true);
+                                      }}
+                                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                                    >
+                                      <Edit2 size={16} />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDelete(entry._id)}
+                                      className="p-1.5 text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
                       </div>
                     </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
+                )}
+
+                {/* No entries message */}
+                {filteredEntries.length === 0 && filteredIncomeFromOtherProjects.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-[#9C6644]">No entries found matching your filters.</p>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>
