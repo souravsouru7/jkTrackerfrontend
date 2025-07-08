@@ -95,7 +95,7 @@ const CreateBill = () => {
         if (brand === 'None') {
           return `Providing and fixing ${thicknessText} ${materialText}with required Adhesive's and Selected Acrylic laminates`;
         }
-        return `Providing and fixing ${thicknessText} ${materialText}${brandText} with required Adhesive's and Selected Acrylic laminates`;
+        return `Providing and fixing ${thicknessText} ${materialText}${brandText} with required Adhesive's and Selected ggttggggggg laminates`;
       
       case 'glasses':
         if (brand === 'None') {
@@ -149,7 +149,8 @@ const CreateBill = () => {
       height: 0,
       sft: 0,
       pricePerUnit: 1250,
-      total: 0
+      total: 0,
+      depth: 1
     }],
     companyDetails: {
       name: 'JK INTERIOR\'S',
@@ -222,17 +223,38 @@ const CreateBill = () => {
     return grandTotal - discount;
   }, [grandTotal, discountType, discountValue]);
 
+  // Calculate per-item discount (equally distributed)
+  const perItemDiscount = useMemo(() => {
+    if (formData.items.length === 0) return 0;
+    const totalDiscount = discountType === 'percentage'
+      ? (grandTotal * discountValue) / 100
+      : discountValue;
+    return totalDiscount / formData.items.length;
+  }, [discountType, discountValue, grandTotal, formData.items.length]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
       // Calculate final totals for all items
-      const calculatedItems = formData.items.map(item => ({
-        ...item,
-        total: calculateItemTotal(item),
-        squareFeet: item.unit === 'Sft' ? item.width * item.height : undefined,
-        quantity: item.quantity || 1
-      }));
+      const calculatedItems = formData.items.map(item => {
+        let depth = item.depth;
+        // If Sft and MS/SS, ensure depth is set (default to 1 if missing)
+        if (item.unit === 'Sft' && (item.description?.toLowerCase().includes('ms') || item.description?.toLowerCase().includes('ss'))) {
+          depth = depth === undefined || depth === null || isNaN(depth) ? 1 : depth;
+        }
+        // If Sft but not MS/SS, ensure depth is at least present (set to 1 if undefined)
+        if (item.unit === 'Sft' && !(item.description?.toLowerCase().includes('ms') || item.description?.toLowerCase().includes('ss'))) {
+          depth = depth === undefined ? 1 : depth;
+        }
+        return {
+          ...item,
+          depth,
+          total: calculateItemTotal({ ...item, depth }),
+          squareFeet: item.unit === 'Sft' ? item.width * item.height : undefined,
+          quantity: item.quantity || 1
+        };
+      });
 
       const updatedPaymentTerms = formData.paymentTerms.map(term => ({
         ...term,
@@ -244,8 +266,8 @@ const CreateBill = () => {
         items: calculatedItems,
         paymentTerms: updatedPaymentTerms,
         grandTotal,
-        discount: discountType === 'percentage' 
-          ? (grandTotal * discountValue) / 100 
+        discount: discountType === 'percentage'
+          ? (grandTotal * discountValue) / 100
           : discountValue || 0,
         finalAmount: finalAmount,
         date: new Date(formData.billDate).toISOString()
@@ -448,7 +470,8 @@ const CreateBill = () => {
                         height: 0,
                         sft: 0,
                         pricePerUnit: 1250,
-                        total: 0
+                        total: 0,
+                        depth: 1
                       }]
                     })}
                     className="flex items-center gap-1 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-[#B08968] text-white text-sm sm:text-base rounded-lg hover:bg-[#9C6644] transition-colors duration-300"
@@ -472,6 +495,8 @@ const CreateBill = () => {
                           <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Sft</th>
                           <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Price</th>
                           <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Total</th>
+                          <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Discount</th>
+                          <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Net Total</th>
                           <th className="border border-[#B08968]/20 p-2 sm:p-3 text-[#7F5539] font-semibold text-sm sm:text-base">Actions</th>
                         </tr>
                       </thead>
@@ -589,7 +614,7 @@ const CreateBill = () => {
                               {item.unit === 'Sft' ? (
                                 <input
                                   type="number"
-                                  className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                  className="w-12 px-2 py-1 bg-white/50 border border-[#B08968]/20 rounded text-sm text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
                                   value={item.width || ''}
                                   onChange={(e) => handleItemChange(index, 'width', parseFloat(e.target.value))}
                                   required
@@ -600,7 +625,7 @@ const CreateBill = () => {
                               {item.unit === 'Sft' ? (
                                 <input
                                   type="number"
-                                  className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                  className="w-12 px-2 py-1 bg-white/50 border border-[#B08968]/20 rounded text-sm text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
                                   value={item.height || ''}
                                   onChange={(e) => handleItemChange(index, 'height', parseFloat(e.target.value))}
                                   required
@@ -611,7 +636,7 @@ const CreateBill = () => {
                               {item.unit === 'Sft' && (item.description?.toLowerCase().includes('ms') || item.description?.toLowerCase().includes('ss')) ? (
                                 <input
                                   type="number"
-                                  className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                  className="w-20 px-2 py-1 bg-white/50 border border-[#B08968]/20 rounded text-sm text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
                                   value={item.depth || ''}
                                   onChange={(e) => handleItemChange(index, 'depth', parseFloat(e.target.value))}
                                   required
@@ -636,6 +661,12 @@ const CreateBill = () => {
                             </td>
                             <td className="border border-[#B08968]/20 p-1.5 sm:p-2 text-right text-[#7F5539] font-medium text-sm sm:text-base">
                               ₹ {item.total.toLocaleString('en-IN')}
+                            </td>
+                            <td className="border border-[#B08968]/20 p-1.5 sm:p-2 text-right text-[#7F5539] font-medium text-sm sm:text-base">
+                              ₹ {perItemDiscount.toLocaleString('en-IN')}
+                            </td>
+                            <td className="border border-[#B08968]/20 p-1.5 sm:p-2 text-right text-[#7F5539] font-medium text-sm sm:text-base">
+                              ₹ {(item.total - perItemDiscount).toLocaleString('en-IN')}
                             </td>
                             <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
                               <button

@@ -156,6 +156,15 @@ const EditBill = () => {
     return grandTotal - discount;
   }, [grandTotal, discountType, discountValue]);
 
+  // Calculate per-item discount (equally distributed)
+  const perItemDiscount = useMemo(() => {
+    if (formData.items.length === 0) return 0;
+    const totalDiscount = discountType === 'percentage'
+      ? (grandTotal * discountValue) / 100
+      : discountValue;
+    return totalDiscount / formData.items.length;
+  }, [discountType, discountValue, grandTotal, formData.items.length]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -505,23 +514,23 @@ const EditBill = () => {
 
                                     {item.unit === 'Sft' && (
                                       <>
-                                        <label className="block">
+                                        <label className="block w-24">
                                           <span className="text-[#7F5539]">Width</span>
                                           <input
                                             type="number"
                                             value={item.width}
                                             onChange={(e) => handleItemChange(index, 'width', parseFloat(e.target.value) || 0)}
-                                            className="mt-1 block w-full rounded-md border-[#B08968] shadow-sm focus:border-[#7F5539] focus:ring focus:ring-[#7F5539] focus:ring-opacity-50"
+                                            className="mt-1 block w-full rounded-md border-[#B08968] shadow-sm focus:border-[#7F5539] focus:ring focus:ring-[#7F5539] focus:ring-opacity-50 text-sm px-2 py-1"
                                           />
                                         </label>
 
-                                        <label className="block">
+                                        <label className="block w-24">
                                           <span className="text-[#7F5539]">Height</span>
                                           <input
                                             type="number"
                                             value={item.height}
                                             onChange={(e) => handleItemChange(index, 'height', parseFloat(e.target.value) || 0)}
-                                            className="mt-1 block w-full rounded-md border-[#B08968] shadow-sm focus:border-[#7F5539] focus:ring focus:ring-[#7F5539] focus:ring-opacity-50"
+                                            className="mt-1 block w-full rounded-md border-[#B08968] shadow-sm focus:border-[#7F5539] focus:ring focus:ring-[#7F5539] focus:ring-opacity-50 text-sm px-2 py-1"
                                           />
                                         </label>
 
@@ -553,6 +562,18 @@ const EditBill = () => {
                                       <span className="text-[#7F5539]">Total</span>
                                       <div className="mt-1 block w-full p-2 bg-gray-50 rounded-md border border-[#B08968]">
                                         ₹{item.total.toFixed(2)}
+                                      </div>
+                                    </div>
+                                    <div className="block">
+                                      <span className="text-[#7F5539]">Discount</span>
+                                      <div className="mt-1 block w-full p-2 bg-gray-50 rounded-md border border-[#B08968]">
+                                        ₹{perItemDiscount.toFixed(2)}
+                                      </div>
+                                    </div>
+                                    <div className="block">
+                                      <span className="text-[#7F5539]">Net Total</span>
+                                      <div className="mt-1 block w-full p-2 bg-gray-50 rounded-md border border-[#B08968]">
+                                        ₹{(item.total - perItemDiscount).toFixed(2)}
                                       </div>
                                     </div>
                                   </div>
