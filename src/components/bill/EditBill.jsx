@@ -490,10 +490,11 @@ const EditBill = () => {
                                           <option key={i} value={desc}>{desc}</option>
                                         ))}
                                       </select>
-                                      {item.description === "" && (
+                                      {(item.description === "" || !predefinedDescriptions.includes(item.description)) && (
                                         <input
                                           type="text"
                                           placeholder="Or type a custom description"
+                                          value={item.description}
                                           onChange={(e) => handleItemChange(index, 'description', e.target.value)}
                                           className="mt-2 block w-full rounded-md border-[#B08968] shadow-sm focus:border-[#7F5539] focus:ring focus:ring-[#7F5539] focus:ring-opacity-50"
                                         />
