@@ -116,7 +116,7 @@ const EditBill = () => {
 
   const calculateItemTotal = useCallback((item) => {
     if (item.unit === 'Sft') {
-      const sft = (item.description?.toLowerCase().includes('ms') || item.description?.toLowerCase().includes('ss'))
+      const sft = (item.particular?.toLowerCase().includes('ms') || item.particular?.toLowerCase().includes('ss'))
         ? item.width * item.height * (item.depth || 1)
         : item.width * item.height;
       return sft * item.pricePerUnit * (item.quantity || 1);
@@ -130,7 +130,7 @@ const EditBill = () => {
       const updatedItem = { ...newItems[index], [field]: value };
       
       if (field === 'width' || field === 'height' || field === 'depth' || field === 'pricePerUnit' || field === 'quantity') {
-        updatedItem.sft = (updatedItem.description?.toLowerCase().includes('ms') || updatedItem.description?.toLowerCase().includes('ss'))
+        updatedItem.sft = (updatedItem.particular?.toLowerCase().includes('ms') || updatedItem.particular?.toLowerCase().includes('ss'))
           ? updatedItem.width * updatedItem.height * (updatedItem.depth || 1)
           : updatedItem.width * updatedItem.height;
         updatedItem.total = calculateItemTotal(updatedItem);
@@ -535,7 +535,7 @@ const EditBill = () => {
                                           />
                                         </label>
 
-                                        {(item.description?.toLowerCase().includes('ms') || item.description?.toLowerCase().includes('ss')) && (
+                                        {(item.particular?.toLowerCase().includes('ms') || item.particular?.toLowerCase().includes('ss')) && (
                                           <label className="block">
                                             <span className="text-[#7F5539]">Depth</span>
                                             <input
