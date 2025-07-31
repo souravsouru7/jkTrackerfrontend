@@ -95,7 +95,7 @@ const CreateBill = () => {
         if (brand === 'None') {
           return `Providing and fixing ${thicknessText} ${materialText}with required Adhesive's and Selected Acrylic laminates`;
         }
-        return `Providing and fixing ${thicknessText} ${materialText}${brandText} with required Adhesive's and Selected ggttggggggg laminates`;
+        return `Providing and fixing ${thicknessText} ${materialText}${brandText} with required Adhesive's and Selected  laminates`;
       
       case 'glasses':
         if (brand === 'None') {
