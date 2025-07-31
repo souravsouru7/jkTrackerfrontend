@@ -502,185 +502,215 @@ const CreateBill = () => {
                       </thead>
                       <tbody>
                         {formData.items.map((item, index) => (
-                          <tr key={index} className="hover:bg-[#B08968]/5">
-                            <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
-                              <input
-                                type="text"
-                                className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
-                                value={item.particular}
-                                onChange={(e) => handleItemChange(index, 'particular', e.target.value)}
-                                required
-                              />
-                            </td>
-                            <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
-                              <div className="space-y-2">
-                                <div className="grid grid-cols-4 gap-2">
-                                  <select
-                                    className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
-                                    value={item.category || 'carpenter'}
-                                    onChange={(e) => {
-                                      const newCategory = e.target.value;
-                                      const categoryOptions = getCategoryOptions(newCategory);
-                                      handleItemChange(index, 'category', newCategory);
-                                      // Reset material, thickness, and brand to first options of new category
-                                      handleItemChange(index, 'description', generateDescription(
-                                        categoryOptions.materials[0],
-                                        categoryOptions.thicknesses[0],
-                                        categoryOptions.brands[0],
-                                        newCategory
-                                      ));
-                                    }}
-                                  >
-                                    <option value="none">None</option>
-                                    <option value="carpenter">Carpenter</option>
-                                    <option value="glasses">Glass</option>
-                                    <option value="painter">Painter</option>
-                                  </select>
-                                  <select
-                                    className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
-                                    value={extractValueFromDescription(item.description, /fixing\s(\d+mm)/) || getCategoryOptions(item.category || 'carpenter').thicknesses[0]}
-                                    onChange={(e) => {
-                                      const thickness = e.target.value;
-                                      const material = extractValueFromDescription(item.description, /mm\s([^&\s]+)/) || getCategoryOptions(item.category || 'carpenter').materials[0];
-                                      const brand = extractValueFromDescription(item.description, /&\s([^H]+)/) || getCategoryOptions(item.category || 'carpenter').brands[0];
-                                      handleItemChange(index, 'description', generateDescription(material, thickness, brand, item.category || 'carpenter'));
-                                    }}
-                                  >
-                                    {getCategoryOptions(item.category || 'carpenter').thicknesses.map(t => (
-                                      <option key={t} value={t}>{t}</option>
-                                    ))}
-                                  </select>
-                                  <select
-                                    className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
-                                    value={extractValueFromDescription(item.description, /mm\s([^&\s]+)/) || getCategoryOptions(item.category || 'carpenter').materials[0]}
-                                    onChange={(e) => {
-                                      const material = e.target.value;
-                                      const thickness = extractValueFromDescription(item.description, /fixing\s(\d+mm)/) || getCategoryOptions(item.category || 'carpenter').thicknesses[0];
-                                      const brand = extractValueFromDescription(item.description, /&\s([^H]+)/) || getCategoryOptions(item.category || 'carpenter').brands[0];
-                                      handleItemChange(index, 'description', generateDescription(material, thickness, brand, item.category || 'carpenter'));
-                                    }}
-                                  >
-                                    {getCategoryOptions(item.category || 'carpenter').materials.map(m => (
-                                      <option key={m} value={m}>{m}</option>
-                                    ))}
-                                  </select>
-                                  <select
-                                    className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
-                                    value={extractValueFromDescription(item.description, /&\s([^H]+)/) || getCategoryOptions(item.category || 'carpenter').brands[0]}
-                                    onChange={(e) => {
-                                      const brand = e.target.value;
-                                      const thickness = extractValueFromDescription(item.description, /fixing\s(\d+mm)/) || getCategoryOptions(item.category || 'carpenter').thicknesses[0];
-                                      const material = extractValueFromDescription(item.description, /mm\s([^&\s]+)/) || getCategoryOptions(item.category || 'carpenter').materials[0];
-                                      handleItemChange(index, 'description', generateDescription(material, thickness, brand, item.category || 'carpenter'));
-                                    }}
-                                  >
-                                    {getCategoryOptions(item.category || 'carpenter').brands.map(b => (
-                                      <option key={b} value={b}>{b}</option>
-                                    ))}
-                                  </select>
+                          <React.Fragment key={index}>
+                            <tr className="hover:bg-[#B08968]/5">
+                              <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
+                                <input
+                                  type="text"
+                                  className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                  value={item.particular}
+                                  onChange={(e) => handleItemChange(index, 'particular', e.target.value)}
+                                  required
+                                />
+                              </td>
+                              <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
+                                <div className="space-y-2">
+                                  <div className="grid grid-cols-4 gap-2">
+                                    <select
+                                      className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                      value={item.category || 'carpenter'}
+                                      onChange={(e) => {
+                                        const newCategory = e.target.value;
+                                        const categoryOptions = getCategoryOptions(newCategory);
+                                        handleItemChange(index, 'category', newCategory);
+                                        // Reset material, thickness, and brand to first options of new category
+                                        handleItemChange(index, 'description', generateDescription(
+                                          categoryOptions.materials[0],
+                                          categoryOptions.thicknesses[0],
+                                          categoryOptions.brands[0],
+                                          newCategory
+                                        ));
+                                      }}
+                                    >
+                                      <option value="none">None</option>
+                                      <option value="carpenter">Carpenter</option>
+                                      <option value="glasses">Glass</option>
+                                      <option value="painter">Painter</option>
+                                    </select>
+                                    <select
+                                      className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                      value={extractValueFromDescription(item.description, /fixing\s(\d+mm)/) || getCategoryOptions(item.category || 'carpenter').thicknesses[0]}
+                                      onChange={(e) => {
+                                        const thickness = e.target.value;
+                                        const material = extractValueFromDescription(item.description, /mm\s([^&\s]+)/) || getCategoryOptions(item.category || 'carpenter').materials[0];
+                                        const brand = extractValueFromDescription(item.description, /&\s([^H]+)/) || getCategoryOptions(item.category || 'carpenter').brands[0];
+                                        handleItemChange(index, 'description', generateDescription(material, thickness, brand, item.category || 'carpenter'));
+                                      }}
+                                    >
+                                      {getCategoryOptions(item.category || 'carpenter').thicknesses.map(t => (
+                                        <option key={t} value={t}>{t}</option>
+                                      ))}
+                                    </select>
+                                    <select
+                                      className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                      value={extractValueFromDescription(item.description, /mm\s([^&\s]+)/) || getCategoryOptions(item.category || 'carpenter').materials[0]}
+                                      onChange={(e) => {
+                                        const material = e.target.value;
+                                        const thickness = extractValueFromDescription(item.description, /fixing\s(\d+mm)/) || getCategoryOptions(item.category || 'carpenter').thicknesses[0];
+                                        const brand = extractValueFromDescription(item.description, /&\s([^H]+)/) || getCategoryOptions(item.category || 'carpenter').brands[0];
+                                        handleItemChange(index, 'description', generateDescription(material, thickness, brand, item.category || 'carpenter'));
+                                      }}
+                                    >
+                                      {getCategoryOptions(item.category || 'carpenter').materials.map(m => (
+                                        <option key={m} value={m}>{m}</option>
+                                      ))}
+                                    </select>
+                                    <select
+                                      className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                      value={extractValueFromDescription(item.description, /&\s([^H]+)/) || getCategoryOptions(item.category || 'carpenter').brands[0]}
+                                      onChange={(e) => {
+                                        const brand = e.target.value;
+                                        const thickness = extractValueFromDescription(item.description, /fixing\s(\d+mm)/) || getCategoryOptions(item.category || 'carpenter').thicknesses[0];
+                                        const material = extractValueFromDescription(item.description, /mm\s([^&\s]+)/) || getCategoryOptions(item.category || 'carpenter').materials[0];
+                                        handleItemChange(index, 'description', generateDescription(material, thickness, brand, item.category || 'carpenter'));
+                                      }}
+                                    >
+                                      {getCategoryOptions(item.category || 'carpenter').brands.map(b => (
+                                        <option key={b} value={b}>{b}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  {(!predefinedDescriptions.includes(item.description) || item.description === '') && (
+                                    <textarea
+                                      className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                      value={item.description}
+                                      onChange={(e) => handleItemChange(index, 'description', e.target.value)}
+                                      placeholder="Enter custom description..."
+                                      rows="3"
+                                    />
+                                  )}
                                 </div>
-                                {(!predefinedDescriptions.includes(item.description) || item.description === '') && (
-                                  <textarea
-                                    className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
-                                    value={item.description}
-                                    onChange={(e) => handleItemChange(index, 'description', e.target.value)}
-                                    placeholder="Enter custom description..."
-                                    rows="3"
+                              </td>
+                              <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
+                                <select
+                                  className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                  value={item.unit}
+                                  onChange={(e) => handleItemChange(index, 'unit', e.target.value)}
+                                >
+                                  <option value="Sft">Sft</option>
+                                  <option value="Lump">Lump</option>
+                                </select>
+                              </td>
+                              <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
+                                <input
+                                  type="number"
+                                  min="1"
+                                  className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                  value={item.quantity || 1}
+                                  onChange={(e) => handleItemChange(index, 'quantity', parseInt(e.target.value) || 1)}
+                                  required
+                                />
+                              </td>
+                              <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
+                                {item.unit === 'Sft' ? (
+                                  <input
+                                    type="number"
+                                    className="w-12 px-2 py-1 bg-white/50 border border-[#B08968]/20 rounded text-sm text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                    value={item.width || ''}
+                                    onChange={(e) => handleItemChange(index, 'width', parseFloat(e.target.value))}
+                                    required
                                   />
-                                )}
-                              </div>
-                            </td>
-                            <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
-                              <select
-                                className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
-                                value={item.unit}
-                                onChange={(e) => handleItemChange(index, 'unit', e.target.value)}
-                              >
-                                <option value="Sft">Sft</option>
-                                <option value="Lump">Lump</option>
-                              </select>
-                            </td>
-                            <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
-                              <input
-                                type="number"
-                                min="1"
-                                className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
-                                value={item.quantity || 1}
-                                onChange={(e) => handleItemChange(index, 'quantity', parseInt(e.target.value) || 1)}
-                                required
-                              />
-                            </td>
-                            <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
-                              {item.unit === 'Sft' ? (
+                                ) : '-'}
+                              </td>
+                              <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
+                                {item.unit === 'Sft' ? (
+                                  <input
+                                    type="number"
+                                    className="w-12 px-2 py-1 bg-white/50 border border-[#B08968]/20 rounded text-sm text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                    value={item.height || ''}
+                                    onChange={(e) => handleItemChange(index, 'height', parseFloat(e.target.value))}
+                                    required
+                                  />
+                                ) : '-'}
+                              </td>
+                              <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
+                                {item.unit === 'Sft' && (item.description?.toLowerCase().includes('ms') || item.description?.toLowerCase().includes('ss')) ? (
+                                  <input
+                                    type="number"
+                                    className="w-20 px-2 py-1 bg-white/50 border border-[#B08968]/20 rounded text-sm text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                    value={item.depth || ''}
+                                    onChange={(e) => handleItemChange(index, 'depth', parseFloat(e.target.value))}
+                                    required
+                                  />
+                                ) : '-'}
+                              </td>
+                              <td className="border border-[#B08968]/20 p-1.5 sm:p-2 text-center text-[#7F5539] text-sm sm:text-base">
+                                {item.unit === 'Sft' ? (
+                                  (item.description?.toLowerCase().includes('ms') || item.description?.toLowerCase().includes('ss')) 
+                                    ? (item.width * item.height * (item.depth || 1)).toFixed(2)
+                                    : (item.width * item.height).toFixed(2)
+                                ) : '-'}
+                              </td>
+                              <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
                                 <input
                                   type="number"
-                                  className="w-12 px-2 py-1 bg-white/50 border border-[#B08968]/20 rounded text-sm text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
-                                  value={item.width || ''}
-                                  onChange={(e) => handleItemChange(index, 'width', parseFloat(e.target.value))}
+                                  className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                  value={item.pricePerUnit || ''}
+                                  onChange={(e) => handleItemChange(index, 'pricePerUnit', parseFloat(e.target.value))}
                                   required
                                 />
-                              ) : '-'}
-                            </td>
-                            <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
-                              {item.unit === 'Sft' ? (
-                                <input
-                                  type="number"
-                                  className="w-12 px-2 py-1 bg-white/50 border border-[#B08968]/20 rounded text-sm text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
-                                  value={item.height || ''}
-                                  onChange={(e) => handleItemChange(index, 'height', parseFloat(e.target.value))}
-                                  required
-                                />
-                              ) : '-'}
-                            </td>
-                            <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
-                              {item.unit === 'Sft' && (item.description?.toLowerCase().includes('ms') || item.description?.toLowerCase().includes('ss')) ? (
-                                <input
-                                  type="number"
-                                  className="w-20 px-2 py-1 bg-white/50 border border-[#B08968]/20 rounded text-sm text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
-                                  value={item.depth || ''}
-                                  onChange={(e) => handleItemChange(index, 'depth', parseFloat(e.target.value))}
-                                  required
-                                />
-                              ) : '-'}
-                            </td>
-                            <td className="border border-[#B08968]/20 p-1.5 sm:p-2 text-center text-[#7F5539] text-sm sm:text-base">
-                              {item.unit === 'Sft' ? (
-                                (item.description?.toLowerCase().includes('ms') || item.description?.toLowerCase().includes('ss')) 
-                                  ? (item.width * item.height * (item.depth || 1)).toFixed(2)
-                                  : (item.width * item.height).toFixed(2)
-                              ) : '-'}
-                            </td>
-                            <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
-                              <input
-                                type="number"
-                                className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
-                                value={item.pricePerUnit || ''}
-                                onChange={(e) => handleItemChange(index, 'pricePerUnit', parseFloat(e.target.value))}
-                                required
-                              />
-                            </td>
-                            <td className="border border-[#B08968]/20 p-1.5 sm:p-2 text-right text-[#7F5539] font-medium text-sm sm:text-base">
-                              ₹ {item.total.toLocaleString('en-IN')}
-                            </td>
-                            <td className="border border-[#B08968]/20 p-1.5 sm:p-2 text-right text-[#7F5539] font-medium text-sm sm:text-base">
-                              ₹ {perItemDiscount.toLocaleString('en-IN')}
-                            </td>
-                            <td className="border border-[#B08968]/20 p-1.5 sm:p-2 text-right text-[#7F5539] font-medium text-sm sm:text-base">
-                              ₹ {(item.total - perItemDiscount).toLocaleString('en-IN')}
-                            </td>
-                            <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const newItems = formData.items.filter((_, i) => i !== index);
-                                  setFormData({ ...formData, items: newItems });
-                                }}
-                                className="text-red-500 hover:text-red-700 transition-colors duration-300"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </td>
-                          </tr>
+                              </td>
+                              <td className="border border-[#B08968]/20 p-1.5 sm:p-2 text-right text-[#7F5539] font-medium text-sm sm:text-base">
+                                ₹ {item.total.toLocaleString('en-IN')}
+                              </td>
+                              <td className="border border-[#B08968]/20 p-1.5 sm:p-2 text-right text-[#7F5539] font-medium text-sm sm:text-base">
+                                ₹ {perItemDiscount.toLocaleString('en-IN')}
+                              </td>
+                              <td className="border border-[#B08968]/20 p-1.5 sm:p-2 text-right text-[#7F5539] font-medium text-sm sm:text-base">
+                                ₹ {(item.total - perItemDiscount).toLocaleString('en-IN')}
+                              </td>
+                              <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const newItems = formData.items.filter((_, i) => i !== index);
+                                    setFormData({ ...formData, items: newItems });
+                                  }}
+                                  className="text-red-500 hover:text-red-700 transition-colors duration-300"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </td>
+                            </tr>
+                            {/* Add Item Button Row */}
+                            <tr className="bg-[#B08968]/5">
+                              <td colSpan="13" className="border border-[#B08968]/20 p-2 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const newItems = [...formData.items];
+                                    newItems.splice(index + 1, 0, {
+                                      particular: '',
+                                      description: generateDescription('HDHMR', '18mm', 'Hafele', 'carpenter'),
+                                      unit: 'Sft',
+                                      quantity: 1,
+                                      width: 0,
+                                      height: 0,
+                                      sft: 0,
+                                      pricePerUnit: 1250,
+                                      total: 0,
+                                      depth: 1
+                                    });
+                                    setFormData({ ...formData, items: newItems });
+                                  }}
+                                  className="flex items-center justify-center gap-2 px-4 py-2 bg-[#B08968] text-white text-sm rounded-lg hover:bg-[#9C6644] transition-colors duration-300 mx-auto"
+                                >
+                                  <Plus size={16} />
+                                  <span>Add Item Below</span>
+                                </button>
+                              </td>
+                            </tr>
+                          </React.Fragment>
                         ))}
                       </tbody>
                     </table>
