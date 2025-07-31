@@ -223,14 +223,17 @@ const CreateBill = () => {
     return grandTotal - discount;
   }, [grandTotal, discountType, discountValue]);
 
-  // Calculate per-item discount (equally distributed)
-  const perItemDiscount = useMemo(() => {
-    if (formData.items.length === 0) return 0;
-    const totalDiscount = discountType === 'percentage'
-      ? (grandTotal * discountValue) / 100
-      : discountValue;
-    return totalDiscount / formData.items.length;
-  }, [discountType, discountValue, grandTotal, formData.items.length]);
+  // Calculate per-item discount (percentage-based for each item)
+  const calculateItemDiscount = useCallback((item) => {
+    const itemTotal = calculateItemTotal(item);
+    if (discountType === 'percentage') {
+      return (itemTotal * discountValue) / 100;
+    } else {
+      // For fixed amount, distribute proportionally based on item's share of total
+      if (grandTotal === 0) return 0;
+      return (itemTotal / grandTotal) * discountValue;
+    }
+  }, [discountType, discountValue, grandTotal, calculateItemTotal]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -663,12 +666,12 @@ const CreateBill = () => {
                               <td className="border border-[#B08968]/20 p-1.5 sm:p-2 text-right text-[#7F5539] font-medium text-sm sm:text-base">
                                 ₹ {item.total.toLocaleString('en-IN')}
                               </td>
-                              <td className="border border-[#B08968]/20 p-1.5 sm:p-2 text-right text-[#7F5539] font-medium text-sm sm:text-base">
-                                ₹ {perItemDiscount.toLocaleString('en-IN')}
-                              </td>
-                              <td className="border border-[#B08968]/20 p-1.5 sm:p-2 text-right text-[#7F5539] font-medium text-sm sm:text-base">
-                                ₹ {(item.total - perItemDiscount).toLocaleString('en-IN')}
-                              </td>
+                                                          <td className="border border-[#B08968]/20 p-1.5 sm:p-2 text-right text-[#7F5539] font-medium text-sm sm:text-base">
+                              ₹ {calculateItemDiscount(item).toLocaleString('en-IN')}
+                            </td>
+                            <td className="border border-[#B08968]/20 p-1.5 sm:p-2 text-right text-[#7F5539] font-medium text-sm sm:text-base">
+                              ₹ {(item.total - calculateItemDiscount(item)).toLocaleString('en-IN')}
+                            </td>
                               <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
                                 <button
                                   type="button"
