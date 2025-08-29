@@ -192,6 +192,47 @@ const CreateBill = () => {
   }, []);
 
   const handleItemChange = useCallback((index, field, value) => {
+    // Validation for numeric fields
+    if (['width', 'height', 'depth', 'pricePerUnit', 'quantity'].includes(field)) {
+      // Prevent negative numbers
+      if (value < 0) {
+        alert(`${field.charAt(0).toUpperCase() + field.slice(1)} cannot be negative. Please enter a valid positive number.`);
+        return;
+      }
+      
+      // Prevent zero for critical fields
+      if (field === 'pricePerUnit' && value === 0) {
+        alert('Price per unit cannot be zero. Please enter a valid price.');
+        return;
+      }
+      
+      // Validate dimensions for Sft items
+      if (field === 'width' || field === 'height') {
+        if (value > 10000) { // Max 10,000 units
+          alert(`${field.charAt(0).toUpperCase() + field.slice(1)} cannot exceed 10,000. Please enter a valid dimension.`);
+          return;
+        }
+      }
+      
+      // Validate depth
+      if (field === 'depth' && value > 1000) {
+        alert('Depth cannot exceed 1,000. Please enter a valid depth.');
+        return;
+      }
+      
+      // Validate quantity
+      if (field === 'quantity' && value > 10000) {
+        alert('Quantity cannot exceed 10,000. Please enter a valid quantity.');
+        return;
+      }
+      
+      // Validate price
+      if (field === 'pricePerUnit' && value > 1000000) {
+        alert('Price per unit cannot exceed ₹10,00,000. Please enter a valid price.');
+        return;
+      }
+    }
+    
     setFormData(prevData => {
       const newItems = [...prevData.items];
       const updatedItem = { ...newItems[index], [field]: value };
@@ -237,6 +278,79 @@ const CreateBill = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Form validation
+    if (!formData.clientName.trim()) {
+      alert('Please enter client name');
+      return;
+    }
+    
+    if (!formData.clientEmail.trim()) {
+      alert('Please enter client email');
+      return;
+    }
+    
+    if (!formData.clientPhone.trim()) {
+      alert('Please enter client phone');
+      return;
+    }
+    
+    if (!formData.clientAddress.trim()) {
+      alert('Please enter client address');
+      return;
+    }
+    
+    // Validate items
+    for (let i = 0; i < formData.items.length; i++) {
+      const item = formData.items[i];
+      
+      if (!item.particular.trim()) {
+        alert(`Please enter particular for item ${i + 1}`);
+        return;
+      }
+      
+      if (item.unit === 'Sft') {
+        if (!item.width || item.width <= 0) {
+          alert(`Please enter valid width for item ${i + 1}`);
+          return;
+        }
+        if (!item.height || item.height <= 0) {
+          alert(`Please enter valid height for item ${i + 1}`);
+          return;
+        }
+        if ((item.description?.toLowerCase().includes('ms') || item.description?.toLowerCase().includes('ss')) && (!item.depth || item.depth <= 0)) {
+          alert(`Please enter valid depth for item ${i + 1}`);
+          return;
+        }
+      }
+      
+      if (!item.pricePerUnit || item.pricePerUnit <= 0) {
+        alert(`Please enter valid price per unit for item ${i + 1}`);
+        return;
+      }
+      
+      if (!item.quantity || item.quantity <= 0) {
+        alert(`Please enter valid quantity for item ${i + 1}`);
+        return;
+      }
+    }
+    
+    // Validate discount
+    if (discountValue < 0) {
+      alert('Discount cannot be negative');
+      return;
+    }
+    
+    if (discountType === 'percentage' && discountValue > 100) {
+      alert('Percentage discount cannot exceed 100%');
+      return;
+    }
+    
+    if (discountType === 'amount' && discountValue > grandTotal) {
+      alert('Fixed amount discount cannot exceed the total amount');
+      return;
+    }
+    
     setIsSubmitting(true);
     try {
       // Calculate final totals for all items
@@ -605,22 +719,48 @@ const CreateBill = () => {
                                 </select>
                               </td>
                               <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
-                                <input
-                                  type="number"
-                                  min="1"
-                                  className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
-                                  value={item.quantity || 1}
-                                  onChange={(e) => handleItemChange(index, 'quantity', parseInt(e.target.value) || 1)}
-                                  required
-                                />
+                                                        <input
+                          type="number"
+                          min="1"
+                          max="10000"
+                          className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                          value={item.quantity || 1}
+                          onChange={(e) => {
+                            const value = parseInt(e.target.value) || 1;
+                            if (value < 1) {
+                              alert('Quantity must be at least 1');
+                              return;
+                            }
+                            if (value > 10000) {
+                              alert('Quantity cannot exceed 10,000');
+                              return;
+                            }
+                            handleItemChange(index, 'quantity', value);
+                          }}
+                          required
+                        />
                               </td>
                               <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
                                 {item.unit === 'Sft' ? (
                                   <input
                                     type="number"
+                                    min="0.01"
+                                    max="10000"
+                                    step="0.01"
                                     className="w-12 px-2 py-1 bg-white/50 border border-[#B08968]/20 rounded text-sm text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
                                     value={item.width || ''}
-                                    onChange={(e) => handleItemChange(index, 'width', parseFloat(e.target.value))}
+                                    onChange={(e) => {
+                                      const value = parseFloat(e.target.value);
+                                      if (value < 0.01) {
+                                        alert('Width must be at least 0.01');
+                                        return;
+                                      }
+                                      if (value > 10000) {
+                                        alert('Width cannot exceed 10,000');
+                                        return;
+                                      }
+                                      handleItemChange(index, 'width', value);
+                                    }}
                                     required
                                   />
                                 ) : '-'}
@@ -629,9 +769,23 @@ const CreateBill = () => {
                                 {item.unit === 'Sft' ? (
                                   <input
                                     type="number"
+                                    min="0.01"
+                                    max="10000"
+                                    step="0.01"
                                     className="w-12 px-2 py-1 bg-white/50 border border-[#B08968]/20 rounded text-sm text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
                                     value={item.height || ''}
-                                    onChange={(e) => handleItemChange(index, 'height', parseFloat(e.target.value))}
+                                    onChange={(e) => {
+                                      const value = parseFloat(e.target.value);
+                                      if (value < 0.01) {
+                                        alert('Height must be at least 0.01');
+                                        return;
+                                      }
+                                      if (value > 10000) {
+                                        alert('Height cannot exceed 10,000');
+                                        return;
+                                      }
+                                      handleItemChange(index, 'height', value);
+                                    }}
                                     required
                                   />
                                 ) : '-'}
@@ -640,9 +794,23 @@ const CreateBill = () => {
                                 {item.unit === 'Sft' && (item.description?.toLowerCase().includes('ms') || item.description?.toLowerCase().includes('ss')) ? (
                                   <input
                                     type="number"
+                                    min="0.01"
+                                    max="1000"
+                                    step="0.01"
                                     className="w-20 px-2 py-1 bg-white/50 border border-[#B08968]/20 rounded text-sm text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
                                     value={item.depth || ''}
-                                    onChange={(e) => handleItemChange(index, 'depth', parseFloat(e.target.value))}
+                                    onChange={(e) => {
+                                      const value = parseFloat(e.target.value);
+                                      if (value < 0.01) {
+                                        alert('Depth must be at least 0.01');
+                                        return;
+                                      }
+                                      if (value > 1000) {
+                                        alert('Depth cannot exceed 1,000');
+                                        return;
+                                      }
+                                      handleItemChange(index, 'depth', value);
+                                    }}
                                     required
                                   />
                                 ) : '-'}
@@ -657,9 +825,23 @@ const CreateBill = () => {
                               <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
                                 <input
                                   type="number"
+                                  min="0.01"
+                                  max="1000000"
+                                  step="0.01"
                                   className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
                                   value={item.pricePerUnit || ''}
-                                  onChange={(e) => handleItemChange(index, 'pricePerUnit', parseFloat(e.target.value))}
+                                  onChange={(e) => {
+                                    const value = parseFloat(e.target.value);
+                                    if (value < 0.01) {
+                                      alert('Price per unit must be at least ₹0.01');
+                                      return;
+                                    }
+                                    if (value > 1000000) {
+                                      alert('Price per unit cannot exceed ₹10,00,000');
+                                      return;
+                                    }
+                                    handleItemChange(index, 'pricePerUnit', value);
+                                  }}
                                   required
                                 />
                               </td>
@@ -762,9 +944,29 @@ const CreateBill = () => {
                           type="number"
                           min="0"
                           max={discountType === 'percentage' ? "100" : grandTotal}
+                          step={discountType === 'percentage' ? "0.01" : "0.01"}
                           value={discountValue}
                           onChange={(e) => {
                             const value = parseFloat(e.target.value) || 0;
+                            
+                            // Validation for discount values
+                            if (value < 0) {
+                              alert('Discount cannot be negative');
+                              return;
+                            }
+                            
+                            if (discountType === 'percentage') {
+                              if (value > 100) {
+                                alert('Percentage discount cannot exceed 100%');
+                                return;
+                              }
+                            } else {
+                              if (value > grandTotal) {
+                                alert('Fixed amount discount cannot exceed the total amount');
+                                return;
+                              }
+                            }
+                            
                             setDiscountValue(value);
                             setFormData(prev => ({
                               ...prev,
@@ -802,9 +1004,34 @@ const CreateBill = () => {
                   </select>
                   <input
                     type="number"
+                    min="0"
+                    max={discountType === 'percentage' ? "100" : grandTotal}
+                    step="0.01"
                     className="flex-1 px-3 py-2 bg-white/50 border border-[#B08968]/20 rounded-lg text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
                     value={discountValue}
-                    onChange={(e) => setDiscountValue(parseFloat(e.target.value))}
+                    onChange={(e) => {
+                      const value = parseFloat(e.target.value) || 0;
+                      
+                      // Validation for discount values
+                      if (value < 0) {
+                        alert('Discount cannot be negative');
+                        return;
+                      }
+                      
+                      if (discountType === 'percentage') {
+                        if (value > 100) {
+                          alert('Percentage discount cannot exceed 100%');
+                          return;
+                        }
+                      } else {
+                        if (value > grandTotal) {
+                          alert('Fixed amount discount cannot exceed the total amount');
+                          return;
+                        }
+                      }
+                      
+                      setDiscountValue(value);
+                    }}
                   />
                 </div>
               </div>
@@ -836,23 +1063,37 @@ const CreateBill = () => {
                                 }}
                               />
                             </td>
-                            <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
-                              <input
-                                type="number"
-                                className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
-                                value={term.percentage}
-                                onChange={(e) => {
-                                  const newTerms = [...formData.paymentTerms];
-                                  const percentage = parseFloat(e.target.value);
-                                  newTerms[index] = {
-                                    ...term,
-                                    percentage,
-                                    amount: term.note === 'Token' ? term.amount : (grandTotal * percentage) / 100
-                                  };
-                                  setFormData({ ...formData, paymentTerms: newTerms });
-                                }}
-                              />
-                            </td>
+                                                          <td className="border border-[#B08968]/20 p-1.5 sm:p-2">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  step="0.01"
+                                  className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/50 border border-[#B08968]/20 rounded text-sm sm:text-base text-[#7F5539] focus:outline-none focus:ring-2 focus:ring-[#B08968] focus:border-transparent transition-all duration-300"
+                                  value={term.percentage}
+                                  onChange={(e) => {
+                                    const percentage = parseFloat(e.target.value) || 0;
+                                    
+                                    // Validation for percentage
+                                    if (percentage < 0) {
+                                      alert('Percentage cannot be negative');
+                                      return;
+                                    }
+                                    if (percentage > 100) {
+                                      alert('Percentage cannot exceed 100%');
+                                      return;
+                                    }
+                                    
+                                    const newTerms = [...formData.paymentTerms];
+                                    newTerms[index] = {
+                                      ...term,
+                                      percentage,
+                                      amount: term.note === 'Token' ? term.amount : (grandTotal * percentage) / 100
+                                    };
+                                    setFormData({ ...formData, paymentTerms: newTerms });
+                                  }}
+                                />
+                              </td>
                             <td className="border border-[#B08968]/20 p-1.5 sm:p-2 text-right text-[#7F5539] font-medium text-sm sm:text-base">
                               ₹ {term.amount.toLocaleString('en-IN')}
                             </td>

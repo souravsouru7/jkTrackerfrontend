@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { addEntry, updateEntry, fetchEntries } from "../../store/slice/entrySlice";
 import { fetchProjects } from "../../store/slice/projectSlice";
 import { fetchCustomCategories, addCustomCategory } from "../../store/slice/categorySlice";
-import { Plus, Mic, MicOff, AlertCircle, X, FileText } from "lucide-react";
+import { Plus, Mic, MicOff, AlertCircle, X, FileText, Search, ChevronDown } from "lucide-react";
 
 // Entry Form Component
 const EntryForm = ({ entry, onClose }) => {
@@ -37,10 +37,14 @@ const EntryForm = ({ entry, onClose }) => {
   // Add state for payment bill
   const [generateBill, setGenerateBill] = useState(false);
 
-  // Add state for showing project selection
+  // Add state for category search
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [categorySearch, setCategorySearch] = useState("");
+
+ 
   const [showProjectSelection, setShowProjectSelection] = useState(false);
 
-  // Category Options
+
   const categoryOptions = {
     Expense: [
       "Food",
@@ -82,7 +86,24 @@ const EntryForm = ({ entry, onClose }) => {
       customCategory: "",
     }));
     setShowCustomCategory(false);
+    setShowCategoryDropdown(false);
+    setCategorySearch("");
   }, [formData.type]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showCategoryDropdown && !event.target.closest('.category-dropdown')) {
+        setShowCategoryDropdown(false);
+        setCategorySearch("");
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showCategoryDropdown]);
 
   // Reset generateBill when type changes
   useEffect(() => {
@@ -103,9 +124,7 @@ const EntryForm = ({ entry, onClose }) => {
   }, [entry]);
 
   // Handle category change
-  const handleCategoryChange = (e) => {
-    const value = e.target.value;
-    
+  const handleCategoryChange = (value) => {
     if (value === "Add Project") {
       setShowProjectSelection(true);
       return;
@@ -131,6 +150,10 @@ const EntryForm = ({ entry, onClose }) => {
       }));
       setShowCustomCategory(value === "Other");
     }
+    
+    // Close dropdown and reset search
+    setShowCategoryDropdown(false);
+    setCategorySearch("");
   };
 
   // Handle custom category change
@@ -170,6 +193,32 @@ const EntryForm = ({ entry, onClose }) => {
       ];
     }
     return [...new Set([...defaultCategories, ...userCategories])];
+  };
+
+  // Filter categories based on search
+  const getFilteredCategories = (type) => {
+    const allCategories = getAllCategories(type);
+    if (!categorySearch.trim()) return allCategories;
+
+    const searchTerm = categorySearch.toLowerCase();
+    
+    if (type === 'Income') {
+      const filtered = allCategories.filter(category => {
+        if (typeof category === 'object' && category.group === 'Projects') {
+          const filteredProjects = category.items.filter(project => 
+            project.toLowerCase().includes(searchTerm)
+          );
+          return filteredProjects.length > 0 ? { ...category, items: filteredProjects } : null;
+        }
+        return category.toLowerCase().includes(searchTerm);
+      }).filter(Boolean);
+      
+      return filtered;
+    }
+    
+    return allCategories.filter(category => 
+      category.toLowerCase().includes(searchTerm)
+    );
   };
 
   // Initialize speech recognition and fetch projects
@@ -530,33 +579,82 @@ const EntryForm = ({ entry, onClose }) => {
               <div className="space-y-4">
                 <div>
                   <label className={labelClasses}>Category</label>
-                  <select
-                    name="category"
-                    value={formData.category}
-                    onChange={handleCategoryChange}
-                    required
-                    className={selectClasses}
-                  >
-                    <option value="">Select a category</option>
-                    {getAllCategories(formData.type).map((category) => {
-                      if (typeof category === 'object' && category.group === 'Projects') {
-                        return (
-                          <optgroup key="projects" label="Projects">
-                            {category.items.map((project) => (
-                              <option key={project} value={project}>
-                                {project}
-                              </option>
-                            ))}
-                          </optgroup>
-                        );
-                      }
-                      return (
-                        <option key={category} value={category}>
-                          {category}
-                        </option>
-                      );
-                    })}
-                  </select>
+                  <div className="relative category-dropdown">
+                    <button
+                      type="button"
+                      onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                      className={`${inputClasses} flex items-center justify-between cursor-pointer`}
+                    >
+                      <span className={formData.category ? "text-[#7F5539]" : "text-[#B08968]/70"}>
+                        {formData.category || "Select a category"}
+                      </span>
+                      <ChevronDown 
+                        className={`h-4 w-4 text-[#B08968] transition-transform duration-200 ${
+                          showCategoryDropdown ? 'rotate-180' : ''
+                        }`} 
+                      />
+                    </button>
+                    
+                    {showCategoryDropdown && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#B08968]/30 rounded-lg shadow-lg z-10 max-h-60 overflow-hidden">
+                        {/* Search Input */}
+                        <div className="p-3 border-b border-[#B08968]/20">
+                          <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#B08968]" />
+                            <input
+                              type="text"
+                              value={categorySearch}
+                              onChange={(e) => setCategorySearch(e.target.value)}
+                              placeholder="Search categories..."
+                              className="w-full pl-10 pr-3 py-2 border border-[#B08968]/20 rounded-md text-sm focus:ring-2 focus:ring-[#B08968] focus:border-transparent outline-none"
+                              autoFocus
+                            />
+                          </div>
+                        </div>
+                        
+                        {/* Category Options */}
+                        <div className="max-h-48 overflow-y-auto">
+                          {getFilteredCategories(formData.type).length > 0 ? (
+                            getFilteredCategories(formData.type).map((category) => {
+                              if (typeof category === 'object' && category.group === 'Projects') {
+                                return (
+                                  <div key="projects">
+                                    <div className="px-3 py-2 text-xs font-semibold text-[#B08968] bg-[#B08968]/5 uppercase tracking-wide">
+                                      {category.group}
+                                    </div>
+                                    {category.items.map((project) => (
+                                      <button
+                                        key={project}
+                                        type="button"
+                                        onClick={() => handleCategoryChange(project)}
+                                        className="w-full px-3 py-2 text-left text-sm hover:bg-[#B08968]/10 transition-colors"
+                                      >
+                                        {project}
+                                      </button>
+                                    ))}
+                                  </div>
+                                );
+                              }
+                              return (
+                                <button
+                                  key={category}
+                                  type="button"
+                                  onClick={() => handleCategoryChange(category)}
+                                  className="w-full px-3 py-2 text-left text-sm hover:bg-[#B08968]/10 transition-colors"
+                                >
+                                  {category}
+                                </button>
+                              );
+                            })
+                          ) : (
+                            <div className="px-3 py-4 text-center text-sm text-[#B08968]">
+                              No categories found
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Custom Category Input */}
