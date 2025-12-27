@@ -217,6 +217,60 @@ export const createIncomeFromProject = createAsyncThunk(
   }
 );
 
+// Add function to download an existing entry as a bill
+export const downloadEntryAsBill = createAsyncThunk(
+  'entries/downloadEntryAsBill',
+  async (entryId, { rejectWithValue }) => {
+    try {
+      const response = await API.get(`/entries/${entryId}/payment-bill`, {
+        responseType: 'blob'
+      });
+      
+      // Create a blob URL and trigger download
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `payment-bill-${entryId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      return { success: true };
+    } catch (error) {
+      return rejectWithValue(error.response?.data || 'Failed to download bill');
+    }
+  }
+);
+
+// Add function to download all entries as a summary bill
+export const downloadAllEntriesAsBill = createAsyncThunk(
+  'entries/downloadAllEntriesAsBill',
+  async (projectId, { rejectWithValue }) => {
+    try {
+      const response = await API.get(`/entries/export-bill/${projectId}`, {
+        responseType: 'blob'
+      });
+      
+      // Create a blob URL and trigger download
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `project-summary-bill-${projectId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      return { success: true };
+    } catch (error) {
+      return rejectWithValue(error.response?.data || 'Failed to download summary bill');
+    }
+  }
+);
+
 const entriesSlice = createSlice({
   name: 'entries',
   initialState: {

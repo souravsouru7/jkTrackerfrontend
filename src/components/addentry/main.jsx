@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { addEntry, updateEntry, fetchEntries, deleteEntry } from '../../store/slice/entrySlice';
+import { addEntry, updateEntry, fetchEntries, deleteEntry, downloadEntryAsBill } from '../../store/slice/entrySlice';
 import { Plus, Search, Filter, X, Edit2, Trash2, Download, ChevronDown, ArrowRight } from 'lucide-react';
 import EntryForm from './EntryForm';
 import Navbar from '../../pages/Navbar';
-import ExportButton from './ExportButton';
+import BillExportButton from './BillExportButton';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const ExpenseTracker = () => {
@@ -201,6 +201,23 @@ const ExpenseTracker = () => {
     }
   };
 
+  const handleDownloadBill = async (entry) => {
+    if (entry.type !== 'Income') {
+      alert('Only income entries can be downloaded as bills');
+      return;
+    }
+    
+    try {
+      setIsEntryLoading(true);
+      await dispatch(downloadEntryAsBill(entry._id)).unwrap();
+    } catch (error) {
+      console.error('Failed to download bill:', error);
+      alert('Failed to download bill: ' + error.message);
+    } finally {
+      setIsEntryLoading(false);
+    }
+  };
+
   if (!selectedProject) {
     return (
       <div className="min-h-screen bg-[#FDF8F3]">
@@ -242,12 +259,7 @@ const ExpenseTracker = () => {
                         <Plus size={16} /> Add Entry
                       </span>
                     </motion.button>
-                    <motion.button
-                      whileTap={{ scale: 0.95 }}
-                      className="p-2 bg-white rounded-full shadow-md text-[#7F5539] border border-[#7F5539]/10"
-                    >
-                      <Download size={20} />
-                    </motion.button>
+                    <BillExportButton />
                   </div>
                 </div>
 
@@ -467,6 +479,15 @@ const ExpenseTracker = () => {
                                 >
                                   <Edit2 size={16} />
                                 </button>
+                                {entry.type === 'Income' && (
+                                  <button
+                                    onClick={() => handleDownloadBill(entry)}
+                                    className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                                    title="Download as Bill"
+                                  >
+                                    <Download size={16} />
+                                  </button>
+                                )}
                                 <button
                                   onClick={() => handleDelete(entry._id)}
                                   className="p-1.5 text-red-600 hover:bg-red-50 rounded-full transition-colors"
@@ -534,6 +555,15 @@ const ExpenseTracker = () => {
                                     >
                                       <Edit2 size={16} />
                                     </button>
+                                    {entry.type === 'Income' && (
+                                      <button
+                                        onClick={() => handleDownloadBill(entry)}
+                                        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                                        title="Download as Bill"
+                                      >
+                                        <Download size={16} />
+                                      </button>
+                                    )}
                                     <button
                                       onClick={() => handleDelete(entry._id)}
                                       className="p-1.5 text-red-600 hover:bg-red-50 rounded-full transition-colors"
