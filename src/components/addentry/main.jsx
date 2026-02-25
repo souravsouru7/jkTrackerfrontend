@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { addEntry, updateEntry, fetchEntries, deleteEntry, downloadEntryAsBill } from '../../store/slice/entrySlice';
+import { fetchEntries, deleteEntry, downloadEntryAsBill } from '../../store/slice/entrySlice';
 import { Plus, Search, Filter, X, Edit2, Trash2, Download, ChevronDown, ArrowRight } from 'lucide-react';
 import EntryForm from './EntryForm';
 import Navbar from '../../pages/Navbar';
@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const ExpenseTracker = () => {
   const dispatch = useDispatch();
-  const { entries, status, error } = useSelector((state) => state.entries);
+  const { entries } = useSelector((state) => state.entries);
   const selectedProject = useSelector((state) => state.projects.selectedProject);
   const [showForm, setShowForm] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState(null);
@@ -21,7 +21,7 @@ const ExpenseTracker = () => {
     sortBy: 'date'
   });
   const [showFilters, setShowFilters] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
+
   const [isLoading, setIsLoading] = useState(true);
   const [isEntryLoading, setIsEntryLoading] = useState(false);
 
@@ -36,10 +36,7 @@ const ExpenseTracker = () => {
     
     loadEntries();
     
-    const handleScroll = () => setIsScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll);
     return () => {
-      window.removeEventListener('scroll', handleScroll);
       document.documentElement.style.scrollBehavior = 'auto';
     };
   }, [dispatch]);
@@ -57,23 +54,7 @@ const ExpenseTracker = () => {
     return { regularEntries: regular, incomeFromOtherProjects: fromOtherProjects };
   }, [entries]);
 
-  // Calculate totals for regular entries only
-  const allTotals = useMemo(() => {
-    return regularEntries.reduce((acc, entry) => {
-      if (entry.type === 'Income') {
-        acc.income += entry.amount;
-      } else {
-        acc.expense += entry.amount;
-      }
-      acc.balance = acc.income - acc.expense;
-      return acc;
-    }, { income: 0, expense: 0, balance: 0 });
-  }, [regularEntries]);
 
-  // Calculate total income from other projects
-  const totalIncomeFromOtherProjects = useMemo(() => {
-    return incomeFromOtherProjects.reduce((total, entry) => total + entry.amount, 0);
-  }, [incomeFromOtherProjects]);
 
   const filterEntry = useCallback((entry) => {
     const matchesSearch = 

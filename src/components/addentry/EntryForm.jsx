@@ -1,5 +1,5 @@
 // EntryForm.jsx
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { addEntry, updateEntry, fetchEntries } from "../../store/slice/entrySlice";
 import { fetchProjects } from "../../store/slice/projectSlice";
@@ -48,7 +48,7 @@ const EntryForm = ({ entry, onClose }) => {
   const [showProjectSelection, setShowProjectSelection] = useState(false);
 
 
-  const categoryOptions = {
+  const categoryOptions = useMemo(() => ({
     Expense: [
       "Food",
       "Accommodation",
@@ -71,7 +71,7 @@ const EntryForm = ({ entry, onClose }) => {
       "Other",
     ],
     Income: ["Advance", "Payment", "Token", "Other"],
-  };
+  }), []);
 
   // Fetch custom categories on component mount
   useEffect(() => {
@@ -249,25 +249,31 @@ const EntryForm = ({ entry, onClose }) => {
       setFormData((prev) => ({ ...prev, type: "Expense" }));
     }
 
-    // Find matching category
-    const currentCategories = categoryOptions[formData.type];
-    const foundCategory = currentCategories.find((category) =>
-      transcript.toLowerCase().includes(category.toLowerCase())
-    );
-    if (foundCategory) {
-      setFormData((prev) => ({ ...prev, category: foundCategory }));
-    }
+    // Find matching category - using current formData.type value
+    setFormData((prev) => {
+      const currentCategories = categoryOptions[prev.type];
+      const foundCategory = currentCategories.find((category) =>
+        transcript.toLowerCase().includes(category.toLowerCase())
+      );
+      
+      let updatedData = { ...prev };
+      if (foundCategory) {
+        updatedData.category = foundCategory;
+      }
 
-    // Extract description
-    const description = transcript
-      .replace(/(\d+)/, "")
-      .replace(/(income|expense|earn|spend|cost)/, "")
-      .replace(foundCategory || "", "")
-      .trim();
-    if (description) {
-      setFormData((prev) => ({ ...prev, description }));
-    }
-  }, [categoryOptions, formData.type, setFormData]);
+      // Extract description
+      const description = transcript
+        .replace(/(\d+)/, "")
+        .replace(/(income|expense|earn|spend|cost)/, "")
+        .replace(foundCategory || "", "")
+        .trim();
+      if (description) {
+        updatedData.description = description;
+      }
+      
+      return updatedData;
+    });
+  }, [categoryOptions, setFormData]);
 
   // Store function in ref to avoid dependency issues
   useEffect(() => {
