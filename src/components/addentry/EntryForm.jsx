@@ -29,8 +29,8 @@ const EntryForm = ({ entry, onClose }) => {
 
   // UI State
   const [error, setError] = useState("");
-  const [isListening, setIsListening] = useState(false);
-  const [recognition, setRecognition] = useState(null);
+  const [_isListening, setIsListening] = useState(false);
+  const [_recognition, setRecognition] = useState(null);
   const [feedback, setFeedback] = useState("");
   const [showCustomCategory, setShowCustomCategory] = useState(false);
 
