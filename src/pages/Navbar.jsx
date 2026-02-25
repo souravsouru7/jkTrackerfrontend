@@ -12,7 +12,6 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  const [isOpen, setIsOpen] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [showCreateDropdown, setShowCreateDropdown] = useState(false);
@@ -35,7 +34,7 @@ const Navbar = () => {
     try {
       const token = localStorage.getItem('token');
       const userId = JSON.parse(localStorage.getItem('user'))._id;
-      
+
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/projects`, {
         method: 'POST',
         headers: {
@@ -109,7 +108,6 @@ const Navbar = () => {
       } else {
         navigate(path);
       }
-      setIsOpen(false);
       setShowMobileMenu(false);
       setShowCreateDropdown(false);
     }
@@ -144,18 +142,17 @@ const Navbar = () => {
                 <JKLogo size="90" />
               </motion.div>
             </div>
-            
+
             <div className="hidden md:block">
               <div className="ml-10 flex items-center space-x-4">
                 {navItems.map((item, index) => (
                   <button
                     key={index}
                     onClick={() => handleNavigation(item.path)}
-                    className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
-                      location.pathname === item.path
-                        ? 'bg-[#8B5E34] text-white'
-                        : 'text-[#8B5E34] hover:bg-[#8B5E34]/10'
-                    }`}
+                    className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${location.pathname === item.path
+                      ? 'bg-[#8B5E34] text-white'
+                      : 'text-[#8B5E34] hover:bg-[#8B5E34]/10'
+                      }`}
                   >
                     <item.icon className="h-5 w-5 mr-2" />
                     {item.name}
@@ -186,53 +183,48 @@ const Navbar = () => {
                 onClick={() => handleNavigation(item.path)}
                 className="flex flex-col items-center justify-center w-16 py-1"
               >
-                <item.icon className={`h-6 w-6 ${
-                  (location.pathname === item.path || (item.path === 'create' && showCreateDropdown)) 
+                <item.icon className={`h-6 w-6 ${(location.pathname === item.path || (item.path === 'create' && showCreateDropdown))
                   ? 'text-[#8B5E34]' : 'text-gray-500'
-                }`} />
-                <span className={`text-xs mt-1 ${
-                  (location.pathname === item.path || (item.path === 'create' && showCreateDropdown))
+                  }`} />
+                <span className={`text-xs mt-1 ${(location.pathname === item.path || (item.path === 'create' && showCreateDropdown))
                   ? 'text-[#8B5E34]' : 'text-gray-500'
-                }`}>
+                  }`}>
                   {item.name}
                 </span>
               </button>
-              
+
               {/* Create Dropdown */}
               {item.path === 'create' && showCreateDropdown && (
-                <div 
+                <div
                   ref={createDropdownRef}
                   className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-48 bg-white rounded-lg shadow-lg border border-[#B08968]/20 py-2"
                 >
                   <button
                     onClick={() => handleNavigation('/create-bill', 'Invoice')}
-                    className={`w-full px-4 py-2 text-left text-sm hover:bg-[#F5EBE0] flex items-center gap-2 ${
-                      location.pathname === '/create-bill' && location.state?.documentType === 'Invoice'
-                        ? 'text-[#8B5E34] bg-[#F5EBE0]'
-                        : 'text-[#7F5539]'
-                    }`}
+                    className={`w-full px-4 py-2 text-left text-sm hover:bg-[#F5EBE0] flex items-center gap-2 ${location.pathname === '/create-bill' && location.state?.documentType === 'Invoice'
+                      ? 'text-[#8B5E34] bg-[#F5EBE0]'
+                      : 'text-[#7F5539]'
+                      }`}
                   >
                     <FileText size={16} />
                     Create Invoice
                   </button>
                   <button
                     onClick={() => handleNavigation('/create-bill', 'Estimate')}
-                    className={`w-full px-4 py-2 text-left text-sm hover:bg-[#F5EBE0] flex items-center gap-2 ${
-                      location.pathname === '/create-bill' && location.state?.documentType === 'Estimate'
-                        ? 'text-[#8B5E34] bg-[#F5EBE0]'
-                        : 'text-[#7F5539]'
-                    }`}
+                    className={`w-full px-4 py-2 text-left text-sm hover:bg-[#F5EBE0] flex items-center gap-2 ${location.pathname === '/create-bill' && location.state?.documentType === 'Estimate'
+                      ? 'text-[#8B5E34] bg-[#F5EBE0]'
+                      : 'text-[#7F5539]'
+                      }`}
                   >
                     <FileText size={16} />
                     Create Estimate
                   </button>
                   <button
                     onClick={() => handleNavigation('/create-bill', 'Quotation')}
-                    className={`w-full px-4 py-2 text-left text-sm hover:bg-[#F5EBE0] flex items-center gap-2 ${
-                      location.pathname === '/create-bill' && location.state?.documentType === 'Quotation'
-                        ? 'text-[#8B5E34] bg-[#F5EBE0]'
-                        : 'text-[#7F5539]'
-                    }`}
+                    className={`w-full px-4 py-2 text-left text-sm hover:bg-[#F5EBE0] flex items-center gap-2 ${location.pathname === '/create-bill' && location.state?.documentType === 'Quotation'
+                      ? 'text-[#8B5E34] bg-[#F5EBE0]'
+                      : 'text-[#7F5539]'
+                      }`}
                   >
                     <FileText size={16} />
                     Create Quotation

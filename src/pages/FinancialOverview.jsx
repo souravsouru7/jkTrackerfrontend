@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ChevronRight } from 'lucide-react';
+
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -55,10 +55,10 @@ const FinancialOverview = React.memo(({ overall }) => {
         <svg className="absolute inset-0 w-full h-full text-white/[0.07]" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="pattern-1" x="0" y="0" width="32" height="32" patternUnits="userSpaceOnUse">
-              <path d="M0 32V.5H32" fill="none" stroke="currentColor" strokeWidth="1"/>
+              <path d="M0 32V.5H32" fill="none" stroke="currentColor" strokeWidth="1" />
             </pattern>
           </defs>
-          <rect width="100%" height="100%" fill="url(#pattern-1)"/>
+          <rect width="100%" height="100%" fill="url(#pattern-1)" />
         </svg>
       )
     },
@@ -80,10 +80,10 @@ const FinancialOverview = React.memo(({ overall }) => {
         <svg className="absolute inset-0 w-full h-full text-white/[0.07]" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="pattern-2" x="0" y="0" width="32" height="32" patternUnits="userSpaceOnUse">
-              <circle cx="16" cy="16" r="10" fill="none" stroke="currentColor" strokeWidth="1"/>
+              <circle cx="16" cy="16" r="10" fill="none" stroke="currentColor" strokeWidth="1" />
             </pattern>
           </defs>
-          <rect width="100%" height="100%" fill="url(#pattern-2)"/>
+          <rect width="100%" height="100%" fill="url(#pattern-2)" />
         </svg>
       )
     },
@@ -105,10 +105,10 @@ const FinancialOverview = React.memo(({ overall }) => {
         <svg className="absolute inset-0 w-full h-full text-white/[0.07]" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="pattern-3" x="0" y="0" width="32" height="32" patternUnits="userSpaceOnUse">
-              <path d="M16 0l16 16-16 16L0 16z" fill="none" stroke="currentColor" strokeWidth="1"/>
+              <path d="M16 0l16 16-16 16L0 16z" fill="none" stroke="currentColor" strokeWidth="1" />
             </pattern>
           </defs>
-          <rect width="100%" height="100%" fill="url(#pattern-3)"/>
+          <rect width="100%" height="100%" fill="url(#pattern-3)" />
         </svg>
       )
     }

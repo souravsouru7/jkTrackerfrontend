@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import API from '../../services/api';
-import axios from 'axios';
 
 const initialState = {
   bills: [],
@@ -71,7 +70,7 @@ export const generatePDF = createAsyncThunk(
         headers: getAuthHeader(),
         responseType: 'blob'
       });
-      
+
       // Create a blob URL and trigger download
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
@@ -125,8 +124,8 @@ export const updateBill = createAsyncThunk(
       });
 
       const grandTotal = calculatedItems.reduce((sum, item) => sum + item.total, 0);
-      const discountAmount = billData.discountType === 'percentage' 
-        ? (billData.discountValue * grandTotal) / 100 
+      const discountAmount = billData.discountType === 'percentage'
+        ? (billData.discountValue * grandTotal) / 100
         : billData.discountValue || 0;
       const finalAmount = grandTotal - discountAmount;
 
@@ -139,9 +138,9 @@ export const updateBill = createAsyncThunk(
         documentType: billData.documentType || 'Invoice',
         date: new Date(billData.billDate).toISOString()
       };
-      
+
       console.log('Sending updated bill data to backend:', transformedData);
-      
+
       const response = await API.put(`/api/interior/bills/${id}`, transformedData, {
         headers: getAuthHeader()
       });
@@ -159,15 +158,15 @@ export const duplicateBill = createAsyncThunk(
   'interiorBilling/duplicateBill',
   async (id, { rejectWithValue }) => {
     try {
-      const response = await API.post(`/api/interior/bills/${id}/duplicate`, {}, {
+      await API.post(`/api/interior/bills/${id}/duplicate`, {}, {
         headers: getAuthHeader()
       });
-      
+
       // Fetch all bills after successful duplication to get updated list
       const updatedBillsResponse = await API.get('/api/interior/bills', {
         headers: getAuthHeader()
       });
-      
+
       return updatedBillsResponse.data.data;
     } catch (error) {
       if (error.response?.status === 401) {

@@ -47,9 +47,8 @@ export const createProject = createAsyncThunk('projects/createProject', async (p
 
 export const deleteProject = createAsyncThunk(
   'projects/deleteProject',
-  async (projectId, { getState }) => {
+  async (projectId) => {
     try {
-      const userId = JSON.parse(localStorage.getItem('user'))._id;
       await axios.delete(`${API_URL}/api/projects/${projectId}`, {
         headers: getAuthHeader()
       });
