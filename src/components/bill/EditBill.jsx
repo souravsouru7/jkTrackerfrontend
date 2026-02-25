@@ -11,8 +11,7 @@ const EditBill = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const { currentBill, loading } = useSelector((state) => state.interiorBilling);
-  const [message, setMessage] = useState({ type: '', text: '' });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [formData, setFormData] = useState({
     billNumber: '',
     documentType: 'Invoice',
@@ -47,10 +46,6 @@ const EditBill = () => {
       'It will take 2 days to start the work in site after getting the basic advance, because we need to finalise the concept and drawings as per the concept selected'
     ]
   });
-
-  const [materials] = useState(['HDHMR', 'MDF', 'Particle Board', 'P/MWood',"MS","SS"]);
-  const [thicknesses] = useState(['1mm','2mm','3mm','4mm','5mm','6mm',"7mm",'8mm',"9mm","10mm",'12mm',"16mm",'18mm', '25mm']);
-  const [hardwareBrands] = useState(['Godrej', 'Ebco', 'Hafele', 'Hettich',"appolo"]);
 
 
   
@@ -359,26 +354,6 @@ const EditBill = () => {
       <div className="min-h-screen bg-gradient-to-br from-[#F5EBE0] via-[#E6CCB2] to-[#DDB892] pt-16 md:pt-0">
         <div className="p-4 md:p-8 max-w-7xl mx-auto pb-20 md:pb-8">
           <div className="bg-white/30 backdrop-blur-md rounded-2xl shadow-xl border border-[#B08968]/20 p-6 md:p-8">
-            {message.text && (
-              <div 
-                className={`mb-4 p-4 rounded-lg animate-fadeIn ${
-                  message.type === 'success' 
-                    ? 'bg-green-100 border border-green-400 text-green-700' 
-                    : message.type === 'error'
-                    ? 'bg-red-100 border border-red-400 text-red-700'
-                    : message.type === 'loading'
-                    ? 'bg-blue-100 border border-blue-400 text-blue-700'
-                    : ''
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  {message.type === 'loading' && (
-                    <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full" />
-                  )}
-                  {message.text}
-                </div>
-              </div>
-            )}
             <div className="mb-8 text-center">
               <h1 className="text-3xl font-bold text-[#7F5539]">Edit Bill</h1>
               <p className="text-[#9C6644] mt-2">Update the bill details below</p>

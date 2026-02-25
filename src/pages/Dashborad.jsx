@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
-import { logout } from "../store/slice/authSlice";
 import {
   fetchMonthlyExpenses,
   fetchIncomeVsExpense,
@@ -20,7 +19,7 @@ import {
   updateProjectStatus, // Add this import
 } from "../store/slice/projectSlice";
 import { fetchEntries } from '../store/slice/entrySlice';
-import { Menu, X, Plus, Trash2, ChevronRight } from "lucide-react";
+import { X, Plus, Trash2, ChevronRight } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   PieChart, Pie, Cell, ResponsiveContainer,
@@ -1107,6 +1106,14 @@ const Dashboard = () => {
   const categoryAnalysis = useSelector((state) => state.analytics.categoryAnalysis);
   const balanceSummary = useSelector((state) => state.balanceSheet.summary);
 
+  // Define showToast first before it's used in effects
+  const showToast = useCallback((message, type) => {
+    setNotificationMessage(message);
+    setNotificationType(type);
+    setShowNotification(true);
+    setTimeout(() => setShowNotification(false), 3000);
+  }, []);
+
   // Effects
   useEffect(() => {
     if (userId) {
@@ -1167,14 +1174,6 @@ const Dashboard = () => {
       dispatch(fetchSharedExpenses(userId));
     }
   }, [dispatch, userId]);
-
-  // Callbacks
-  const showToast = useCallback((message, type) => {
-    setNotificationMessage(message);
-    setNotificationType(type);
-    setShowNotification(true);
-    setTimeout(() => setShowNotification(false), 3000);
-  }, []);
 
   const handleCreateProject = useCallback(async () => {
     if (!newProjectName) return;
