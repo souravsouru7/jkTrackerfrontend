@@ -29,8 +29,6 @@ const EntryForm = ({ entry, onClose }) => {
 
   // UI State
   const [error, setError] = useState("");
-  const [_isListening, setIsListening] = useState(false);
-  const [_recognition, setRecognition] = useState(null);
   const [feedback, setFeedback] = useState("");
   const [showCustomCategory, setShowCustomCategory] = useState(false);
 
@@ -44,7 +42,7 @@ const EntryForm = ({ entry, onClose }) => {
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [categorySearch, setCategorySearch] = useState("");
 
- 
+
   const [showProjectSelection, setShowProjectSelection] = useState(false);
 
 
@@ -132,10 +130,10 @@ const EntryForm = ({ entry, onClose }) => {
       setShowProjectSelection(true);
       return;
     }
-    
+
     // Check if the selected category is a project name
     const selectedProject = projects.find(project => project.name === value);
-    
+
     if (selectedProject) {
       // If a project is selected, only update the category
       setFormData(prev => ({
@@ -153,7 +151,7 @@ const EntryForm = ({ entry, onClose }) => {
       }));
       setShowCustomCategory(value === "Other");
     }
-    
+
     // Close dropdown and reset search
     setShowCategoryDropdown(false);
     setCategorySearch("");
@@ -204,22 +202,22 @@ const EntryForm = ({ entry, onClose }) => {
     if (!categorySearch.trim()) return allCategories;
 
     const searchTerm = categorySearch.toLowerCase();
-    
+
     if (type === 'Income') {
       const filtered = allCategories.filter(category => {
         if (typeof category === 'object' && category.group === 'Projects') {
-          const filteredProjects = category.items.filter(project => 
+          const filteredProjects = category.items.filter(project =>
             project.toLowerCase().includes(searchTerm)
           );
           return filteredProjects.length > 0 ? { ...category, items: filteredProjects } : null;
         }
         return category.toLowerCase().includes(searchTerm);
       }).filter(Boolean);
-      
+
       return filtered;
     }
-    
-    return allCategories.filter(category => 
+
+    return allCategories.filter(category =>
       category.toLowerCase().includes(searchTerm)
     );
   };
@@ -255,7 +253,7 @@ const EntryForm = ({ entry, onClose }) => {
       const foundCategory = currentCategories.find((category) =>
         transcript.toLowerCase().includes(category.toLowerCase())
       );
-      
+
       let updatedData = { ...prev };
       if (foundCategory) {
         updatedData.category = foundCategory;
@@ -270,7 +268,7 @@ const EntryForm = ({ entry, onClose }) => {
       if (description) {
         updatedData.description = description;
       }
-      
+
       return updatedData;
     });
   }, [categoryOptions, setFormData]);
@@ -312,7 +310,6 @@ const EntryForm = ({ entry, onClose }) => {
       };
 
       recognitionInstance.onerror = (event) => {
-        setIsListening(false);
         switch (event.error) {
           case "no-speech":
             setError("No speech detected. Please try again.");
@@ -332,14 +329,12 @@ const EntryForm = ({ entry, onClose }) => {
       };
 
       recognitionInstance.onend = () => {
-        setIsListening(false);
         if (!error) {
           setFeedback("Listening stopped. Click the mic to try again.");
           setTimeout(() => setFeedback(""), 3000);
         }
       };
 
-      setRecognition(recognitionInstance);
     }
   }, [dispatch, error, processVoiceInputRef]);
 
@@ -365,14 +360,14 @@ const EntryForm = ({ entry, onClose }) => {
           type: formData.type,
           category: formData.customCategory
         })).unwrap();
-        
+
         // Refresh custom categories after adding a new one
         await dispatch(fetchCustomCategories(user._id || user.id));
       }
 
       // Check if the selected category is a project name
       const selectedProjectFromCategory = projects.find(project => project.name === formData.category);
-      
+
       if (selectedProjectFromCategory && formData.type === 'Income') {
         // Use the new API endpoint for income from other projects
         const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/entries/income-from-project`, {
@@ -397,19 +392,19 @@ const EntryForm = ({ entry, onClose }) => {
         }
 
         const data = await response.json();
-        
+
         // Handle PDF download if requested
         if (data.paymentBill && generateBill) {
           const byteCharacters = atob(data.paymentBill.data);
           const byteNumbers = new Array(byteCharacters.length);
-          
+
           for (let i = 0; i < byteCharacters.length; i++) {
             byteNumbers[i] = byteCharacters.charCodeAt(i);
           }
-          
+
           const byteArray = new Uint8Array(byteNumbers);
           const pdfBlob = new Blob([byteArray], { type: 'application/pdf' });
-          
+
           const url = window.URL.createObjectURL(pdfBlob);
           const link = document.createElement('a');
           link.href = url;
@@ -582,13 +577,12 @@ const EntryForm = ({ entry, onClose }) => {
                       <span className={formData.category ? "text-[#7F5539]" : "text-[#B08968]/70"}>
                         {formData.category || "Select a category"}
                       </span>
-                      <ChevronDown 
-                        className={`h-4 w-4 text-[#B08968] transition-transform duration-200 ${
-                          showCategoryDropdown ? 'rotate-180' : ''
-                        }`} 
+                      <ChevronDown
+                        className={`h-4 w-4 text-[#B08968] transition-transform duration-200 ${showCategoryDropdown ? 'rotate-180' : ''
+                          }`}
                       />
                     </button>
-                    
+
                     {showCategoryDropdown && (
                       <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#B08968]/30 rounded-lg shadow-lg z-10 max-h-60 overflow-hidden">
                         {/* Search Input */}
@@ -605,7 +599,7 @@ const EntryForm = ({ entry, onClose }) => {
                             />
                           </div>
                         </div>
-                        
+
                         {/* Category Options */}
                         <div className="max-h-48 overflow-y-auto">
                           {getFilteredCategories(formData.type).length > 0 ? (
