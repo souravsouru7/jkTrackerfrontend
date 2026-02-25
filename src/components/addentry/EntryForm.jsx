@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { addEntry, updateEntry, fetchEntries } from "../../store/slice/entrySlice";
 import { fetchProjects } from "../../store/slice/projectSlice";
 import { fetchCustomCategories, addCustomCategory } from "../../store/slice/categorySlice";
-import { Plus, Mic, MicOff, AlertCircle, X, FileText, Search, ChevronDown } from "lucide-react";
+import { Plus, Mic, AlertCircle, X, FileText, Search, ChevronDown } from "lucide-react";
 
 // Entry Form Component
 const EntryForm = ({ entry, onClose }) => {
@@ -282,7 +282,7 @@ const EntryForm = ({ entry, onClose }) => {
 
       setRecognition(recognitionInstance);
     }
-  }, [dispatch, error]);
+  }, [dispatch, error, processVoiceInput]);
 
   // Process voice input
   const processVoiceInput = (transcript) => {
@@ -451,27 +451,7 @@ const EntryForm = ({ entry, onClose }) => {
     }));
   };
 
-  // Voice input toggle handler
-  const toggleVoiceInput = () => {
-    if (!recognition) {
-      setError("Voice recognition is not supported in your browser");
-      return;
-    }
 
-    if (isListening) {
-      recognition.stop();
-      setFeedback("");
-    } else {
-      setError("");
-      try {
-        recognition.start();
-        setIsListening(true);
-      } catch (err) {
-        setError("Failed to start voice recognition. Please try again.");
-        setIsListening(false);
-      }
-    }
-  };
 
   // Class definitions for consistent styling
   const inputClasses =
