@@ -1,5 +1,5 @@
 // EntryForm.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { addEntry, updateEntry, fetchEntries } from "../../store/slice/entrySlice";
 import { fetchProjects } from "../../store/slice/projectSlice";
@@ -33,6 +33,9 @@ const EntryForm = ({ entry, onClose }) => {
   const [recognition, setRecognition] = useState(null);
   const [feedback, setFeedback] = useState("");
   const [showCustomCategory, setShowCustomCategory] = useState(false);
+
+  // Refs for stable function access
+  const processVoiceInputRef = useRef();
 
   // Add state for payment bill
   const [generateBill, setGenerateBill] = useState(false);
@@ -221,71 +224,8 @@ const EntryForm = ({ entry, onClose }) => {
     );
   };
 
-  // Initialize speech recognition and fetch projects
-  useEffect(() => {
-    // Fetch projects
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (user?._id || user?.id) {
-      dispatch(fetchProjects(user?._id || user?.id));
-    }
-
-    // Initialize speech recognition
-    if (window.webkitSpeechRecognition || window.SpeechRecognition) {
-      const SpeechRecognition =
-        window.webkitSpeechRecognition || window.SpeechRecognition;
-      const recognitionInstance = new SpeechRecognition();
-
-      recognitionInstance.continuous = false;
-      recognitionInstance.interimResults = false;
-      recognitionInstance.lang = "en-US";
-      recognitionInstance.maxAlternatives = 1;
-
-      recognitionInstance.onstart = () => {
-        setFeedback("Listening... Please speak now");
-        setError("");
-      };
-
-      recognitionInstance.onresult = (event) => {
-        const transcript = event.results[0][0].transcript.toLowerCase();
-        processVoiceInput(transcript);
-        setFeedback("Voice input processed successfully!");
-        setTimeout(() => setFeedback(""), 3000);
-      };
-
-      recognitionInstance.onerror = (event) => {
-        setIsListening(false);
-        switch (event.error) {
-          case "no-speech":
-            setError("No speech detected. Please try again.");
-            break;
-          case "audio-capture":
-            setError("No microphone found. Please check your device.");
-            break;
-          case "not-allowed":
-            setError("Microphone access denied. Please enable permissions.");
-            break;
-          case "network":
-            setError("Network error occurred. Please check your connection.");
-            break;
-          default:
-            setError(`Error: ${event.error}`);
-        }
-      };
-
-      recognitionInstance.onend = () => {
-        setIsListening(false);
-        if (!error) {
-          setFeedback("Listening stopped. Click the mic to try again.");
-          setTimeout(() => setFeedback(""), 3000);
-        }
-      };
-
-      setRecognition(recognitionInstance);
-    }
-  }, [dispatch, error, processVoiceInput]);
-
   // Process voice input
-  const processVoiceInput = (transcript) => {
+  const processVoiceInput = useCallback((transcript) => {
     console.log("Processing transcript:", transcript);
 
     // Extract amount
@@ -327,7 +267,75 @@ const EntryForm = ({ entry, onClose }) => {
     if (description) {
       setFormData((prev) => ({ ...prev, description }));
     }
-  };
+  }, [categoryOptions, formData.type, setFormData]);
+
+  // Store function in ref to avoid dependency issues
+  useEffect(() => {
+    processVoiceInputRef.current = processVoiceInput;
+  });
+
+  // Initialize speech recognition and fetch projects
+  useEffect(() => {
+    // Fetch projects
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (user?._id || user?.id) {
+      dispatch(fetchProjects(user?._id || user?.id));
+    }
+
+    // Initialize speech recognition
+    if (window.webkitSpeechRecognition || window.SpeechRecognition) {
+      const SpeechRecognition =
+        window.webkitSpeechRecognition || window.SpeechRecognition;
+      const recognitionInstance = new SpeechRecognition();
+
+      recognitionInstance.continuous = false;
+      recognitionInstance.interimResults = false;
+      recognitionInstance.lang = "en-US";
+      recognitionInstance.maxAlternatives = 1;
+
+      recognitionInstance.onstart = () => {
+        setFeedback("Listening... Please speak now");
+        setError("");
+      };
+
+      recognitionInstance.onresult = (event) => {
+        const transcript = event.results[0][0].transcript.toLowerCase();
+        processVoiceInputRef.current(transcript);
+        setFeedback("Voice input processed successfully!");
+        setTimeout(() => setFeedback(""), 3000);
+      };
+
+      recognitionInstance.onerror = (event) => {
+        setIsListening(false);
+        switch (event.error) {
+          case "no-speech":
+            setError("No speech detected. Please try again.");
+            break;
+          case "audio-capture":
+            setError("No microphone found. Please check your device.");
+            break;
+          case "not-allowed":
+            setError("Microphone access denied. Please enable permissions.");
+            break;
+          case "network":
+            setError("Network error occurred. Please check your connection.");
+            break;
+          default:
+            setError(`Error: ${event.error}`);
+        }
+      };
+
+      recognitionInstance.onend = () => {
+        setIsListening(false);
+        if (!error) {
+          setFeedback("Listening stopped. Click the mic to try again.");
+          setTimeout(() => setFeedback(""), 3000);
+        }
+      };
+
+      setRecognition(recognitionInstance);
+    }
+  }, [dispatch, error, processVoiceInputRef]);
 
   // Form submission handler
   const handleSubmit = async (e) => {

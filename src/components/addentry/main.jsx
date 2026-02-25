@@ -48,9 +48,9 @@ const ExpenseTracker = () => {
     if (selectedProject) {
       dispatch(fetchEntries());
     }
-  }, [dispatch, selectedProject?._id]);
+  }, [dispatch, selectedProject]);
 
-  // Separate regular entries from income from other projects
+
   const { regularEntries, incomeFromOtherProjects } = useMemo(() => {
     const regular = entries.filter(entry => !entry.isIncomeFromOtherProject);
     const fromOtherProjects = entries.filter(entry => entry.isIncomeFromOtherProject);
@@ -155,12 +155,12 @@ const ExpenseTracker = () => {
   const filteredEntries = useMemo(() => {
     const filtered = regularEntries.filter(filterEntry);
     return sortEntries(filtered);
-  }, [regularEntries, searchTerm, activeFilters]);
+  }, [regularEntries, filterEntry, sortEntries]);
 
   const filteredIncomeFromOtherProjects = useMemo(() => {
     const filtered = incomeFromOtherProjects.filter(filterIncomeFromOtherProjects);
     return sortEntries(filtered);
-  }, [incomeFromOtherProjects, searchTerm, activeFilters]);
+  }, [incomeFromOtherProjects, filterIncomeFromOtherProjects, sortEntries]);
 
   // Calculate totals for filtered entries
   const filteredTotals = useMemo(() => {
