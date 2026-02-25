@@ -11,6 +11,7 @@ const EditBill = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const { currentBill, loading } = useSelector((state) => state.interiorBilling);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     billNumber: '',
