@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addEntry, updateEntry, fetchEntries, deleteEntry, downloadEntryAsBill } from '../../store/slice/entrySlice';
 import { Plus, Search, Filter, X, Edit2, Trash2, Download, ChevronDown, ArrowRight } from 'lucide-react';
@@ -75,7 +75,7 @@ const ExpenseTracker = () => {
     return incomeFromOtherProjects.reduce((total, entry) => total + entry.amount, 0);
   }, [incomeFromOtherProjects]);
 
-  const filterEntry = (entry) => {
+  const filterEntry = useCallback((entry) => {
     const matchesSearch = 
       entry.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       entry.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -106,9 +106,9 @@ const ExpenseTracker = () => {
     }
 
     return matchesSearch && matchesType && matchesCategory && matchesDate;
-  };
+  }, [searchTerm, activeFilters]);
 
-  const filterIncomeFromOtherProjects = (entry) => {
+  const filterIncomeFromOtherProjects = useCallback((entry) => {
     const matchesSearch = 
       entry.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       entry.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -136,9 +136,9 @@ const ExpenseTracker = () => {
     }
 
     return matchesSearch && matchesDate;
-  };
+  }, [searchTerm, activeFilters]);
 
-  const sortEntries = (entries) => {
+  const sortEntries = useCallback((entries) => {
     switch (activeFilters.sortBy) {
       case 'date':
         return [...entries].sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -149,7 +149,7 @@ const ExpenseTracker = () => {
       default:
         return entries;
     }
-  };
+  }, [activeFilters.sortBy]);
 
   // Get filtered and sorted entries
   const filteredEntries = useMemo(() => {

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchAllBills, generatePDF, duplicateBill } from '../../store/slice/interiorBillingSlice';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Eye, Plus, Edit, Copy } from 'lucide-react';
+import { FileText, Plus, Edit, Copy } from 'lucide-react';
 import Navbar from '../../pages/Navbar';
 import Loader from '../Loader';
 
@@ -49,10 +49,6 @@ const BillsList = () => {
       document.documentElement.style.scrollBehavior = 'auto';
     };
   }, []);
-
-  const handleViewBill = (id) => {
-    navigate(`/bills/${id}`);
-  };
 
   const handleEditBill = (id) => {
     navigate(`/edit-bill/${id}`);

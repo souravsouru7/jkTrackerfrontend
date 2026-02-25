@@ -6,8 +6,7 @@ import {
   fetchTotalCalculations,
   fetchProjectDetails,
   generateBalanceSheetPDF,
-  toggleSelectedItem,
-  clearSelectedItems
+  toggleSelectedItem
 } from '../../store/slice/balanceSheetSlice';
 import { selectProject } from '../../store/slice/projectSlice';
 import Navbar from "../../pages/Navbar";
@@ -69,18 +68,7 @@ const BalanceSheet = () => {
     dispatch(toggleSelectedItem(item));
   };
 
-  // Get all unique categories
-  const getUniqueCategories = () => {
-    if (!projectDetails?.data) return [];
-    const incomeCategories = projectDetails.data.income.categories.map(c => c.category);
-    const expenseCategories = projectDetails.data.expenses.categories.map(c => c.category);
-    return [...new Set([...incomeCategories, ...expenseCategories])];
-  };
 
-  // Handle category selection
-  const handleCategoryToggle = (category) => {
-    // Removed setSelectedCategories since it's not being used
-  };
 
   // Loading skeleton animation
   const LoadingSkeleton = () => (
