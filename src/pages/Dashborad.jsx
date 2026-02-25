@@ -207,14 +207,14 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject,
           billId,
           projectId: selectedProjectForBills._id
         })).unwrap();
-        
+
         // Refresh bills lists
         await Promise.all([
           dispatch(fetchUnconnectedBills()),
           dispatch(fetchProjectBills(selectedProjectForBills._id)),
           dispatch(fetchProjects(userId))
         ]);
-        
+
         showToast("Bill connected successfully", "success");
       } catch (error) {
         console.error('Failed to connect bill:', error);
@@ -226,14 +226,14 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject,
   const handleDisconnectBill = async (billId) => {
     try {
       await dispatch(disconnectBillFromProject(billId)).unwrap();
-      
+
       // Refresh bills lists
       await Promise.all([
         dispatch(fetchUnconnectedBills()),
         dispatch(fetchProjectBills(selectedProjectForBills._id)),
         dispatch(fetchProjects(userId))
       ]);
-      
+
       showToast("Bill disconnected successfully", "success");
     } catch (error) {
       console.error('Failed to disconnect bill:', error);
@@ -284,22 +284,21 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject,
       {(projects || []).map((project) => {
         // Ensure budget has a default value
         const budget = Number(project.budget) || 0;
-        
+
         return (
           <motion.div
             key={project._id}
             variants={itemVariants}
-            className={`p-4 rounded-lg shadow-md ${
-              selectedProject?._id === project._id
-                ? "bg-[#B08968]/20 border-2 border-[#B08968]"
-                : "bg-white"
-            }`}
+            className={`p-4 rounded-lg shadow-md ${selectedProject?._id === project._id
+              ? "bg-[#B08968]/20 border-2 border-[#B08968]"
+              : "bg-white"
+              }`}
           >
             <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-[#7F5539]">{project.name || 'Untitled Project'}</h3>
                 <p className="text-sm text-gray-600">{project.description || 'No description'}</p>
-                
+
                 {/* Status and Budget Section */}
                 <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
                   <div className="flex items-center gap-2">
@@ -355,7 +354,7 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject,
                   )}
                 </div>
               </div>
-              
+
               {/* Action Buttons */}
               <div className="flex flex-wrap gap-2 mt-2 sm:mt-0 sm:flex-nowrap items-center justify-end">
                 <motion.button
@@ -437,13 +436,12 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject,
                               <div>
                                 <div className="flex items-center gap-2">
                                   <p className="font-medium text-[#7F5539]">{bill.clientName || 'No Client Name'}</p>
-                                  <span className={`px-2 py-0.5 text-xs rounded-full ${
-                                    bill.documentType === 'Estimate' 
-                                      ? 'bg-blue-100 text-blue-700'
-                                      : bill.documentType === 'Quotation'
+                                  <span className={`px-2 py-0.5 text-xs rounded-full ${bill.documentType === 'Estimate'
+                                    ? 'bg-blue-100 text-blue-700'
+                                    : bill.documentType === 'Quotation'
                                       ? 'bg-purple-100 text-purple-700'
                                       : 'bg-green-100 text-green-700'
-                                  }`}>
+                                    }`}>
                                     {bill.documentType || 'Invoice'}
                                   </span>
                                 </div>
@@ -479,13 +477,12 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject,
                               <div>
                                 <div className="flex items-center gap-2">
                                   <p className="font-medium text-[#7F5539]">{bill.clientName || 'No Client Name'}</p>
-                                  <span className={`px-2 py-0.5 text-xs rounded-full ${
-                                    bill.documentType === 'Estimate' 
-                                      ? 'bg-blue-100 text-blue-700'
-                                      : bill.documentType === 'Quotation'
+                                  <span className={`px-2 py-0.5 text-xs rounded-full ${bill.documentType === 'Estimate'
+                                    ? 'bg-blue-100 text-blue-700'
+                                    : bill.documentType === 'Quotation'
                                       ? 'bg-purple-100 text-purple-700'
                                       : 'bg-green-100 text-green-700'
-                                  }`}>
+                                    }`}>
                                     {bill.documentType || 'Invoice'}
                                   </span>
                                 </div>
@@ -529,13 +526,13 @@ const FinancialSummary = React.memo(({ summary, selectedProject }) => {
 
   const budget = Number(selectedProject?.budget) || 0;
   console.log('Budget:', budget, 'Type:', typeof budget);
-  
+
   // Fetch entries when component mounts or when project changes
   useEffect(() => {
     if (selectedProject?._id) {
       setLoading(true);
       dispatch(fetchEntries(selectedProject._id))
-      
+
         .then(() => setLoading(false))
         .catch((error) => {
           console.error('Error fetching entries:', error);
@@ -640,11 +637,10 @@ const FinancialSummary = React.memo(({ summary, selectedProject }) => {
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-sm font-medium mb-1">{card.title}</p>
-                <h3 className={`font-bold ${
-                  card.title === "Payment Received" ? "text-3xl" : 
-                  card.title === "Total Balance" ? "text-2xl" : 
-                  "text-xl"
-                }`}>
+                <h3 className={`font-bold ${card.title === "Payment Received" ? "text-3xl" :
+                  card.title === "Total Balance" ? "text-2xl" :
+                    "text-xl"
+                  }`}>
                   ₹{card.value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                 </h3>
               </div>
@@ -698,7 +694,7 @@ const FinancialSummary = React.memo(({ summary, selectedProject }) => {
             >
               <div className="flex justify-between items-center p-4 border-b border-gray-100">
                 <h2 className="text-xl font-semibold text-[#7F5539]">Expense Details</h2>
-                <button 
+                <button
                   onClick={() => setShowExpenseDetails(false)}
                   className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                 >
@@ -779,7 +775,7 @@ const Charts = React.memo(({ monthlyExpenses, incomeVsExpense, categoryAnalysis,
   // Modern Mobile Charts
   const MobileCharts = () => {
     const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
-    
+
     return (
       <div className="space-y-4 p-2">
         {/* Financial Summary */}
@@ -807,18 +803,18 @@ const Charts = React.memo(({ monthlyExpenses, incomeVsExpense, categoryAnalysis,
                 <AreaChart data={monthlyExpenses}>
                   <defs>
                     <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#B08968" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#B08968" stopOpacity={0.1}/>
+                      <stop offset="5%" stopColor="#B08968" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#B08968" stopOpacity={0.1} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis 
-                    dataKey="month" 
+                  <XAxis
+                    dataKey="month"
                     fontSize={10}
                     tick={{ fill: '#7F5539' }}
                     axisLine={{ stroke: '#E6CCB2' }}
                   />
-                  <YAxis 
+                  <YAxis
                     fontSize={10}
                     tickFormatter={formatCurrency}
                     tick={{ fill: '#7F5539' }}
@@ -833,15 +829,15 @@ const Charts = React.memo(({ monthlyExpenses, incomeVsExpense, categoryAnalysis,
                       boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
                     }}
                   />
-                  <Area 
-                    type="monotone" 
-                    dataKey="amount" 
-                    stroke="#B08968" 
+                  <Area
+                    type="monotone"
+                    dataKey="amount"
+                    stroke="#B08968"
                     fill="url(#expenseGradient)"
                     strokeWidth={2}
                     name="Expenses"
-                    activeDot={{ 
-                      r: 6, 
+                    activeDot={{
+                      r: 6,
                       stroke: '#B08968',
                       strokeWidth: 2,
                       fill: '#fff'
@@ -881,8 +877,8 @@ const Charts = React.memo(({ monthlyExpenses, incomeVsExpense, categoryAnalysis,
                     fill="#B08968"
                   >
                     {incomeVsExpense.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
+                      <Cell
+                        key={`cell-${index}`}
                         fill={entry.name === 'Income' ? '#4CAF50' : '#F44336'}
                       />
                     ))}
@@ -923,9 +919,9 @@ const Charts = React.memo(({ monthlyExpenses, incomeVsExpense, categoryAnalysis,
                 >
                   <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
                   <XAxis type="number" tickFormatter={formatCurrency} />
-                  <YAxis 
-                    type="category" 
-                    dataKey="name" 
+                  <YAxis
+                    type="category"
+                    dataKey="name"
                     width={100}
                     tick={{ fontSize: 12 }}
                   />
@@ -938,8 +934,8 @@ const Charts = React.memo(({ monthlyExpenses, incomeVsExpense, categoryAnalysis,
                       boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
                     }}
                   />
-                  <Bar 
-                    dataKey="value" 
+                  <Bar
+                    dataKey="value"
                     fill="#B08968"
                     radius={[0, 4, 4, 0]}
                     barSize={20}
@@ -960,7 +956,7 @@ const Charts = React.memo(({ monthlyExpenses, incomeVsExpense, categoryAnalysis,
   // Desktop Charts
   const DesktopCharts = () => {
     const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
-    
+
     return (
       <div className="grid grid-cols-2 gap-6 p-6">
         {/* Monthly Expenses Chart */}
@@ -978,18 +974,18 @@ const Charts = React.memo(({ monthlyExpenses, incomeVsExpense, categoryAnalysis,
               <AreaChart data={monthlyExpenses}>
                 <defs>
                   <linearGradient id="expenseGradientDesktop" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#B08968" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#B08968" stopOpacity={0.1}/>
+                    <stop offset="5%" stopColor="#B08968" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#B08968" stopOpacity={0.1} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis 
-                  dataKey="month" 
+                <XAxis
+                  dataKey="month"
                   fontSize={12}
                   tick={{ fill: '#7F5539' }}
                   axisLine={{ stroke: '#E6CCB2' }}
                 />
-                <YAxis 
+                <YAxis
                   fontSize={12}
                   tickFormatter={formatCurrency}
                   tick={{ fill: '#7F5539' }}
@@ -1004,15 +1000,15 @@ const Charts = React.memo(({ monthlyExpenses, incomeVsExpense, categoryAnalysis,
                     boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
                   }}
                 />
-                <Area 
-                  type="monotone" 
-                  dataKey="amount" 
-                  stroke="#B08968" 
+                <Area
+                  type="monotone"
+                  dataKey="amount"
+                  stroke="#B08968"
                   fill="url(#expenseGradientDesktop)"
                   strokeWidth={2}
                   name="Expenses"
-                  activeDot={{ 
-                    r: 8, 
+                  activeDot={{
+                    r: 8,
                     stroke: '#B08968',
                     strokeWidth: 2,
                     fill: '#fff'
@@ -1051,8 +1047,8 @@ const Charts = React.memo(({ monthlyExpenses, incomeVsExpense, categoryAnalysis,
                   label={({ name, value }) => `${name}: ${formatCurrency(value)}`}
                 >
                   {incomeVsExpense.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
+                    <Cell
+                      key={`cell-${index}`}
                       fill={entry.name === 'Income' ? '#4CAF50' : '#F44336'}
                     />
                   ))}
@@ -1092,9 +1088,9 @@ const Charts = React.memo(({ monthlyExpenses, incomeVsExpense, categoryAnalysis,
                 >
                   <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
                   <XAxis type="number" tickFormatter={formatCurrency} />
-                  <YAxis 
-                    type="category" 
-                    dataKey="name" 
+                  <YAxis
+                    type="category"
+                    dataKey="name"
                     width={150}
                     tick={{ fontSize: 14 }}
                   />
@@ -1107,8 +1103,8 @@ const Charts = React.memo(({ monthlyExpenses, incomeVsExpense, categoryAnalysis,
                       boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
                     }}
                   />
-                  <Bar 
-                    dataKey="value" 
+                  <Bar
+                    dataKey="value"
                     fill="#B08968"
                     radius={[0, 4, 4, 0]}
                     barSize={30}
@@ -1150,9 +1146,8 @@ const Toast = React.memo(({ message, type }) => (
     initial={{ opacity: 0, y: 50 }}
     animate={{ opacity: 1, y: 0 }}
     exit={{ opacity: 0, y: 50 }}
-    className={`fixed bottom-4 left-4 right-4 p-4 rounded-lg ${
-      type === "success" ? "bg-[#B08968]" : "bg-red-500"
-    } text-white z-50`}
+    className={`fixed bottom-4 left-4 right-4 p-4 rounded-lg ${type === "success" ? "bg-[#B08968]" : "bg-red-500"
+      } text-white z-50`}
   >
     {message}
   </motion.div>
@@ -1177,6 +1172,13 @@ const Dashboard = () => {
   const [currentStatus, setCurrentStatus] = useState(PROJECT_STATUSES.UNDER_DISCUSSION);
   const [showEntryOptions, setShowEntryOptions] = useState(false);
   const [isSharedExpenseModalOpen, setIsSharedExpenseModalOpen] = useState(false);
+  const currentYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+  const availableYears = useMemo(() => {
+    const years = [];
+    for (let y = currentYear; y >= 2020; y--) years.push(y);
+    return years;
+  }, [currentYear]);
 
 
   // Hooks
@@ -1202,13 +1204,13 @@ const Dashboard = () => {
   // Effects
   useEffect(() => {
     if (userId) {
-      dispatch(fetchFinancialSummary(userId));
+      dispatch(fetchFinancialSummary({ userId, year: selectedYear }));
       const savedProject = localStorage.getItem('selectedProject');
       if (savedProject) {
         dispatch(selectProject(JSON.parse(savedProject)));
       }
     }
-  }, [dispatch, userId]);
+  }, [dispatch, userId, selectedYear]);
 
   useEffect(() => {
     if (userId) {
@@ -1221,17 +1223,17 @@ const Dashboard = () => {
   useEffect(() => {
     if (selectedProject && userId) {
       const projectId = selectedProject._id;
-      console.log('Fetching data for project:', projectId);
-      
+      console.log('Fetching data for project:', projectId, 'year:', selectedYear);
+
       // Fetch all data in parallel
       Promise.all([
-        dispatch(fetchMonthlyExpenses({ userId, projectId }))
+        dispatch(fetchMonthlyExpenses({ userId, projectId, year: selectedYear }))
           .then(res => console.log('Monthly Expenses:', res.payload)),
-        dispatch(fetchIncomeVsExpense({ userId, projectId }))
+        dispatch(fetchIncomeVsExpense({ userId, projectId, year: selectedYear }))
           .then(res => console.log('Income vs Expense:', res.payload)),
-        dispatch(fetchCategoryExpenses({ userId, projectId }))
+        dispatch(fetchCategoryExpenses({ userId, projectId, year: selectedYear }))
           .then(res => console.log('Category Expenses:', res.payload)),
-        dispatch(fetchCategoryAnalysis({ userId, projectId }))
+        dispatch(fetchCategoryAnalysis({ userId, projectId, year: selectedYear }))
           .then(res => console.log('Category Analysis:', res.payload)),
         dispatch(fetchBalanceSummary(userId))
           .then(res => console.log('Balance Summary:', res.payload))
@@ -1240,7 +1242,7 @@ const Dashboard = () => {
         showToast("Failed to fetch data", "error");
       });
     }
-  }, [dispatch, userId, selectedProject]);
+  }, [dispatch, userId, selectedProject, selectedYear]);
 
   useEffect(() => {
     console.log('Monthly Expenses updated:', monthlyExpenses);
@@ -1275,7 +1277,7 @@ const Dashboard = () => {
       // Ensure budget is converted to number
       const budget = Number(newProjectBudget) || 0;
       console.log('Creating project with budget:', budget);
-      
+
       await dispatch(createProject({
         userId,
         name: newProjectName,
@@ -1297,7 +1299,7 @@ const Dashboard = () => {
 
     try {
       await dispatch(deleteProject(projectId)).unwrap();
-      
+
       // Clear selected project if it was deleted
       if (selectedProject?._id === projectId) {
         dispatch(selectProject(null));
@@ -1305,7 +1307,7 @@ const Dashboard = () => {
       }
 
       dispatch(fetchProjects(userId));
-      
+
       showToast("Project deleted successfully", "success");
     } catch (error) {
       console.error('Delete project error:', error);
@@ -1320,19 +1322,19 @@ const Dashboard = () => {
 
   const refreshData = useCallback(() => {
     if (userId) {
-      dispatch(fetchFinancialSummary(userId));
+      dispatch(fetchFinancialSummary({ userId, year: selectedYear }));
       if (selectedProject) {
         const projectId = selectedProject._id;
         Promise.all([
-          dispatch(fetchMonthlyExpenses({ userId, projectId })),
-          dispatch(fetchIncomeVsExpense({ userId, projectId })),
-          dispatch(fetchCategoryExpenses({ userId, projectId })),
-          dispatch(fetchCategoryAnalysis({ userId, projectId })),
+          dispatch(fetchMonthlyExpenses({ userId, projectId, year: selectedYear })),
+          dispatch(fetchIncomeVsExpense({ userId, projectId, year: selectedYear })),
+          dispatch(fetchCategoryExpenses({ userId, projectId, year: selectedYear })),
+          dispatch(fetchCategoryAnalysis({ userId, projectId, year: selectedYear })),
           dispatch(fetchBalanceSummary(userId))
         ]);
       }
     }
-  }, [dispatch, userId, selectedProject]);
+  }, [dispatch, userId, selectedProject, selectedYear]);
 
   const handleEntryModalClose = useCallback(() => {
     setIsEntryModalOpen(false);
@@ -1359,9 +1361,25 @@ const Dashboard = () => {
           </div>
 
           <div className="bg-white/80 rounded-xl p-6 shadow-lg backdrop-blur-sm mb-6">
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold text-[#7F5539]">Income & Expense Overview</h2>
-              <p className="text-sm text-gray-500">Current financial status</p>
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-[#7F5539]">Income & Expense Overview</h2>
+                <p className="text-sm text-gray-500">Showing data for {selectedYear}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-500">Year:</label>
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(Number(e.target.value))}
+                  className="px-3 py-1.5 text-sm border border-[#B08968]/30 rounded-lg bg-white text-[#7F5539] cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#B08968]/40 shadow-sm"
+                >
+                  {availableYears.map((y) => (
+                    <option key={y} value={y}>
+                      {y}{y === currentYear ? ' (Current)' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
             <FinancialOverview overall={overall} />
           </div>
@@ -1521,10 +1539,10 @@ const Dashboard = () => {
                 // Refresh data
                 if (selectedProject && userId) {
                   const projectId = selectedProject._id;
-                  dispatch(fetchMonthlyExpenses({ userId, projectId }));
-                  dispatch(fetchIncomeVsExpense({ userId, projectId }));
-                  dispatch(fetchCategoryExpenses({ userId, projectId }));
-                  dispatch(fetchCategoryAnalysis({ userId, projectId }));
+                  dispatch(fetchMonthlyExpenses({ userId, projectId, year: selectedYear }));
+                  dispatch(fetchIncomeVsExpense({ userId, projectId, year: selectedYear }));
+                  dispatch(fetchCategoryExpenses({ userId, projectId, year: selectedYear }));
+                  dispatch(fetchCategoryAnalysis({ userId, projectId, year: selectedYear }));
                   dispatch(fetchBalanceSummary(userId));
                 }
               }} />

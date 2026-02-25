@@ -39,9 +39,11 @@ const formatCategoryAnalysis = (data) => {
 
 export const fetchMonthlyExpenses = createAsyncThunk(
   'analytics/fetchMonthlyExpenses',
-  async ({ userId, projectId }) => {
+  async ({ userId, projectId, year }) => {
+    const params = new URLSearchParams({ userId, projectId });
+    if (year) params.append('year', year);
     const response = await axios.get(
-      `${BASE_URL}/analytics/monthly-expenses?userId=${userId}&projectId=${projectId}`,
+      `${BASE_URL}/analytics/monthly-expenses?${params.toString()}`,
       { headers: getAuthHeader() }
     );
     return formatMonthlyExpenses(response.data);
@@ -50,9 +52,11 @@ export const fetchMonthlyExpenses = createAsyncThunk(
 
 export const fetchIncomeVsExpense = createAsyncThunk(
   'analytics/fetchIncomeVsExpense',
-  async ({ userId, projectId }) => {
+  async ({ userId, projectId, year }) => {
+    const params = new URLSearchParams({ userId, projectId });
+    if (year) params.append('year', year);
     const response = await axios.get(
-      `${BASE_URL}/analytics/income-vs-expense?userId=${userId}&projectId=${projectId}`,
+      `${BASE_URL}/analytics/income-vs-expense?${params.toString()}`,
       { headers: getAuthHeader() }
     );
     return formatIncomeVsExpense(response.data);
@@ -61,9 +65,11 @@ export const fetchIncomeVsExpense = createAsyncThunk(
 
 export const fetchCategoryExpenses = createAsyncThunk(
   'analytics/fetchCategoryExpenses',
-  async ({ userId, projectId }) => {
+  async ({ userId, projectId, year }) => {
+    const params = new URLSearchParams({ userId, projectId });
+    if (year) params.append('year', year);
     const response = await axios.get(
-      `${BASE_URL}/analytics/category-expenses?userId=${userId}&projectId=${projectId}`,
+      `${BASE_URL}/analytics/category-expenses?${params.toString()}`,
       { headers: getAuthHeader() }
     );
     return response.data;
@@ -72,9 +78,11 @@ export const fetchCategoryExpenses = createAsyncThunk(
 
 export const fetchCategoryAnalysis = createAsyncThunk(
   'analytics/fetchCategoryAnalysis',
-  async ({ userId, projectId }) => {
+  async ({ userId, projectId, year }) => {
+    const params = new URLSearchParams({ userId, projectId });
+    if (year) params.append('year', year);
     const response = await axios.get(
-      `${BASE_URL}/analytics/category-analysis?userId=${userId}&projectId=${projectId}`,
+      `${BASE_URL}/analytics/category-analysis?${params.toString()}`,
       { headers: getAuthHeader() }
     );
     return formatCategoryAnalysis(response.data);

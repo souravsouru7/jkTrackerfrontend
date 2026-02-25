@@ -6,10 +6,12 @@ const API_URL = config.API_URL;
 
 export const fetchFinancialSummary = createAsyncThunk(
   'summary/fetchFinancialSummary',
-  async (userId) => {
+  async ({ userId, year } = {}) => {
     const token = localStorage.getItem('token');
+    const params = new URLSearchParams({ userId });
+    if (year) params.append('year', year);
     const response = await axios.get(
-      `${API_URL}/api/projects/project-summary?userId=${userId}`,
+      `${API_URL}/api/projects/project-summary?${params.toString()}`,
       {
         headers: { 'x-auth-token': token }
       }
