@@ -24,8 +24,7 @@ import { Menu, X, Plus, Trash2, ChevronRight } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   PieChart, Pie, Cell, ResponsiveContainer,
-  AreaChart, Area,
-  RadialBarChart, RadialBar
+  AreaChart, Area
 } from "recharts";
 import { fetchFinancialSummary } from '../store/slice/fincialSlice';
 import FinancialOverview from './FinancialOverview';
@@ -70,88 +69,7 @@ const cardVariants = {
   }
 };
 
-const MobileHeader = React.memo(({ isOpen, setIsOpen }) => (
-  <motion.header
-    initial={{ y: -100 }}
-    animate={{ y: 0 }}
-    className="sticky top-0 z-50 bg-white/10 backdrop-blur-md border-b border-[#B08968]/20"
-  >
-    <div className="flex justify-between items-center px-4 py-4">
-      <motion.h1
-        whileHover={{ scale: 1.05 }}
-        className="text-xl font-bold text-[#7F5539]"
-      >
-        Finance Tracker
-      </motion.h1>
-      <motion.button
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={() => setIsOpen(!isOpen)}
-        className="text-[#7F5539]"
-      >
-        {isOpen ? <X size={24} /> : <Menu size={24} />}
-      </motion.button>
-    </div>
-  </motion.header>
-));
 
-const MobileMenu = React.memo(({ isOpen, setIsOpen, navigate, dispatch }) => {
-  const handleNavigation = useCallback((path) => {
-    navigate(path);
-    setIsOpen(false);
-  }, [navigate, setIsOpen]);
-
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ x: "100%" }}
-          animate={{ x: 0 }}
-          exit={{ x: "100%" }}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          className="fixed inset-0 bg-white z-40 flex flex-col"
-        >
-          <div className="flex justify-between items-center px-4 py-4 border-b">
-            <h1 className="text-xl font-bold text-[#7F5539]">Finance Tracker</h1>
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setIsOpen(false)}
-            >
-              <X size={24} className="text-[#7F5539]" />
-            </motion.button>
-          </div>
-          <nav className="flex flex-col p-4 gap-4">
-            {["Entries", "Balance Sheet", "Create Bill"].map((item, index) => (
-              <motion.button
-                key={item}
-                initial={{ x: -50, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ scale: 1.02, x: 10 }}
-                onClick={() => handleNavigation(`/${item.toLowerCase().replace(' ', '-')}`)}
-                className="w-full py-3 text-left text-[#9C6644] text-lg flex items-center justify-between"
-              >
-                {item}
-                <ChevronRight size={20} />
-              </motion.button>
-            ))}
-            <motion.button
-              initial={{ y: 50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => dispatch(logout())}
-              className="w-full py-3 bg-[#B08968] text-white rounded-lg text-lg mt-4"
-            >
-              Logout
-            </motion.button>
-          </nav>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-});
 
 const STATUS_OPTIONS = [
   { value: 'Under Disscussion', label: 'Under Discussion' },
@@ -178,7 +96,7 @@ const ProjectList = React.memo(({ projects, onDelete, onSelect, selectedProject,
     }
   };
 
-  const { unconnectedBills, projectBills, loadingStates } = useSelector(state => state.interiorBilling);
+  const { unconnectedBills, projectBills } = useSelector(state => state.interiorBilling);
 
   const handleShowBills = async (project) => {
     setError(null);
@@ -556,23 +474,12 @@ const FinancialSummary = React.memo(({ summary, selectedProject }) => {
       .reduce((sum, entry) => sum + Number(entry.amount || 0), 0) || 0;
   }, [entries]);
 
-  // Calculate income from other projects separately
-  const totalIncomeFromOtherProjects = useMemo(() => {
-    return entries
-      ?.filter(entry => entry.type.toLowerCase() === 'income' && entry.isIncomeFromOtherProject)
-      .reduce((sum, entry) => sum + Number(entry.amount || 0), 0) || 0;
-  }, [entries]);
+  
 
   // Calculate remaining payment based on budget and received payments
   const remainingPayment = Math.max(budget - totalIncome, 0);
 
-  // Calculate budget utilization percentage
-  const budgetUtilization = useMemo(() => {
-    if (!budget || budget <= 0) return 0;
-    const percentage = (totalExpenses / budget) * 100;
-    console.log('Budget:', budget, 'Total Expenses:', totalExpenses, 'Utilization:', percentage);
-    return Math.min(Math.round(percentage), 100);
-  }, [budget, totalExpenses]);
+  
 
   const cards = [
     {
@@ -1161,7 +1068,6 @@ const PROJECT_STATUSES = {
 
 const Dashboard = () => {
   // State
-  const [isOpen, setIsOpen] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
   const [newProjectDescription, setNewProjectDescription] = useState("");
   const [showNotification, setShowNotification] = useState(false);
@@ -1242,7 +1148,7 @@ const Dashboard = () => {
         showToast("Failed to fetch data", "error");
       });
     }
-  }, [dispatch, userId, selectedProject, selectedYear]);
+  }, [dispatch, userId, selectedProject, selectedYear, showToast]);
 
   useEffect(() => {
     console.log('Monthly Expenses updated:', monthlyExpenses);

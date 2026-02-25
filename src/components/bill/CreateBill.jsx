@@ -21,7 +21,7 @@ const CreateBill = () => {
   const [thicknesses] = useState(['1mm','2mm','3mm','4mm','5mm','6mm',"7mm",'8mm',"9mm","10mm",'12mm',"16mm",'18mm', '25mm']);
   const [hardwareBrands] = useState(['Godrej', 'Ebco', 'Hafele', 'Hettich',"appolo"]);
 
-  const [workType, setWorkType] = useState('all');
+
   
   const workTypeOptions = {
     all: {
@@ -121,10 +121,11 @@ const CreateBill = () => {
 
   const [predefinedDescriptions] = useState(() => {
     const descriptions = ['Custom'];
-    workTypeOptions[workType].materials.forEach(material => {
-      workTypeOptions[workType].thicknesses.forEach(thickness => {
-        workTypeOptions[workType].brands.forEach(brand => {
-          descriptions.push(generateDescription(material, thickness, brand, workType));
+    const currentWorkType = 'all';
+    workTypeOptions[currentWorkType].materials.forEach(material => {
+      workTypeOptions[currentWorkType].thicknesses.forEach(thickness => {
+        workTypeOptions[currentWorkType].brands.forEach(brand => {
+          descriptions.push(generateDescription(material, thickness, brand, currentWorkType));
         });
       });
     });
