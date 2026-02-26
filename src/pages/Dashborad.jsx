@@ -473,12 +473,12 @@ const FinancialSummary = React.memo(({ summary, selectedProject }) => {
       .reduce((sum, entry) => sum + Number(entry.amount || 0), 0) || 0;
   }, [entries]);
 
-  
+
 
   // Calculate remaining payment based on budget and received payments
   const remainingPayment = Math.max(budget - totalIncome, 0);
 
-  
+
 
   const cards = [
     {
@@ -1286,7 +1286,7 @@ const Dashboard = () => {
                 </select>
               </div>
             </div>
-            <FinancialOverview overall={overall} />
+            <FinancialOverview overall={overall} year={selectedYear} />
           </div>
 
           <section className="hidden md:block bg-white/80 rounded-xl p-4 mb-6">

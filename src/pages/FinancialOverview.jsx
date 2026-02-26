@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-
+import { useSelector } from 'react-redux';
+import BreakdownModal from '../components/BreakdownModal';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -35,12 +36,24 @@ const cardVariants = {
   },
 };
 
-const FinancialOverview = React.memo(({ overall }) => {
+const FinancialOverview = React.memo(({ overall, year }) => {
+  const { projects } = useSelector((state) => state.summary);
+  const [modalState, setModalState] = useState({ isOpen: false, type: '' });
+
+  const openModal = useCallback((type) => {
+    setModalState({ isOpen: true, type });
+  }, []);
+
+  const closeModal = useCallback(() => {
+    setModalState(prev => ({ ...prev, isOpen: false }));
+  }, []);
+
   const cards = [
     {
       title: "Total Income",
       value: overall.totalIncome,
       gradient: "from-[#B08968] to-[#9C6644]",
+      onClick: () => openModal('Income'),
       icon: (
         <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path
@@ -66,6 +79,7 @@ const FinancialOverview = React.memo(({ overall }) => {
       title: "Total Expenses",
       value: overall.totalExpenses,
       gradient: "from-[#7F5539] to-[#6B4423]",
+      onClick: () => openModal('Expense'),
       icon: (
         <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path
@@ -122,7 +136,8 @@ const FinancialOverview = React.memo(({ overall }) => {
         <motion.div
           variants={cardVariants}
           whileTap={{ scale: 0.98 }}
-          className="relative overflow-hidden bg-gradient-to-br from-[#B08968] to-[#9C6644] rounded-2xl p-6 text-white shadow-lg"
+          onClick={cards[0].onClick}
+          className="relative overflow-hidden bg-gradient-to-br from-[#B08968] to-[#9C6644] rounded-2xl p-6 text-white shadow-lg cursor-pointer"
         >
           <div className="absolute top-0 right-0 w-32 h-32 -mr-8 -mt-8">
             <motion.div
@@ -146,7 +161,7 @@ const FinancialOverview = React.memo(({ overall }) => {
               ₹{cards[0].value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
             </p>
             <div className="flex items-center text-white/60 text-sm">
-              <span>View Details</span>
+              <span>View Breakdown</span>
               <svg className="w-4 h-4 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
@@ -161,7 +176,8 @@ const FinancialOverview = React.memo(({ overall }) => {
               key={card.title}
               variants={cardVariants}
               whileTap={{ scale: 0.98 }}
-              className={`relative overflow-hidden bg-gradient-to-br ${card.gradient} rounded-2xl p-4 text-white shadow-lg`}
+              onClick={card.onClick}
+              className={`relative overflow-hidden bg-gradient-to-br ${card.gradient} rounded-2xl p-4 text-white shadow-lg ${card.onClick ? 'cursor-pointer' : ''}`}
             >
               {card.bgPattern}
               <div className="relative z-10">
@@ -172,6 +188,14 @@ const FinancialOverview = React.memo(({ overall }) => {
                 <p className="text-lg font-bold">
                   ₹{card.value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                 </p>
+                {card.onClick && (
+                  <div className="mt-2 flex items-center text-white/40 text-[10px]">
+                    <span>View Breakdown</span>
+                    <svg className="w-2 h-2 ml-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                )}
               </div>
             </motion.div>
           ))}
@@ -188,7 +212,8 @@ const FinancialOverview = React.memo(({ overall }) => {
           key={card.title}
           variants={cardVariants}
           whileHover="hover"
-          className={`bg-gradient-to-br ${card.gradient} rounded-2xl p-6 text-white shadow-lg relative overflow-hidden`}
+          onClick={card.onClick}
+          className={`bg-gradient-to-br ${card.gradient} rounded-2xl p-6 text-white shadow-lg relative overflow-hidden ${card.onClick ? 'cursor-pointer' : ''}`}
         >
           {card.bgPattern}
           <div className="absolute top-0 right-0 w-32 h-32 -mr-8 -mt-8 opacity-10">
@@ -211,6 +236,14 @@ const FinancialOverview = React.memo(({ overall }) => {
           >
             ₹{card.value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
           </motion.p>
+          {card.onClick && (
+            <div className="mt-4 flex items-center text-white/60 text-sm relative z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span>View Details</span>
+              <svg className="w-4 h-4 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          )}
         </motion.div>
       ))}
     </div>
@@ -224,6 +257,13 @@ const FinancialOverview = React.memo(({ overall }) => {
     >
       <MobileView />
       <DesktopView />
+      <BreakdownModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        type={modalState.type}
+        projects={projects}
+        year={year}
+      />
     </motion.div>
   );
 });
